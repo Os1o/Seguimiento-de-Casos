@@ -14,6 +14,11 @@ function verificarSesion() {
     return JSON.parse(usuarioStr);
 }
 
+function cerrarSesion() {
+    sessionStorage.removeItem('usuario');
+    window.location.href = 'login.html';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const usuario = verificarSesion();
     if (!usuario) return;

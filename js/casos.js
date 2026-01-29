@@ -5,6 +5,20 @@
 let casosFiltrados = [];
 let todosLosCasos = [];
 
+function verificarSesion() {
+    const usuarioStr = sessionStorage.getItem('usuario');
+    if (!usuarioStr) {
+        window.location.href = 'login.html';
+        return null;
+    }
+    return JSON.parse(usuarioStr);
+}
+
+function cerrarSesion() {
+    sessionStorage.removeItem('usuario');
+    window.location.href = 'login.html';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar sesión
     const usuario = verificarSesion();
@@ -28,15 +42,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mostrar casos
     filtrarCasos();
 });
-
-function verificarSesion() {
-    const usuarioStr = sessionStorage.getItem('usuario');
-    if (!usuarioStr) {
-        window.location.href = 'login.html';
-        return null;
-    }
-    return JSON.parse(usuarioStr);
-}
 
 function cargarCasos() {
     // Intentar cargar casos del localStorage
