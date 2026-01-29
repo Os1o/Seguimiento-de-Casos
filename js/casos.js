@@ -8,14 +8,22 @@ let todosLosCasos = [];
 // En js/casos.js, asegúrate de que no haya errores al leer
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
-    if (!usuarioStr || usuarioStr === "undefined") { // Añade validación extra
+    
+    // Si no hay nada o es un string vacío, redirigir
+    if (!usuarioStr || usuarioStr === "undefined" || usuarioStr === "null") {
+        console.warn("Sesión no encontrada, redirigiendo a login...");
         window.location.href = 'login.html';
         return null;
     }
+
     try {
         return JSON.parse(usuarioStr);
     } catch (e) {
-        return null; 
+        console.error("Error al leer la sesión:", e);
+        // Opcional: limpiar el storage corrupto antes de redirigir
+        sessionStorage.removeItem('usuario');
+        window.location.href = 'login.html';
+        return null;
     }
 }
 
@@ -25,27 +33,29 @@ function cerrarSesion() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Verificar sesión
+    // Verificar sesión primero
     const usuario = verificarSesion();
+    
+    // Si no hay usuario, detenemos la ejecución aquí para evitar errores en cascada
     if (!usuario) return;
     
-    // Mostrar nombre de usuario
-    document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
+    // El resto de tu lógica se mantiene igual...
+    if (document.getElementById('nombreUsuario')) {
+        document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
+    }
     
-    // Cargar casos (fake o localStorage)
     cargarCasos();
-    
-    // Llenar filtros
     llenarFiltros();
     
-    // Event listeners para filtros y búsqueda
-    document.getElementById('searchInput').addEventListener('input', filtrarCasos);
-    document.getElementById('filtroDelegacion').addEventListener('change', filtrarCasos);
-    document.getElementById('filtroEstatus').addEventListener('change', filtrarCasos);
-    document.getElementById('filtroTipo').addEventListener('change', filtrarCasos);
-    
-    // Mostrar casos
-    filtrarCasos();
+    // Inicializar filtros si los elementos existen
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', filtrarCasos);
+        document.getElementById('filtroDelegacion').addEventListener('change', filtrarCasos);
+        document.getElementById('filtroEstatus').addEventListener('change', filtrarCasos);
+        document.getElementById('filtroTipo').addEventListener('change', filtrarCasos);
+        filtrarCasos();
+    }
 });
 
 function cargarCasos() {
