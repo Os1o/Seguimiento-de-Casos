@@ -5,13 +5,18 @@
 let casosFiltrados = [];
 let todosLosCasos = [];
 
+// En js/casos.js, asegúrate de que no haya errores al leer
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
-    if (!usuarioStr) {
+    if (!usuarioStr || usuarioStr === "undefined") { // Añade validación extra
         window.location.href = 'login.html';
         return null;
     }
-    return JSON.parse(usuarioStr);
+    try {
+        return JSON.parse(usuarioStr);
+    } catch (e) {
+        return null; 
+    }
 }
 
 function cerrarSesion() {
