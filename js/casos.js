@@ -9,19 +9,19 @@ let todosLosCasos = [];
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
     
-    // Si no hay nada o es un string vacío, redirigir
-    if (!usuarioStr || usuarioStr === "undefined" || usuarioStr === "null") {
-        console.warn("Sesión no encontrada, redirigiendo a login...");
+    // Si no existe el dato
+    if (!usuarioStr) {
         window.location.href = 'login.html';
         return null;
     }
 
     try {
+        // Intentamos parsear. Si falla, el catch nos salva del bucle.
         return JSON.parse(usuarioStr);
     } catch (e) {
-        console.error("Error al leer la sesión:", e);
-        // Opcional: limpiar el storage corrupto antes de redirigir
-        sessionStorage.removeItem('usuario');
+        console.error("Error de sesión corrupta. Limpiando...");
+        // ¡IMPORTANTE! Limpiamos para que login.html no nos regrese aquí
+        sessionStorage.removeItem('usuario'); 
         window.location.href = 'login.html';
         return null;
     }
