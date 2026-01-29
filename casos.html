@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casos Civiles y Mercantiles - Sistema de Gestión de Juicios</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header-gob">
+        <div class="header-logo">
+            <span class="logo-text">Gobierno de México</span>
+        </div>
+        <nav class="header-nav">
+            <div class="header-user">
+                <span id="nombreUsuario">Usuario</span>
+            </div>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </nav>
+    </header>
+
+    <!-- Contenido Principal -->
+    <div class="container">
+        <!-- Encabezado de Página -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Casos Civiles y Mercantiles</h1>
+                <p class="page-subtitle">Gestión y seguimiento de expedientes</p>
+            </div>
+            <a href="nuevo-caso.html" class="btn btn-primary">
+                ➕ Nuevo Caso
+            </a>
+        </div>
+
+        <!-- Toolbar: Búsqueda y Filtros -->
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="🔍 Buscar por expediente, actor o demandado..."
+                >
+                
+                <select id="filtroDelegacion" class="form-select" style="max-width: 250px;">
+                    <option value="">Todas las delegaciones</option>
+                </select>
+                
+                <select id="filtroEstatus" class="form-select" style="max-width: 200px;">
+                    <option value="">Todos los estatus</option>
+                    <option value="TRAMITE">En Trámite</option>
+                    <option value="CONCLUIDO">Concluido</option>
+                </select>
+                
+                <select id="filtroTipo" class="form-select" style="max-width: 200px;">
+                    <option value="">Todos los tipos</option>
+                    <option value="CIVIL">Civil</option>
+                    <option value="MERCANTIL">Mercantil</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Estadísticas Rápidas -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="card" style="padding: 16px; text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: var(--color-secondary);" id="totalCasos">0</div>
+                <div style="font-size: 14px; color: var(--color-text-light);">Total de Casos</div>
+            </div>
+            <div class="card" style="padding: 16px; text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: var(--color-warning);" id="casosTramite">0</div>
+                <div style="font-size: 14px; color: var(--color-text-light);">En Trámite</div>
+            </div>
+            <div class="card" style="padding: 16px; text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: var(--color-success);" id="casosConcluidos">0</div>
+                <div style="font-size: 14px; color: var(--color-text-light);">Concluidos</div>
+            </div>
+        </div>
+
+        <!-- Tabla de Casos -->
+        <div class="table-container">
+            <table class="table" id="tablaCasos">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Expediente</th>
+                        <th>Delegación</th>
+                        <th>Tipo</th>
+                        <th>Fecha Inicio</th>
+                        <th>Actor</th>
+                        <th>Demandado</th>
+                        <th>Importe</th>
+                        <th>IMSS es</th>
+                        <th>Estatus</th>
+                        <th>Acumulados</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCasosBody">
+                    <!-- Se llena con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mensaje si no hay casos -->
+        <div id="mensajeVacio" class="card text-center" style="display: none; padding: 40px;">
+            <p style="font-size: 18px; color: var(--color-text-light);">
+                📋 No se encontraron casos con los filtros aplicados
+            </p>
+        </div>
+    </div>
+
+    <!-- Modal para ver casos acumulados -->
+    <div id="modalAcumulados" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="card" style="max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="margin: 0; color: var(--color-primary);">Casos Acumulados</h3>
+                <button onclick="cerrarModalAcumulados()" class="btn-secondary" style="padding: 8px 16px;">✕</button>
+            </div>
+            <div id="listaAcumulados"></div>
+        </div>
+    </div>
+
+    <script src="js/datos-fake.js"></script>
+    <script src="js/login.js"></script>
+    <script src="js/casos.js"></script>
+</body>
+</html>

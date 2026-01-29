@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     
     // Verificar si ya hay sesión activa
-    const sesionActiva = localStorage.getItem('usuario');
+    const sesionActiva = sessionStorage.getItem('usuario');
     if (sesionActiva) {
         // Si ya hay sesión, redirigir a casos
         window.location.href = 'casos.html';
@@ -46,8 +46,8 @@ function realizarLogin(usuario, password) {
             usuario: usuario // Usar el usuario que ingresó
         };
         
-        // Guardar en localStorage (simula sesión)
-        localStorage.setItem('usuario', JSON.stringify(usuarioData));
+        // Guardar en sessionStorage (se borra al cerrar navegador)
+        sessionStorage.setItem('usuario', JSON.stringify(usuarioData));
         
         // Redirigir a la página de casos
         window.location.href = 'casos.html';
@@ -56,6 +56,6 @@ function realizarLogin(usuario, password) {
 
 // Función para cerrar sesión (se usa en otras páginas)
 function cerrarSesion() {
-    localStorage.removeItem('usuario');
+    sessionStorage.removeItem('usuario');
     window.location.href = 'login.html';
 }
