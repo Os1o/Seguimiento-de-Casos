@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de Sesión - Sistema de Gestión de Juicios</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Header Gubernamental -->
+    <header class="header-gob">
+        <div class="header-logo">
+            <span class="logo-text">Gobierno de México</span>
+        </div>
+        <nav class="header-nav">
+            <a href="#">Trámites</a>
+            <a href="#">Gobierno</a>
+        </nav>
+    </header>
+
+    <!-- Contenido de Login -->
+    <div class="login-page">
+        <div class="login-hero">
+            <div class="login-content">
+                <!-- Título del Sistema -->
+                <div class="login-title">
+                    <h1>Sistema de Seguimiento de Casos</h1>
+                    <p>Dirección Jurídica</p>
+                </div>
+
+                <!-- Card de Login -->
+                <div class="login-card">
+                    <h2>Inicio de Sesión</h2>
+                    <p>Completa los siguientes campos</p>
+
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="usuario" class="form-label required">Usuario</label>
+                            <input 
+                                type="text" 
+                                id="usuario" 
+                                class="form-input"
+                                placeholder="Ingresa tu usuario"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password" class="form-label required">Contraseña</label>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                class="form-input"
+                                placeholder="Ingresa tu contraseña"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                Acceder
+                            </button>
+                        </div>
+                    </form>
+
+                    <div style="margin-top: 24px; text-align: center;">
+                        <a href="#" class="btn-link">Recuperar contraseña</a>
+                    </div>
+
+                    <!-- Mensaje de ayuda para la maqueta -->
+                    <div style="margin-top: 32px; padding: 12px; background-color: #e3f2fd; border-radius: 8px; font-size: 12px; color: #0d47a1;">
+                        <strong>Maqueta funcional:</strong><br>
+                        Usuario: <code>admin</code><br>
+                        Contraseña: <code>admin123</code><br>
+                        <em>(Cualquier usuario/contraseña funciona para esta demo)</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/datos-fake.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>
