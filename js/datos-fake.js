@@ -38,29 +38,70 @@ const catalogos = {
         id: 1, 
         nombre: "Ordinario",
         subtipos: [
-          { id: 11, nombre: "Daños y Perjuicios", subsubtipos: [] },
-          { id: 12, nombre: "Cumplimiento de Contrato", subsubtipos: [] }
+          { id: 11, nombre: "Oral", jurisdiccion: "LOCAL" },
+          { id: 12, nombre: "Escrito", jurisdiccion: "AMBAS" }
         ]
       },
       { 
         id: 2, 
-        nombre: "Especial",
-        subtipos: [
-          { id: 21, nombre: "Desahucio", subsubtipos: [] }
-        ]
+        nombre: "Hipotecario",
+        jurisdiccion: "LOCAL",
+        subtipos: []
       },
-      { id: 3, nombre: "Ejecutivo", subtipos: [] }
+      { 
+        id: 3, 
+        nombre: "Arrendamiento",
+        jurisdiccion: "LOCAL",
+        subtipos: []
+      },
+      { 
+        id: 4, 
+        nombre: "Usucapión",
+        jurisdiccion: "LOCAL",
+        subtipos: []
+      },
+      { 
+        id: 5, 
+        nombre: "Agrario",
+        jurisdiccion: "FEDERAL",
+        subtipos: []
+      },
+      { 
+        id: 6, 
+        nombre: "Otros",
+        jurisdiccion: "AMBAS",
+        subtipos: [],
+        requiere_descripcion: true
+      }
     ],
     MERCANTIL: [
       { 
-        id: 4, 
-        nombre: "Ejecutivo Mercantil",
+        id: 7, 
+        nombre: "Ordinario",
         subtipos: [
-          { id: 41, nombre: "Pagaré", subsubtipos: [] },
-          { id: 42, nombre: "Cheque", subsubtipos: [] }
+          { id: 71, nombre: "Oral", jurisdiccion: "LOCAL" },
+          { id: 72, nombre: "Escrito", jurisdiccion: "AMBAS" }
         ]
       },
-      { id: 5, nombre: "Ordinario Mercantil", subtipos: [] }
+      { 
+        id: 8, 
+        nombre: "Concursos Mercantiles",
+        jurisdiccion: "FEDERAL",
+        subtipos: []
+      },
+      { 
+        id: 9, 
+        nombre: "Especial de Fianza",
+        jurisdiccion: "FEDERAL",
+        subtipos: []
+      },
+      { 
+        id: 10, 
+        nombre: "Otros",
+        jurisdiccion: "AMBAS",
+        subtipos: [],
+        requiere_descripcion: true
+      }
     ]
   },
   

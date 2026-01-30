@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('filtroDelegacion').addEventListener('change', filtrarCasos);
     document.getElementById('filtroEstatus').addEventListener('change', filtrarCasos);
     document.getElementById('filtroTipo').addEventListener('change', filtrarCasos);
+    document.getElementById('filtroTipoPersona').addEventListener('change', filtrarCasos);
     document.getElementById('fechaDesde').addEventListener('change', filtrarCasos);
     document.getElementById('fechaHasta').addEventListener('change', filtrarCasos);
     
@@ -50,6 +51,7 @@ function limpiarFiltros() {
     document.getElementById('filtroDelegacion').value = '';
     document.getElementById('filtroEstatus').value = '';
     document.getElementById('filtroTipo').value = '';
+    document.getElementById('filtroTipoPersona').value = '';
     document.getElementById('fechaDesde').value = '';
     document.getElementById('fechaHasta').value = '';
     filtrarCasos();
@@ -85,20 +87,25 @@ function filtrarCasos() {
     const delegacionId = document.getElementById('filtroDelegacion').value;
     const estatus = document.getElementById('filtroEstatus').value;
     const tipo = document.getElementById('filtroTipo').value;
+    const tipoPersona = document.getElementById('filtroTipoPersona').value;
     const fechaDesde = document.getElementById('fechaDesde').value;
     const fechaHasta = document.getElementById('fechaHasta').value;
     
     casosFiltrados = todosLosCasos.filter(caso => {
-        // Filtro de búsqueda
+        // Filtro de búsqueda mejorado
         let cumpleBusqueda = true;
         if (searchTerm) {
             const expediente = (caso.numero_expediente || '').toLowerCase();
             const actorNombre = getActorNombre(caso.actor).toLowerCase();
             const demandadosNombre = getDemandadosNombres(caso).toLowerCase();
+            const codemandadosNombre = getCodemandadosNombres(caso).toLowerCase();
+            const tipoJuicioCompleto = `${caso.tipo_juicio} ${caso.subtipo_juicio || ''} ${caso.sub_subtipo_juicio || ''}`.toLowerCase();
             
             cumpleBusqueda = expediente.includes(searchTerm) ||
                             actorNombre.includes(searchTerm) ||
-                            demandadosNombre.includes(searchTerm);
+                            demandadosNombre.includes(searchTerm) ||
+                            codemandadosNombre.includes(searchTerm) ||
+                            tipoJuicioCompleto.includes(searchTerm);
         }
         
         // Filtro de delegación
@@ -107,8 +114,17 @@ function filtrarCasos() {
         // Filtro de estatus
         const cumpleEstatus = !estatus || caso.estatus === estatus;
         
-        // Filtro de tipo
+        // Filtro de tipo de juicio
         const cumpleTipo = !tipo || caso.tipo_juicio === tipo;
+        
+        // Filtro de tipo de persona
+        let cumpleTipoPersona = true;
+        if (tipoPersona) {
+            const tieneActorTipo = caso.actor && caso.actor.tipo_persona === tipoPersona;
+            const tieneDemandadoTipo = caso.demandados && caso.demandados.some(d => d.tipo_persona === tipoPersona);
+            const tieneCodemandadoTipo = caso.codemandados && caso.codemandados.some(c => c.tipo_persona === tipoPersona);
+            cumpleTipoPersona = tieneActorTipo || tieneDemandadoTipo || tieneCodemandadoTipo;
+        }
         
         // Filtro de fecha desde
         let cumpleFechaDesde = true;
@@ -122,7 +138,7 @@ function filtrarCasos() {
             cumpleFechaHasta = caso.fecha_inicio <= fechaHasta;
         }
         
-        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleFechaDesde && cumpleFechaHasta;
+        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleTipoPersona && cumpleFechaDesde && cumpleFechaHasta;
     });
     
     actualizarEstadisticas();
@@ -157,25 +173,22 @@ function renderizarTabla() {
         const demandadosNombres = getDemandadosNombresConTipo(caso);
         const codemandadosNombres = getCodemandadosNombresConTipo(caso);
         
-        // Badge de estatus inline con el expediente
-        const badgeEstatus = caso.estatus === 'CONCLUIDO' 
-            ? '<span class="badge badge-concluido" style="font-size: 10px; margin-left: 8px;">Concluido</span>' 
-            : '';
+        // Color del número según estatus
+        const claseNumero = caso.estatus === 'CONCLUIDO' ? 'numero-concluido' : 'numero-tramite';
         
         return `
             <tr>
-                <td><strong>${caso.numero}</strong></td>
+                <td><strong class="${claseNumero}">${caso.numero}</strong></td>
                 <td>
                     <a href="#" class="expediente-link" onclick="verDetalle(${caso.id}); return false;">
                         <strong>${caso.numero_expediente}</strong>
                     </a>
-                    ${badgeEstatus}
                     ${caso.acumulado_a ? '<br><small style="color: var(--color-text-light);">↳ Acumulado a ' + obtenerNumeroExpediente(caso.acumulado_a) + '</small>' : ''}
                 </td>
                 <td>${delegacion ? delegacion.nombre : 'N/A'}</td>
                 <td>
                     <span style="font-weight: 600;">${caso.tipo_juicio}</span><br>
-                    <small style="color: var(--color-text-light);">${caso.subtipo_juicio || ''}</small>
+                    <small style="color: var(--color-text-light);">${caso.subtipo_juicio || ''}${caso.sub_subtipo_juicio ? ' - ' + caso.sub_subtipo_juicio : ''}</small>
                 </td>
                 <td>${formatearFecha(caso.fecha_inicio)}</td>
                 <td>${actorNombre}</td>
@@ -267,6 +280,17 @@ function getCodemandadosNombresConTipo(caso) {
         const tipo = c.tipo_persona === 'FISICA' ? 'F' : 'M';
         return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
     }).join('<br>');
+}
+
+function getCodemandadosNombres(caso) {
+    if (!caso.codemandados || caso.codemandados.length === 0) return '';
+    
+    return caso.codemandados.map(c => {
+        if (c.tipo_persona === 'FISICA') {
+            return `${c.nombres} ${c.apellido_paterno}`;
+        }
+        return c.empresa;
+    }).join(', ');
 }
 
 function obtenerNumeroExpediente(casoId) {

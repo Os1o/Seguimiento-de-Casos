@@ -69,19 +69,33 @@ function llenarPrestaciones() {
 }
 
 function cargarCasosParaAcumular() {
+    actualizarCasosAcumulables();
+}
+
+function actualizarCasosAcumulables() {
     const select = document.getElementById('acumuladoA');
+    const tipoJuicioActual = document.getElementById('tipoJuicio').value;
+    
+    // Limpiar select
+    select.innerHTML = '<option value="">No está acumulado</option>';
+    
     const casosStr = localStorage.getItem('casos');
     if (!casosStr) return;
     
     const casos = JSON.parse(casosStr);
-    // Solo mostrar casos en TRAMITE (no concluidos) y más viejos
+    
+    // Filtrar solo casos en TRAMITE, no acumulados, y de la misma materia
     casos
-        .filter(c => c.estatus === 'TRAMITE' && !c.acumulado_a)
+        .filter(c => {
+            const cumpleEstatus = c.estatus === 'TRAMITE' && !c.acumulado_a;
+            const cumpleMateria = !tipoJuicioActual || c.tipo_juicio === tipoJuicioActual;
+            return cumpleEstatus && cumpleMateria;
+        })
         .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
         .forEach(c => {
             const option = document.createElement('option');
             option.value = c.id;
-            option.textContent = `${c.numero_expediente} - ${formatearFecha(c.fecha_inicio)}`;
+            option.textContent = `${c.numero_expediente} - ${c.tipo_juicio} - ${formatearFecha(c.fecha_inicio)}`;
             select.appendChild(option);
         });
 }
@@ -123,7 +137,16 @@ function configurarEventListeners() {
         });
     });
     
-    // Cambio de tipo de juicio actualiza subtipos
+    // Validación solo números en expediente federal
+    document.getElementById('numeroFederal').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+    });
+    
+    document.getElementById('añoFederal').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+    });
+    
+    // Cambio de tipo de juicio actualiza subtipos Y casos acumulables
     document.getElementById('tipoJuicio').addEventListener('change', function() {
         const tipo = this.value;
         const selectSubtipo = document.getElementById('subtipoJuicio');
@@ -136,6 +159,8 @@ function configurarEventListeners() {
                 option.value = st.id;
                 option.textContent = st.nombre;
                 option.dataset.subtipos = JSON.stringify(st.subtipos || []);
+                option.dataset.jurisdiccion = st.jurisdiccion || '';
+                option.dataset.requiereDescripcion = st.requiere_descripcion || false;
                 selectSubtipo.appendChild(option);
             });
         } else {
@@ -143,6 +168,9 @@ function configurarEventListeners() {
         }
         
         document.getElementById('grupSubsubtipo').style.display = 'none';
+        
+        // Actualizar casos acumulables según materia
+        actualizarCasosAcumulables();
     });
     
     // Cambio de subtipo puede mostrar sub-subtipos
