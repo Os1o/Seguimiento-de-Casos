@@ -5,26 +5,13 @@
 let casosFiltrados = [];
 let todosLosCasos = [];
 
-// En js/casos.js, asegúrate de que no haya errores al leer
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
-    
-    // Si no existe el dato
     if (!usuarioStr) {
         window.location.href = 'login.html';
         return null;
     }
-
-    try {
-        // Intentamos parsear. Si falla, el catch nos salva del bucle.
-        return JSON.parse(usuarioStr);
-    } catch (e) {
-        console.error("Error de sesión corrupta. Limpiando...");
-        // ¡IMPORTANTE! Limpiamos para que login.html no nos regrese aquí
-        sessionStorage.removeItem('usuario'); 
-        window.location.href = 'login.html';
-        return null;
-    }
+    return JSON.parse(usuarioStr);
 }
 
 function cerrarSesion() {
@@ -33,30 +20,40 @@ function cerrarSesion() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Verificar sesión primero
+    // Verificar sesión
     const usuario = verificarSesion();
-    
-    // Si no hay usuario, detenemos la ejecución aquí para evitar errores en cascada
     if (!usuario) return;
     
-    // El resto de tu lógica se mantiene igual...
-    if (document.getElementById('nombreUsuario')) {
-        document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
-    }
+    // Mostrar nombre de usuario
+    document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
     
+    // Cargar casos (fake o localStorage)
     cargarCasos();
+    
+    // Llenar filtros
     llenarFiltros();
     
-    // Inicializar filtros si los elementos existen
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', filtrarCasos);
-        document.getElementById('filtroDelegacion').addEventListener('change', filtrarCasos);
-        document.getElementById('filtroEstatus').addEventListener('change', filtrarCasos);
-        document.getElementById('filtroTipo').addEventListener('change', filtrarCasos);
-        filtrarCasos();
-    }
+    // Event listeners para filtros y búsqueda
+    document.getElementById('searchInput').addEventListener('input', filtrarCasos);
+    document.getElementById('filtroDelegacion').addEventListener('change', filtrarCasos);
+    document.getElementById('filtroEstatus').addEventListener('change', filtrarCasos);
+    document.getElementById('filtroTipo').addEventListener('change', filtrarCasos);
+    document.getElementById('fechaDesde').addEventListener('change', filtrarCasos);
+    document.getElementById('fechaHasta').addEventListener('change', filtrarCasos);
+    
+    // Mostrar casos
+    filtrarCasos();
 });
+
+function limpiarFiltros() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filtroDelegacion').value = '';
+    document.getElementById('filtroEstatus').value = '';
+    document.getElementById('filtroTipo').value = '';
+    document.getElementById('fechaDesde').value = '';
+    document.getElementById('fechaHasta').value = '';
+    filtrarCasos();
+}
 
 function cargarCasos() {
     // Intentar cargar casos del localStorage
@@ -84,17 +81,25 @@ function llenarFiltros() {
 }
 
 function filtrarCasos() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const delegacionId = document.getElementById('filtroDelegacion').value;
     const estatus = document.getElementById('filtroEstatus').value;
     const tipo = document.getElementById('filtroTipo').value;
+    const fechaDesde = document.getElementById('fechaDesde').value;
+    const fechaHasta = document.getElementById('fechaHasta').value;
     
     casosFiltrados = todosLosCasos.filter(caso => {
         // Filtro de búsqueda
-        const cumpleBusqueda = !searchTerm || 
-            caso.numero_expediente.toLowerCase().includes(searchTerm) ||
-            (caso.actor && getActorNombre(caso.actor).toLowerCase().includes(searchTerm)) ||
-            getDemandadosNombres(caso).toLowerCase().includes(searchTerm);
+        let cumpleBusqueda = true;
+        if (searchTerm) {
+            const expediente = (caso.numero_expediente || '').toLowerCase();
+            const actorNombre = getActorNombre(caso.actor).toLowerCase();
+            const demandadosNombre = getDemandadosNombres(caso).toLowerCase();
+            
+            cumpleBusqueda = expediente.includes(searchTerm) ||
+                            actorNombre.includes(searchTerm) ||
+                            demandadosNombre.includes(searchTerm);
+        }
         
         // Filtro de delegación
         const cumpleDelegacion = !delegacionId || caso.delegacion_id == delegacionId;
@@ -105,7 +110,19 @@ function filtrarCasos() {
         // Filtro de tipo
         const cumpleTipo = !tipo || caso.tipo_juicio === tipo;
         
-        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo;
+        // Filtro de fecha desde
+        let cumpleFechaDesde = true;
+        if (fechaDesde) {
+            cumpleFechaDesde = caso.fecha_inicio >= fechaDesde;
+        }
+        
+        // Filtro de fecha hasta
+        let cumpleFechaHasta = true;
+        if (fechaHasta) {
+            cumpleFechaHasta = caso.fecha_inicio <= fechaHasta;
+        }
+        
+        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleFechaDesde && cumpleFechaHasta;
     });
     
     actualizarEstadisticas();
@@ -154,7 +171,7 @@ function renderizarTabla() {
                 <td>${formatearFecha(caso.fecha_inicio)}</td>
                 <td>${actorNombre}</td>
                 <td>${demandadosNombres}</td>
-                <td><strong>${caso.importe_demandado > 0 ? formatearMoneda(caso.importe_demandado) : '-'}</strong></td>
+                <td><strong>${caso.importe_demandado > 0 ? formatearMoneda(caso.importe_demandado) : 'Sin cuantía'}</strong></td>
                 <td>
                     <span class="badge ${getBadgeClass(caso.imss_es)}">
                         ${caso.imss_es}
@@ -162,7 +179,7 @@ function renderizarTabla() {
                 </td>
                 <td>
                     <span class="badge ${caso.estatus === 'TRAMITE' ? 'badge-tramite' : 'badge-concluido'}">
-                        ${caso.estatus === 'TRAMITE' ? '⏳ Trámite' : '✓ Concluido'}
+                        ${caso.estatus === 'TRAMITE' ? 'Trámite' : 'Concluido'}
                     </span>
                 </td>
                 <td>

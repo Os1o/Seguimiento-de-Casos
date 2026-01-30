@@ -36,7 +36,7 @@
         <form id="formNuevoCaso" class="card">
             <!-- SECCIÓN 1: Información General -->
             <div class="form-section">
-                <h3 class="form-section-title">📋 Información General</h3>
+                <h3 class="form-section-title">Información General</h3>
                 
                 <div class="form-grid">
                     <div class="form-group">
@@ -96,7 +96,7 @@
 
             <!-- SECCIÓN 2: Expediente -->
             <div class="form-section">
-                <h3 class="form-section-title">📄 Identificación del Expediente</h3>
+                <h3 class="form-section-title"> Identificación del Expediente</h3>
 
                 <div id="campoLocal" style="display: none;">
                     <div class="form-group">
@@ -125,14 +125,14 @@
                         <option value="">No está acumulado</option>
                     </select>
                     <div class="alert alert-warning" style="margin-top: 8px;">
-                        ⚠️ Al acumular a otro caso, este se marcará automáticamente como <strong>CONCLUIDO</strong>
+                        ADVERTENCIA: Al acumular a otro caso, este se marcará automáticamente como <strong>CONCLUIDO</strong>
                     </div>
                 </div>
             </div>
 
             <!-- SECCIÓN 3: Tribunal -->
             <div class="form-section">
-                <h3 class="form-section-title">⚖️ Tribunal</h3>
+                <h3 class="form-section-title"> Tribunal</h3>
                 
                 <div class="form-grid">
                     <div class="form-group">
@@ -151,7 +151,7 @@
 
             <!-- SECCIÓN 4: Posición IMSS -->
             <div class="form-section">
-                <h3 class="form-section-title">🏛️ Posición del IMSS</h3>
+                <h3 class="form-section-title"> Posición del IMSS</h3>
                 
                 <div class="form-group">
                     <label class="form-label required">El IMSS es:</label>
@@ -174,7 +174,7 @@
 
             <!-- SECCIÓN 5: Actor -->
             <div class="form-section" id="seccionActor" style="display: none;">
-                <h3 class="form-section-title">👤 Actor</h3>
+                <h3 class="form-section-title"> Actor</h3>
                 
                 <div class="form-group">
                     <label class="form-label required">Tipo de Persona</label>
@@ -217,7 +217,7 @@
 
             <!-- SECCIÓN 6: Demandados -->
             <div class="form-section" id="seccionDemandados" style="display: none;">
-                <h3 class="form-section-title">👥 Demandados</h3>
+                <h3 class="form-section-title"> Demandados</h3>
                 
                 <div id="listaDemandados"></div>
                 
@@ -228,7 +228,7 @@
 
             <!-- SECCIÓN 7: Codemandados -->
             <div class="form-section">
-                <h3 class="form-section-title">👥 Codemandados (obligatorio)</h3>
+                <h3 class="form-section-title"> Codemandados (obligatorio)</h3>
                 
                 <div id="listaCodemandados"></div>
                 
@@ -239,29 +239,31 @@
 
             <!-- SECCIÓN 8: Prestaciones -->
             <div class="form-section">
-                <h3 class="form-section-title">💰 Prestaciones</h3>
+                <h3 class="form-section-title">Prestaciones</h3>
                 
                 <div class="form-group">
-                    <label class="form-label required">Prestaciones Reclamadas</label>
-                    <div class="form-checkbox-group" id="prestacionesCheckboxes"></div>
+                    <label class="form-label required">Prestación Reclamada</label>
+                    <select id="prestacionReclamada" class="form-select" required>
+                        <option value="">Seleccione una prestación...</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Notas / Especificaciones</label>
-                    <textarea id="prestacionesNotas" class="form-textarea" placeholder="Detalles adicionales sobre las prestaciones reclamadas..."></textarea>
+                    <textarea id="prestacionesNotas" class="form-textarea" placeholder="Detalles adicionales sobre la prestación reclamada..."></textarea>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Importe Demandado</label>
                     <input type="number" id="importeDemandado" class="form-input" min="0" step="0.01" placeholder="0.00">
-                    <small style="color: var(--color-text-light);">Dejar en 0 si no aplica</small>
+                    <small style="color: var(--color-text-light);">Dejar en 0 si es sin cuantía</small>
                 </div>
             </div>
 
             <!-- Botones -->
             <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px;">
                 <a href="casos.html" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-success">💾 Guardar Caso</button>
+                <button type="submit" class="btn btn-success">Guardar Caso</button>
             </div>
         </form>
     </div>

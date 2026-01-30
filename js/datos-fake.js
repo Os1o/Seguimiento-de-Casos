@@ -118,7 +118,7 @@ const casosFake = [
         empresa: "Constructora ABC S.A. de C.V."
       }
     ],
-    prestaciones_reclamadas: [1, 4, 5],
+    prestacion_reclamada: 1,
     prestaciones_notas: "Daños ocasionados por negligencia médica durante procedimiento quirúrgico",
     importe_demandado: 500000.00,
     estatus: "TRAMITE",
@@ -156,7 +156,7 @@ const casosFake = [
         apellido_materno: "Torres"
       }
     ],
-    prestaciones_reclamadas: [1, 5],
+    prestacion_reclamada: 1,
     prestaciones_notas: "Caso relacionado con el expediente principal 123456/2024",
     importe_demandado: 250000.00,
     estatus: "CONCLUIDO", // Automático por estar acumulado
@@ -197,7 +197,7 @@ const casosFake = [
         empresa: "Distribuidora Médica del Sur"
       }
     ],
-    prestaciones_reclamadas: [3, 4],
+    prestacion_reclamada: 3,
     prestaciones_notas: "Incumplimiento de contrato de suministro médico",
     importe_demandado: 800000.00,
     estatus: "CONCLUIDO",
@@ -240,7 +240,7 @@ const casosFake = [
         apellido_materno: "Ruiz"
       }
     ],
-    prestaciones_reclamadas: [3, 8],
+    prestacion_reclamada: 3,
     prestaciones_notas: "Cobro de pagaré vencido por suministro de equipo médico",
     importe_demandado: 1200000.00,
     estatus: "TRAMITE",
@@ -279,7 +279,7 @@ const casosFake = [
         apellido_materno: "Domínguez"
       }
     ],
-    prestaciones_reclamadas: [9],
+    prestacion_reclamada: 9,
     prestaciones_notas: "Desalojo de inmueble propiedad del IMSS",
     importe_demandado: 0,
     estatus: "TRAMITE",
@@ -313,7 +313,7 @@ const casosFake = [
         empresa: "Gobierno del Estado de México"
       }
     ],
-    prestaciones_reclamadas: [2, 3, 6],
+    prestacion_reclamada: 2,
     prestaciones_notas: "Incumplimiento de convenio de subrogación de servicios médicos",
     importe_demandado: 2500000.00,
     estatus: "TRAMITE",
@@ -353,7 +353,7 @@ const casosFake = [
         empresa: "Clínica Privada del Valle"
       }
     ],
-    prestaciones_reclamadas: [4, 10],
+    prestacion_reclamada: 4,
     prestaciones_notas: "Controversia mercantil sobre cesión de derechos de crédito",
     importe_demandado: 950000.00,
     estatus: "TRAMITE",
@@ -393,7 +393,7 @@ const casosFake = [
         apellido_materno: "Guzmán"
       }
     ],
-    prestaciones_reclamadas: [2, 7, 8],
+    prestacion_reclamada: 2,
     prestaciones_notas: "Cobro de crédito por pago indebido de prestaciones",
     importe_demandado: 180000.00,
     estatus: "TRAMITE",
@@ -434,7 +434,7 @@ const casosFake = [
         empresa: "Hospital General de Zona 32"
       }
     ],
-    prestaciones_reclamadas: [1, 4, 5],
+    prestacion_reclamada: 1,
     prestaciones_notas: "Demanda por mala praxis médica durante atención de emergencia",
     importe_demandado: 750000.00,
     estatus: "TRAMITE",

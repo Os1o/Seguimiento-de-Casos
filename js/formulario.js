@@ -60,15 +60,12 @@ function llenarTribunales() {
 }
 
 function llenarPrestaciones() {
-    const container = document.getElementById('prestacionesCheckboxes');
+    const select = document.getElementById('prestacionReclamada');
     catalogos.prestaciones.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'form-checkbox';
-        div.innerHTML = `
-            <input type="checkbox" id="prest_${p.id}" value="${p.id}">
-            <label for="prest_${p.id}">${p.nombre}</label>
-        `;
-        container.appendChild(div);
+        const option = document.createElement('option');
+        option.value = p.id;
+        option.textContent = p.nombre;
+        select.appendChild(option);
     });
 }
 
@@ -427,11 +424,8 @@ function construirObjetoCaso() {
     // Codemandados
     const codemandados = obtenerPersonasDinamicas('codemandado_');
     
-    // Prestaciones
-    const prestaciones = [];
-    document.querySelectorAll('#prestacionesCheckboxes input[type="checkbox"]:checked').forEach(cb => {
-        prestaciones.push(parseInt(cb.value));
-    });
+    // Prestación (solo una)
+    const prestacionId = parseInt(document.getElementById('prestacionReclamada').value);
     
     const subtipoSelect = document.getElementById('subtipoJuicio');
     const subsubtipoSelect = document.getElementById('subsubtipoJuicio');
@@ -451,7 +445,7 @@ function construirObjetoCaso() {
         actor: actor,
         demandados: demandados,
         codemandados: codemandados,
-        prestaciones_reclamadas: prestaciones,
+        prestacion_reclamada: prestacionId,
         prestaciones_notas: document.getElementById('prestacionesNotas').value,
         importe_demandado: parseFloat(document.getElementById('importeDemandado').value) || 0,
         estatus: document.getElementById('acumuladoA').value ? 'CONCLUIDO' : 'TRAMITE',
@@ -502,9 +496,9 @@ function obtenerPersonasDinamicas(prefijo) {
 }
 
 function validarCaso(caso) {
-    // Validar prestaciones
-    if (caso.prestaciones_reclamadas.length === 0) {
-        alert('Debe seleccionar al menos una prestación reclamada');
+    // Validar prestación
+    if (!caso.prestacion_reclamada) {
+        alert('Debe seleccionar una prestación reclamada');
         return false;
     }
     
