@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('filtroDelegacion').addEventListener('change', filtrarCasos);
     document.getElementById('filtroEstatus').addEventListener('change', filtrarCasos);
     document.getElementById('filtroTipo').addEventListener('change', filtrarCasos);
-    document.getElementById('filtroTipoPersona').addEventListener('change', filtrarCasos);
+    document.getElementById('filtroPosicionIMSS').addEventListener('change', filtrarCasos);
     document.getElementById('fechaDesde').addEventListener('change', filtrarCasos);
     document.getElementById('fechaHasta').addEventListener('change', filtrarCasos);
     
@@ -51,7 +51,7 @@ function limpiarFiltros() {
     document.getElementById('filtroDelegacion').value = '';
     document.getElementById('filtroEstatus').value = '';
     document.getElementById('filtroTipo').value = '';
-    document.getElementById('filtroTipoPersona').value = '';
+    document.getElementById('filtroPosicionIMSS').value = '';
     document.getElementById('fechaDesde').value = '';
     document.getElementById('fechaHasta').value = '';
     filtrarCasos();
@@ -87,25 +87,21 @@ function filtrarCasos() {
     const delegacionId = document.getElementById('filtroDelegacion').value;
     const estatus = document.getElementById('filtroEstatus').value;
     const tipo = document.getElementById('filtroTipo').value;
-    const tipoPersona = document.getElementById('filtroTipoPersona').value;
+    const posicionIMSS = document.getElementById('filtroPosicionIMSS').value;
     const fechaDesde = document.getElementById('fechaDesde').value;
     const fechaHasta = document.getElementById('fechaHasta').value;
     
     casosFiltrados = todosLosCasos.filter(caso => {
-        // Filtro de búsqueda mejorado
+        // Filtro de búsqueda SIMPLIFICADO: solo expediente, actor y demandado
         let cumpleBusqueda = true;
         if (searchTerm) {
             const expediente = (caso.numero_expediente || '').toLowerCase();
             const actorNombre = getActorNombre(caso.actor).toLowerCase();
             const demandadosNombre = getDemandadosNombres(caso).toLowerCase();
-            const codemandadosNombre = getCodemandadosNombres(caso).toLowerCase();
-            const tipoJuicioCompleto = `${caso.tipo_juicio} ${caso.subtipo_juicio || ''} ${caso.sub_subtipo_juicio || ''}`.toLowerCase();
             
             cumpleBusqueda = expediente.includes(searchTerm) ||
                             actorNombre.includes(searchTerm) ||
-                            demandadosNombre.includes(searchTerm) ||
-                            codemandadosNombre.includes(searchTerm) ||
-                            tipoJuicioCompleto.includes(searchTerm);
+                            demandadosNombre.includes(searchTerm);
         }
         
         // Filtro de delegación
@@ -117,7 +113,10 @@ function filtrarCasos() {
         // Filtro de tipo de juicio
         const cumpleTipo = !tipo || caso.tipo_juicio === tipo;
         
-        // Filtro de tipo de persona
+        // Filtro de posición IMSS
+        const cumplePosicionIMSS = !posicionIMSS || caso.imss_es === posicionIMSS;
+        
+        /* FILTRO TIPO PERSONA - COMENTADO PARA FUTURO USO O DASHBOARD
         let cumpleTipoPersona = true;
         if (tipoPersona) {
             const tieneActorTipo = caso.actor && caso.actor.tipo_persona === tipoPersona;
@@ -125,6 +124,7 @@ function filtrarCasos() {
             const tieneCodemandadoTipo = caso.codemandados && caso.codemandados.some(c => c.tipo_persona === tipoPersona);
             cumpleTipoPersona = tieneActorTipo || tieneDemandadoTipo || tieneCodemandadoTipo;
         }
+        */
         
         // Filtro de fecha desde
         let cumpleFechaDesde = true;
@@ -138,7 +138,7 @@ function filtrarCasos() {
             cumpleFechaHasta = caso.fecha_inicio <= fechaHasta;
         }
         
-        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleTipoPersona && cumpleFechaDesde && cumpleFechaHasta;
+        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumplePosicionIMSS && cumpleFechaDesde && cumpleFechaHasta;
     });
     
     actualizarEstadisticas();
