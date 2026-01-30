@@ -734,6 +734,87 @@ body {
 }
 
 /* =====================================================
+   MENÚ DESPLEGABLE (TRES PUNTOS)
+   ===================================================== */
+.menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.menu-trigger {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: var(--color-text-light);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.menu-trigger:hover {
+  background-color: #f0f0f0;
+  color: var(--color-text);
+}
+
+.menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  min-width: 150px;
+  z-index: 1000;
+  display: none;
+}
+
+.menu-dropdown.show {
+  display: block;
+}
+
+.menu-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.menu-item.danger:hover {
+  background-color: #ffebee;
+  color: var(--color-danger);
+}
+
+/* =====================================================
+   LINK CLICKABLE EN EXPEDIENTE
+   ===================================================== */
+.expediente-link {
+  color: var(--color-secondary);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.expediente-link:hover {
+  text-decoration: underline;
+  color: var(--color-primary);
+}
+
+/* =====================================================
    UTILIDADES
    ===================================================== */
 .text-center {
@@ -766,6 +847,87 @@ body {
 
 .gap-2 {
   gap: var(--spacing-md);
+}
+
+/* =====================================================
+   MENÚ DESPLEGABLE (TRES PUNTOS)
+   ===================================================== */
+.menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.menu-trigger {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: var(--color-text-light);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.menu-trigger:hover {
+  background-color: #f0f0f0;
+  color: var(--color-text);
+}
+
+.menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  min-width: 150px;
+  z-index: 1000;
+  display: none;
+}
+
+.menu-dropdown.show {
+  display: block;
+}
+
+.menu-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.menu-item.danger:hover {
+  background-color: #ffebee;
+  color: var(--color-danger);
+}
+
+/* =====================================================
+   LINK CLICKEABLE EN EXPEDIENTE
+   ===================================================== */
+.expediente-link {
+  color: var(--color-secondary);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.expediente-link:hover {
+  text-decoration: underline;
+  color: var(--color-primary);
 }
 
 /* =====================================================

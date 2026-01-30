@@ -160,7 +160,9 @@ function renderizarTabla() {
             <tr>
                 <td><strong>${caso.numero}</strong></td>
                 <td>
-                    <strong>${caso.numero_expediente}</strong>
+                    <a href="#" class="expediente-link" onclick="verDetalle(${caso.id}); return false;">
+                        <strong>${caso.numero_expediente}</strong>
+                    </a>
                     ${caso.acumulado_a ? '<br><small style="color: var(--color-text-light);">↳ Acumulado a #' + caso.acumulado_a + '</small>' : ''}
                 </td>
                 <td>${delegacion ? delegacion.nombre : 'N/A'}</td>
@@ -189,9 +191,19 @@ function renderizarTabla() {
                     }
                 </td>
                 <td>
-                    <button onclick="verDetalle(${caso.id})" class="btn btn-secondary btn-icon" style="padding: 4px 12px; font-size: 12px;">
-                        Ver
-                    </button>
+                    <div class="menu-container">
+                        <button class="menu-trigger" onclick="toggleMenu(${caso.id})" id="menu-trigger-${caso.id}">
+                            ⋮
+                        </button>
+                        <div class="menu-dropdown" id="menu-${caso.id}">
+                            <div class="menu-item" onclick="editarCaso(${caso.id})">
+                                Editar
+                            </div>
+                            <div class="menu-item danger" onclick="eliminarCaso(${caso.id})">
+                                Eliminar
+                            </div>
+                        </div>
+                    </div>
                 </td>
             </tr>
         `;
@@ -259,10 +271,80 @@ function cerrarModalAcumulados() {
 }
 
 function verDetalle(casoId) {
-    // Por ahora solo mostramos un alert
-    // En futuro: ir a detalle-caso.html?id=X
     const caso = todosLosCasos.find(c => c.id === casoId);
     if (!caso) return;
     
-    alert(`Detalle del caso #${caso.numero_expediente}\n\n(En la versión completa esto abrirá una página con todos los detalles)`);
+    // Por ahora muestra un alert con info básica
+    // En futuro: ir a detalle-caso.html?id=X
+    const delegacion = obtenerDelegacion(caso.delegacion_id);
+    const prestacion = catalogos.prestaciones.find(p => p.id === caso.prestacion_reclamada);
+    
+    let detalle = `EXPEDIENTE: ${caso.numero_expediente}\n`;
+    detalle += `DELEGACIÓN: ${delegacion ? delegacion.nombre : 'N/A'}\n`;
+    detalle += `TIPO: ${caso.tipo_juicio} - ${caso.subtipo_juicio}\n`;
+    detalle += `FECHA INICIO: ${formatearFecha(caso.fecha_inicio)}\n`;
+    detalle += `ACTOR: ${getActorNombre(caso.actor)}\n`;
+    detalle += `DEMANDADO: ${getDemandadosNombres(caso)}\n`;
+    detalle += `IMPORTE: ${caso.importe_demandado > 0 ? formatearMoneda(caso.importe_demandado) : 'Sin cuantía'}\n`;
+    detalle += `PRESTACIÓN: ${prestacion ? prestacion.nombre : 'N/A'}\n`;
+    detalle += `IMSS ES: ${caso.imss_es}\n`;
+    detalle += `ESTATUS: ${caso.estatus}`;
+    
+    alert(detalle);
 }
+
+function toggleMenu(casoId) {
+    // Cerrar otros menús abiertos
+    document.querySelectorAll('.menu-dropdown').forEach(menu => {
+        if (menu.id !== `menu-${casoId}`) {
+            menu.classList.remove('show');
+        }
+    });
+    
+    // Toggle este menú
+    const menu = document.getElementById(`menu-${casoId}`);
+    menu.classList.toggle('show');
+}
+
+function editarCaso(casoId) {
+    // Cerrar menú
+    const menu = document.getElementById(`menu-${casoId}`);
+    if (menu) menu.classList.remove('show');
+    
+    // Por ahora solo alert
+    // En futuro: ir a editar-caso.html?id=X
+    alert(`Editar caso #${casoId}\n\n(En la versión completa esto abrirá el formulario de edición)`);
+}
+
+function eliminarCaso(casoId) {
+    // Cerrar menú
+    const menu = document.getElementById(`menu-${casoId}`);
+    if (menu) menu.classList.remove('show');
+    
+    const caso = todosLosCasos.find(c => c.id === casoId);
+    if (!caso) return;
+    
+    if (!confirm(`¿Estás seguro de eliminar el caso ${caso.numero_expediente}?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    // Eliminar del array
+    todosLosCasos = todosLosCasos.filter(c => c.id !== casoId);
+    
+    // Actualizar localStorage
+    localStorage.setItem('casos', JSON.stringify(todosLosCasos));
+    
+    // Refrescar tabla
+    filtrarCasos();
+    
+    alert('Caso eliminado exitosamente');
+}
+
+// Cerrar menús al hacer clic fuera
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.menu-container')) {
+        document.querySelectorAll('.menu-dropdown').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+});
