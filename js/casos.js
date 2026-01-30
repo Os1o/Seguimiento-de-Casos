@@ -153,8 +153,14 @@ function renderizarTabla() {
     
     tbody.innerHTML = casosFiltrados.map(caso => {
         const delegacion = obtenerDelegacion(caso.delegacion_id);
-        const actorNombre = getActorNombre(caso.actor);
-        const demandadosNombres = getDemandadosNombres(caso);
+        const actorNombre = getActorNombreConTipo(caso.actor);
+        const demandadosNombres = getDemandadosNombresConTipo(caso);
+        const codemandadosNombres = getCodemandadosNombresConTipo(caso);
+        
+        // Badge de estatus inline con el expediente
+        const badgeEstatus = caso.estatus === 'CONCLUIDO' 
+            ? '<span class="badge badge-concluido" style="font-size: 10px; margin-left: 8px;">Concluido</span>' 
+            : '';
         
         return `
             <tr>
@@ -163,7 +169,8 @@ function renderizarTabla() {
                     <a href="#" class="expediente-link" onclick="verDetalle(${caso.id}); return false;">
                         <strong>${caso.numero_expediente}</strong>
                     </a>
-                    ${caso.acumulado_a ? '<br><small style="color: var(--color-text-light);">↳ Acumulado a #' + caso.acumulado_a + '</small>' : ''}
+                    ${badgeEstatus}
+                    ${caso.acumulado_a ? '<br><small style="color: var(--color-text-light);">↳ Acumulado a ' + obtenerNumeroExpediente(caso.acumulado_a) + '</small>' : ''}
                 </td>
                 <td>${delegacion ? delegacion.nombre : 'N/A'}</td>
                 <td>
@@ -173,15 +180,11 @@ function renderizarTabla() {
                 <td>${formatearFecha(caso.fecha_inicio)}</td>
                 <td>${actorNombre}</td>
                 <td>${demandadosNombres}</td>
+                <td>${codemandadosNombres}</td>
                 <td><strong>${caso.importe_demandado > 0 ? formatearMoneda(caso.importe_demandado) : 'Sin cuantía'}</strong></td>
                 <td>
                     <span class="badge ${getBadgeClass(caso.imss_es)}">
                         ${caso.imss_es}
-                    </span>
-                </td>
-                <td>
-                    <span class="badge ${caso.estatus === 'TRAMITE' ? 'badge-tramite' : 'badge-concluido'}">
-                        ${caso.estatus === 'TRAMITE' ? 'Trámite' : 'Concluido'}
                     </span>
                 </td>
                 <td>
@@ -218,6 +221,15 @@ function getActorNombre(actor) {
     return actor.empresa;
 }
 
+function getActorNombreConTipo(actor) {
+    if (!actor) return 'IMSS';
+    const nombre = actor.tipo_persona === 'FISICA' 
+        ? `${actor.nombres} ${actor.apellido_paterno}` 
+        : actor.empresa;
+    const tipo = actor.tipo_persona === 'FISICA' ? 'F' : 'M';
+    return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
+}
+
 function getDemandadosNombres(caso) {
     if (caso.imss_es === 'DEMANDADO') return 'IMSS';
     
@@ -229,6 +241,37 @@ function getDemandadosNombres(caso) {
         }
         return d.empresa;
     }).join(', ');
+}
+
+function getDemandadosNombresConTipo(caso) {
+    if (caso.imss_es === 'DEMANDADO') return 'IMSS';
+    
+    if (!caso.demandados || caso.demandados.length === 0) return 'N/A';
+    
+    return caso.demandados.map(d => {
+        const nombre = d.tipo_persona === 'FISICA' 
+            ? `${d.nombres} ${d.apellido_paterno}` 
+            : d.empresa;
+        const tipo = d.tipo_persona === 'FISICA' ? 'F' : 'M';
+        return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
+    }).join('<br>');
+}
+
+function getCodemandadosNombresConTipo(caso) {
+    if (!caso.codemandados || caso.codemandados.length === 0) return 'N/A';
+    
+    return caso.codemandados.map(c => {
+        const nombre = c.tipo_persona === 'FISICA' 
+            ? `${c.nombres} ${c.apellido_paterno}` 
+            : c.empresa;
+        const tipo = c.tipo_persona === 'FISICA' ? 'F' : 'M';
+        return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
+    }).join('<br>');
+}
+
+function obtenerNumeroExpediente(casoId) {
+    const caso = todosLosCasos.find(c => c.id === casoId);
+    return caso ? caso.numero_expediente : casoId;
 }
 
 function getBadgeClass(imssEs) {

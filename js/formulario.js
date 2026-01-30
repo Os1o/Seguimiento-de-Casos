@@ -28,8 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarFormulario();
     configurarEventListeners();
     
-    // Agregar un codemandado por defecto (es obligatorio)
-    agregarCodemandado();
+    // NO agregar codemandado por defecto (ya no es obligatorio)
 });
 
 function inicializarFormulario() {
@@ -334,11 +333,8 @@ function agregarCodemandado() {
 }
 
 function eliminarCodemandado(id) {
-    if (contadorCodemandados <= 1) {
-        alert('Debe haber al menos un codemandado');
-        return;
-    }
     document.getElementById(id).remove();
+    contadorCodemandados--;
 }
 
 function cambiarTipoCodemandado(id, tipo) {
@@ -349,13 +345,6 @@ function cambiarTipoCodemandado(id, tipo) {
 
 function guardarCaso(e) {
     e.preventDefault();
-    
-    // Validar que haya al menos un codemandado
-    const codemandadosElements = document.querySelectorAll('[id^="codemandado_"]');
-    if (codemandadosElements.length === 0) {
-        alert('Debe agregar al menos un codemandado');
-        return;
-    }
     
     // Construir objeto del caso
     const caso = construirObjetoCaso();
@@ -373,6 +362,17 @@ function guardarCaso(e) {
     caso.id = casos.length > 0 ? Math.max(...casos.map(c => c.id)) + 1 : 1;
     caso.numero = casos.length + 1;
     caso.fecha_creacion = new Date().toISOString();
+    
+    // Si se acumula a otro caso, actualizar ese caso
+    if (caso.acumulado_a) {
+        const casoAcumulador = casos.find(c => c.id === caso.acumulado_a);
+        if (casoAcumulador) {
+            if (!casoAcumulador.juicios_acumulados) {
+                casoAcumulador.juicios_acumulados = [];
+            }
+            casoAcumulador.juicios_acumulados.push(caso.id);
+        }
+    }
     
     casos.push(caso);
     localStorage.setItem('casos', JSON.stringify(casos));
@@ -499,12 +499,6 @@ function validarCaso(caso) {
     // Validar prestación
     if (!caso.prestacion_reclamada) {
         alert('Debe seleccionar una prestación reclamada');
-        return false;
-    }
-    
-    // Validar codemandados
-    if (caso.codemandados.length === 0) {
-        alert('Debe agregar al menos un codemandado');
         return false;
     }
     

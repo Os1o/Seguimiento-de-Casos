@@ -472,7 +472,7 @@ const casosFake = [
         apellido_materno: "Rojas"
       }
     ],
-    prestaciones_reclamadas: [3],
+    prestacion_reclamada: 3,
     prestaciones_notas: "Cobro de cheque devuelto por fondos insuficientes",
     importe_demandado: 320000.00,
     estatus: "TRAMITE",
