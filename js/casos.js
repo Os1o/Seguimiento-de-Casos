@@ -83,26 +83,24 @@ function llenarFiltros() {
 }
 
 function filtrarCasos() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    
     const delegacionId = document.getElementById('filtroDelegacion').value;
     const estatus = document.getElementById('filtroEstatus').value;
     const tipo = document.getElementById('filtroTipo').value;
-    const posicionIMSS = document.getElementById('filtroPosicionIMSS').value;
-    const fechaDesde = document.getElementById('fechaDesde').value;
-    const fechaHasta = document.getElementById('fechaHasta').value;
     
     casosFiltrados = todosLosCasos.filter(caso => {
-        // Filtro de búsqueda SIMPLIFICADO: solo expediente, actor y demandado
-        let cumpleBusqueda = true;
-        if (searchTerm) {
-            const expediente = (caso.numero_expediente || '').toLowerCase();
-            const actorNombre = getActorNombre(caso.actor).toLowerCase();
-            const demandadosNombre = getDemandadosNombres(caso).toLowerCase();
-            
-            cumpleBusqueda = expediente.includes(searchTerm) ||
-                            actorNombre.includes(searchTerm) ||
-                            demandadosNombre.includes(searchTerm);
-        }
+        // 1. Obtener valores seguros (si es null, usamos string vacío)
+        const expediente = (caso.numero_expediente || '').toLowerCase();
+        const actor = getActorNombre(caso.actor).toLowerCase();
+        const demandados = getDemandadosNombres(caso).toLowerCase();
+
+        // Filtro de búsqueda (Buscador ahora es a prueba de fallos)
+        const cumpleBusqueda = !searchTerm || 
+            expediente.includes(searchTerm) ||
+            actor.includes(searchTerm) ||
+            demandados.includes(searchTerm);
         
         // Filtro de delegación
         const cumpleDelegacion = !delegacionId || caso.delegacion_id == delegacionId;
@@ -110,35 +108,10 @@ function filtrarCasos() {
         // Filtro de estatus
         const cumpleEstatus = !estatus || caso.estatus === estatus;
         
-        // Filtro de tipo de juicio
+        // Filtro de tipo
         const cumpleTipo = !tipo || caso.tipo_juicio === tipo;
         
-        // Filtro de posición IMSS
-        const cumplePosicionIMSS = !posicionIMSS || caso.imss_es === posicionIMSS;
-        
-        /* FILTRO TIPO PERSONA - COMENTADO PARA FUTURO USO O DASHBOARD
-        let cumpleTipoPersona = true;
-        if (tipoPersona) {
-            const tieneActorTipo = caso.actor && caso.actor.tipo_persona === tipoPersona;
-            const tieneDemandadoTipo = caso.demandados && caso.demandados.some(d => d.tipo_persona === tipoPersona);
-            const tieneCodemandadoTipo = caso.codemandados && caso.codemandados.some(c => c.tipo_persona === tipoPersona);
-            cumpleTipoPersona = tieneActorTipo || tieneDemandadoTipo || tieneCodemandadoTipo;
-        }
-        */
-        
-        // Filtro de fecha desde
-        let cumpleFechaDesde = true;
-        if (fechaDesde) {
-            cumpleFechaDesde = caso.fecha_inicio >= fechaDesde;
-        }
-        
-        // Filtro de fecha hasta
-        let cumpleFechaHasta = true;
-        if (fechaHasta) {
-            cumpleFechaHasta = caso.fecha_inicio <= fechaHasta;
-        }
-        
-        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumplePosicionIMSS && cumpleFechaDesde && cumpleFechaHasta;
+        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo;
     });
     
     actualizarEstadisticas();
@@ -228,10 +201,15 @@ function renderizarTabla() {
 
 function getActorNombre(actor) {
     if (!actor) return 'IMSS';
+    
+    // Verificamos que existan las propiedades antes de usarlas
     if (actor.tipo_persona === 'FISICA') {
-        return `${actor.nombres} ${actor.apellido_paterno} ${actor.apellido_materno}`;
+        const nombreCompleto = `${actor.nombres || ''} ${actor.apellido_paterno || ''} ${actor.apellido_materno || ''}`;
+        return nombreCompleto.trim() || 'Nombre desconocido';
     }
-    return actor.empresa;
+    
+    // Si es MORAL, devolvemos la empresa o un texto por defecto
+    return actor.empresa || 'Empresa desconocida';
 }
 
 function getActorNombreConTipo(actor) {
@@ -250,10 +228,11 @@ function getDemandadosNombres(caso) {
     
     return caso.demandados.map(d => {
         if (d.tipo_persona === 'FISICA') {
-            return `${d.nombres} ${d.apellido_paterno}`;
+            const nombre = `${d.nombres || ''} ${d.apellido_paterno || ''}`;
+            return nombre.trim();
         }
-        return d.empresa;
-    }).join(', ');
+        return d.empresa || 'Empresa S/N';
+    }).join(', '); // El .join siempre devuelve string, así que es seguro
 }
 
 function getDemandadosNombresConTipo(caso) {
