@@ -89,6 +89,7 @@ function filtrarCasos() {
     const delegacionId = document.getElementById('filtroDelegacion').value;
     const estatus = document.getElementById('filtroEstatus').value;
     const tipo = document.getElementById('filtroTipo').value;
+    const posicionIMSS = document.getElementById('filtroPosicionIMSS').value;
     
     casosFiltrados = todosLosCasos.filter(caso => {
         // 1. Obtener valores seguros (si es null, usamos string vacío)
@@ -110,8 +111,11 @@ function filtrarCasos() {
         
         // Filtro de tipo
         const cumpleTipo = !tipo || caso.tipo_juicio === tipo;
+
+        // Filtro de posicion
+        const cumplePosicion = !posicionIMSS || caso.imss_es === posicionIMSS;
         
-        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo;
+        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumplePosicion;
     });
     
     actualizarEstadisticas();
