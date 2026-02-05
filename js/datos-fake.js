@@ -2,33 +2,101 @@
 // DATOS FAKE PARA MAQUETA FUNCIONAL
 // =====================================================
 
-// CATÁLOGOS
+// CATÁLOGOS (Datos reales IMSS - 2-3 áreas por OOAD)
 const catalogos = {
   delegaciones: [
-    { id: 1, nombre: "Delegación Chiapas", estado: "Chiapas" },
-    { id: 2, nombre: "Delegación Jalisco", estado: "Jalisco" },
-    { id: 3, nombre: "Delegación Estado de México Oriente", estado: "Estado de México" },
-    { id: 4, nombre: "Delegación Ciudad de México Norte", estado: "Ciudad de México" }
+    { id: 1, nombre: "AGUASCALIENTES", estado: "Aguascalientes" },
+    { id: 2, nombre: "BAJA CALIFORNIA", estado: "Baja California" },
+    { id: 3, nombre: "BAJA CALIFORNIA SUR", estado: "Baja California Sur" },
+    { id: 4, nombre: "CAMPECHE", estado: "Campeche" },
+    { id: 5, nombre: "CHIAPAS", estado: "Chiapas" },
+    { id: 6, nombre: "CHIHUAHUA", estado: "Chihuahua" },
+    { id: 7, nombre: "COAHUILA", estado: "Coahuila" },
+    { id: 8, nombre: "COLIMA", estado: "Colima" },
+    { id: 9, nombre: "D.F. NORTE", estado: "Ciudad de México" },
+    { id: 10, nombre: "D.F. SUR", estado: "Ciudad de México" },
+    { id: 11, nombre: "DURANGO", estado: "Durango" },
+    { id: 12, nombre: "ESTADO MEXICO ORIENTE", estado: "Estado de México" },
+    { id: 13, nombre: "ESTADO MEXICO PONIENTE", estado: "Estado de México" },
+    { id: 14, nombre: "GUANAJUATO", estado: "Guanajuato" },
+    { id: 15, nombre: "GUERRERO", estado: "Guerrero" }
   ],
   
   areas: {
-    1: [ // Chiapas
-      { id: 1, nombre: "Prestaciones Médicas" },
-      { id: 2, nombre: "Prestaciones Económicas" },
-      { id: 3, nombre: "Recursos Humanos" }
+    1: [ // AGUASCALIENTES
+      { id: 1, nombre: "DELEGACION ESTATAL DEL IMSS EN AGUASCALIENTES AGS." },
+      { id: 2, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 1 AGS." },
+      { id: 3, nombre: "HOSPITAL GENERAL DE ZONA NUM. 1 AGS." }
     ],
-    2: [ // Jalisco
-      { id: 4, nombre: "Prestaciones Médicas" },
-      { id: 5, nombre: "Prestaciones Económicas" },
-      { id: 6, nombre: "Recursos Humanos" }
+    2: [ // BAJA CALIFORNIA
+      { id: 4, nombre: "DELEGACION ESTATAL DEL IMSS EN BAJA CALIFORNIA BC." },
+      { id: 5, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 2 BC." },
+      { id: 6, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 3 BC." }
     ],
-    3: [ // Edomex
-      { id: 7, nombre: "Prestaciones Médicas" },
-      { id: 8, nombre: "Administración" }
+    3: [ // BAJA CALIFORNIA SUR
+      { id: 7, nombre: "DELEGACION ESTATAL DEL IMSS EN BAJA CALIFORNIA SUR BCS." },
+      { id: 8, nombre: "HOSPITAL GENERAL DE ZONA/MF NUM. 1 BCS." },
+      { id: 9, nombre: "HOSPITAL GENERAL DE SUBZONA/MF NUM. 2 BCS." }
     ],
-    4: [ // CDMX
-      { id: 9, nombre: "Prestaciones Médicas" },
-      { id: 10, nombre: "Servicios Generales" }
+    4: [ // CAMPECHE
+      { id: 10, nombre: "DELEGACION ESTATAL DEL IMSS EN CAMPECHE CAM." },
+      { id: 11, nombre: "HOSPITAL GENERAL DE ZONA/MF NUM. 1 CAM." },
+      { id: 12, nombre: "UNIDAD DE MEDICINA FAMILIAR/CH NUM. 2 CAM." }
+    ],
+    5: [ // CHIAPAS
+      { id: 13, nombre: "DELEGACION ESTATAL DEL IMSS EN CHIAPAS CHS." },
+      { id: 14, nombre: "HOSPITAL GENERAL DE ZONA/MF NUM. 1 CHS." },
+      { id: 15, nombre: "HOSPITAL GENERAL DE ZONA/MF NUM. 2 CHS." }
+    ],
+    6: [ // CHIHUAHUA
+      { id: 16, nombre: "DELEGACION ESTATAL DEL IMSS EN CHIHUAHUA CHH." },
+      { id: 17, nombre: "HOSPITAL GENERAL REGIONAL NUM. 1 CHH." },
+      { id: 18, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 2 CHH." }
+    ],
+    7: [ // COAHUILA
+      { id: 19, nombre: "DELEGACION ESTATAL DEL IMSS EN COAHUILA COA." },
+      { id: 20, nombre: "HOSPITAL GENERAL DE ZONA NUM. 1 COA." },
+      { id: 21, nombre: "HOSPITAL GENERAL DE ZONA NUM. 2 COA." }
+    ],
+    8: [ // COLIMA
+      { id: 22, nombre: "DELEGACION REGIONAL DEL IMSS EN COLIMA COL." },
+      { id: 23, nombre: "HOSPITAL GENERAL DE ZONA NUM. 1 COL." },
+      { id: 24, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 2 COL." }
+    ],
+    9: [ // D.F. NORTE
+      { id: 25, nombre: "DELEGACION NORTE DEL DISTRITO FEDERAL DFN" },
+      { id: 26, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 2 DFN" },
+      { id: 27, nombre: "HOSPITAL DE GINECO-OBSTETRICIA NUM. 3A DFN" }
+    ],
+    10: [ // D.F. SUR
+      { id: 31, nombre: "DELEGACION SUR DEL DISTRITO FEDERAL DFS" },
+      { id: 32, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 1 DFS" },
+      { id: 33, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 4 DFS" }
+    ],
+    11: [ // DURANGO
+      { id: 37, nombre: "DELEGACION ESTATAL DEL IMSS EN DURANGO DGO." },
+      { id: 38, nombre: "HOSPITAL GENERAL DE ZONA/MF NUM. 1 DGO." },
+      { id: 39, nombre: "HOSPITAL GENERAL DE SUBZONA NUM. 2 DGO." }
+    ],
+    12: [ // ESTADO MEXICO ORIENTE
+      { id: 40, nombre: "DELEGACION ESTADO DE MEXICO ZONA ORIENTE EMO." },
+      { id: 41, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 52 EMO." },
+      { id: 42, nombre: "HOSPITAL GENERAL DE ZONA NUM. 53 EMO." }
+    ],
+    13: [ // ESTADO MEXICO PONIENTE
+      { id: 43, nombre: "DELEGACION ESTADO DE MEXICO ZONA PONIENTE EMP." },
+      { id: 44, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 51 EMP." },
+      { id: 45, nombre: "HOSPITAL GENERAL DE ZONA/MF NUM. 58 EMP." }
+    ],
+    14: [ // GUANAJUATO
+      { id: 47, nombre: "DELEGACION ESTATAL DEL IMSS EN GUANAJUATO GTO." },
+      { id: 48, nombre: "HOSPITAL GENERAL DE ZONA NUM. 2 GTO." },
+      { id: 49, nombre: "UNIDAD DE MEDICINA FAMILIAR NUM. 3 GTO." }
+    ],
+    15: [ // GUERRERO
+      { id: 50, nombre: "DELEGACION ESTATAL DEL IMSS EN GUERRERO GRO." },
+      { id: 51, nombre: "HOSPITAL GENERAL DE ZONA/MF NUM. 1 GRO." },
+      { id: 52, nombre: "HOSPITAL GENERAL DE ZONA NUM. 2 GRO." }
     ]
   },
   
@@ -132,8 +200,8 @@ const casosFake = [
   {
     id: 1,
     numero: 1,
-    delegacion_id: 1,
-    area_generadora_id: 1,
+    delegacion_id: 5, // CHIAPAS
+    area_generadora_id: 13,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
     subtipo_juicio: "Ordinario",
@@ -168,8 +236,8 @@ const casosFake = [
   {
     id: 2,
     numero: 2,
-    delegacion_id: 1,
-    area_generadora_id: 1,
+    delegacion_id: 5, // CHIAPAS
+    area_generadora_id: 14,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
     subtipo_juicio: "Ordinario",
@@ -206,8 +274,8 @@ const casosFake = [
   {
     id: 3,
     numero: 3,
-    delegacion_id: 1,
-    area_generadora_id: 2,
+    delegacion_id: 5, // CHIAPAS
+    area_generadora_id: 15,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
     subtipo_juicio: "Ordinario",
@@ -247,7 +315,7 @@ const casosFake = [
   {
     id: 4,
     numero: 4,
-    delegacion_id: 2,
+    delegacion_id: 2, // BAJA CALIFORNIA
     area_generadora_id: 4,
     jurisdiccion: "LOCAL",
     tipo_juicio: "MERCANTIL",
@@ -290,8 +358,8 @@ const casosFake = [
   {
     id: 5,
     numero: 5,
-    delegacion_id: 2,
-    area_generadora_id: 5,
+    delegacion_id: 14, // GUANAJUATO
+    area_generadora_id: 47,
     jurisdiccion: "LOCAL",
     tipo_juicio: "CIVIL",
     subtipo_juicio: "Especial",
@@ -329,7 +397,7 @@ const casosFake = [
   {
     id: 6,
     numero: 6,
-    delegacion_id: 3,
+    delegacion_id: 12, // ESTADO MEXICO ORIENTE
     area_generadora_id: 7,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
@@ -363,8 +431,8 @@ const casosFake = [
   {
     id: 7,
     numero: 7,
-    delegacion_id: 3,
-    area_generadora_id: 8,
+    delegacion_id: 9, // D.F. NORTE
+    area_generadora_id: 25,
     jurisdiccion: "LOCAL",
     tipo_juicio: "MERCANTIL",
     subtipo_juicio: "Ordinario Mercantil",
@@ -403,8 +471,8 @@ const casosFake = [
   {
     id: 8,
     numero: 8,
-    delegacion_id: 4,
-    area_generadora_id: 9,
+    delegacion_id: 10, // D.F. SUR
+    area_generadora_id: 31,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
     subtipo_juicio: "Ejecutivo",
