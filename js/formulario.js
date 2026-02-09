@@ -1,10 +1,9 @@
 // =====================================================
-// FORMULARIO.JS - Lógica completa (Creación y Edición)
+// FORMULARIO.JS - Lógica completa del formulario
 // =====================================================
 
 let contadorDemandados = 0;
 let contadorCodemandados = 0;
-let casoEditando = null; // Variable global para saber si editamos
 
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -29,157 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarFormulario();
     configurarEventListeners();
     
-    // DETECTAR MODO EDICIÓN
-    const urlParams = new URLSearchParams(window.location.search);
-    const casoId = urlParams.get('id'); // Buscamos ?id=123 en la URL
-    
-    if (casoId) {
-        cargarDatosEdicion(parseInt(casoId));
-    }
+    // NO agregar codemandado por defecto (ya no es obligatorio)
 });
-
-// ==========================================
-// FUNCIÓN PRINCIPAL DE CARGA DE EDICIÓN
-// ==========================================
-function cargarDatosEdicion(id) {
-    const casosStr = localStorage.getItem('casos');
-    const casos = casosStr ? JSON.parse(casosStr) : (typeof casosFake !== 'undefined' ? casosFake : []);
-    casoEditando = casos.find(c => c.id === id);
-
-    if (!casoEditando) {
-        alert("Caso no encontrado");
-        window.location.href = 'casos.html';
-        return;
-    }
-
-    // Cambiar textos visuales
-    document.querySelector('.page-title').textContent = `Editar Caso #${casoEditando.numero_expediente || id}`;
-    document.querySelector('.btn-success').textContent = "Actualizar Caso";
-
-    // 1. Delegación y Área
-    document.getElementById('delegacion').value = casoEditando.delegacion_id;
-    // Disparamos evento manual para llenar el select de Áreas
-    document.getElementById('delegacion').dispatchEvent(new Event('change'));
-    document.getElementById('area').value = casoEditando.area_generadora_id;
-
-    // 2. Jurisdicción
-    const radioJurisdiccion = document.querySelector(`input[name="jurisdiccion"][value="${casoEditando.jurisdiccion}"]`);
-    if (radioJurisdiccion) {
-        radioJurisdiccion.checked = true;
-        radioJurisdiccion.dispatchEvent(new Event('change'));
-    }
-
-    // Llenar inputs de expediente
-    if (casoEditando.jurisdiccion === 'LOCAL') {
-        document.getElementById('numeroLocal').value = casoEditando.numero_juicio_local || casoEditando.numero_expediente;
-    } else {
-        document.getElementById('numeroFederal').value = casoEditando.numero_juicio;
-        document.getElementById('añoFederal').value = casoEditando.año;
-    }
-
-    // 3. Tipo de Juicio (Cascada)
-    document.getElementById('tipoJuicio').value = casoEditando.tipo_juicio;
-    document.getElementById('tipoJuicio').dispatchEvent(new Event('change')); // Carga subtipos
-
-    // Seleccionar Subtipo por Texto
-    const selectSubtipo = document.getElementById('subtipoJuicio');
-    if (casoEditando.subtipo_juicio) {
-        Array.from(selectSubtipo.options).forEach(opt => {
-            if (opt.text === casoEditando.subtipo_juicio) selectSubtipo.value = opt.value;
-        });
-        selectSubtipo.dispatchEvent(new Event('change')); // Carga sub-subtipos
-    }
-
-    // 4. Posición IMSS
-    const radioImss = document.querySelector(`input[name="imssEs"][value="${casoEditando.imss_es}"]`);
-    if (radioImss) {
-        radioImss.checked = true;
-        actualizarSeccionesPersonas(); // Función extraída abajo
-    }
-
-    // 5. ACTOR (Aquí estaba el error)
-    if (casoEditando.imss_es !== 'ACTOR' && casoEditando.actor) {
-        // Usamos el name correcto: actorTipo
-        const radioActor = document.querySelector(`input[name="actorTipo"][value="${casoEditando.actor.tipo_persona}"]`);
-        if (radioActor) {
-            radioActor.checked = true;
-            actualizarCamposActor(); // Llamada a la función corregida
-
-            if (casoEditando.actor.tipo_persona === 'FISICA') {
-                document.getElementById('actorNombres').value = casoEditando.actor.nombres || '';
-                document.getElementById('actorPaterno').value = casoEditando.actor.apellido_paterno || '';
-                document.getElementById('actorMaterno').value = casoEditando.actor.apellido_materno || '';
-            } else {
-                document.getElementById('actorEmpresa').value = casoEditando.actor.empresa || '';
-            }
-        }
-    }
-
-    // 6. DEMANDADOS
-    if (casoEditando.imss_es !== 'DEMANDADO' && casoEditando.demandados) {
-        document.getElementById('listaDemandados').innerHTML = '';
-        contadorDemandados = 0;
-        
-        casoEditando.demandados.forEach(dem => {
-            agregarDemandado(); // Crea el HTML al instante
-            const id = `demandado_${contadorDemandados}`;
-            
-            const radioTipo = document.querySelector(`input[name="${id}_tipo"][value="${dem.tipo_persona}"]`);
-            if (radioTipo) {
-                radioTipo.checked = true;
-                cambiarTipoDemandado(id, dem.tipo_persona);
-                
-                if (dem.tipo_persona === 'FISICA') {
-                    document.getElementById(`${id}_nombres`).value = dem.nombres || '';
-                    document.getElementById(`${id}_paterno`).value = dem.apellido_paterno || '';
-                    document.getElementById(`${id}_materno`).value = dem.apellido_materno || '';
-                } else {
-                    document.getElementById(`${id}_empresa`).value = dem.empresa || '';
-                }
-            }
-        });
-    }
-
-    // 7. Prestaciones y montos
-    document.getElementById('prestacionReclamada').value = casoEditando.prestacion_reclamada;
-    document.getElementById('prestacionesNotas').value = casoEditando.prestaciones_notas || '';
-    document.getElementById('importeDemandado').value = casoEditando.importe_demandado || 0;
-    document.getElementById('fechaInicio').value = casoEditando.fecha_inicio;
-}
-
-// ==========================================
-// FUNCIONES AUXILIARES (Refactorizadas)
-// ==========================================
-
-function actualizarCamposActor() {
-    // CORRECCIÓN: Usamos 'actorTipo' que es el name real en el HTML
-    const tipoSeleccionado = document.querySelector('input[name="actorTipo"]:checked')?.value;
-    
-    const seccionFisica = document.getElementById('actorFisicaCampos');
-    const seccionMoral = document.getElementById('actorMoralCampos');
-    
-    if (tipoSeleccionado === 'FISICA') {
-        seccionFisica.style.display = 'block';
-        seccionMoral.style.display = 'none';
-    } else if (tipoSeleccionado === 'MORAL') {
-        seccionFisica.style.display = 'none';
-        seccionMoral.style.display = 'block';
-    } else {
-        seccionFisica.style.display = 'none';
-        seccionMoral.style.display = 'none';
-    }
-}
-
-function actualizarSeccionesPersonas() {
-    const valor = document.querySelector('input[name="imssEs"]:checked')?.value;
-    if (!valor) return;
-
-    const seccionActor = document.getElementById('seccionActor');
-    seccionActor.style.display = (valor !== 'ACTOR') ? 'block' : 'none';
-    
-    const seccionDemandados = document.getElementById('seccionDemandados');
-    seccionDemandados.style.display = (valor !== 'DEMANDADO') ? 'block' : 'none';
-}
 
 function inicializarFormulario() {
     llenarDelegaciones();
@@ -188,12 +38,75 @@ function inicializarFormulario() {
     cargarCasosParaAcumular();
 }
 
+function llenarDelegaciones() {
+    const select = document.getElementById('delegacion');
+    catalogos.delegaciones.forEach(d => {
+        const option = document.createElement('option');
+        option.value = d.id;
+        option.textContent = d.nombre;
+        select.appendChild(option);
+    });
+}
+
+function llenarTribunales() {
+    const select = document.getElementById('tribunal');
+    catalogos.tribunales.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t.id;
+        option.textContent = t.nombre;
+        select.appendChild(option);
+    });
+}
+
+function llenarPrestaciones() {
+    const select = document.getElementById('prestacionReclamada');
+    catalogos.prestaciones.forEach(p => {
+        const option = document.createElement('option');
+        option.value = p.id;
+        option.textContent = p.nombre;
+        select.appendChild(option);
+    });
+}
+
+function cargarCasosParaAcumular() {
+    actualizarCasosAcumulables();
+}
+
+function actualizarCasosAcumulables() {
+    const select = document.getElementById('acumuladoA');
+    const tipoJuicioActual = document.getElementById('tipoJuicio').value;
+    
+    // Limpiar select
+    select.innerHTML = '<option value="">No está acumulado</option>';
+    
+    const casosStr = localStorage.getItem('casos');
+    if (!casosStr) return;
+    
+    const casos = JSON.parse(casosStr);
+    
+    // Filtrar solo casos en TRAMITE, no acumulados, y de la misma materia
+    casos
+        .filter(c => {
+            const cumpleEstatus = c.estatus === 'TRAMITE' && !c.acumulado_a;
+            const cumpleMateria = !tipoJuicioActual || c.tipo_juicio === tipoJuicioActual;
+            return cumpleEstatus && cumpleMateria;
+        })
+        .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
+        .forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = `${c.numero_expediente} - ${c.tipo_juicio} - ${formatearFecha(c.fecha_inicio)}`;
+            select.appendChild(option);
+        });
+}
+
 function configurarEventListeners() {
-    // Delegación -> Área
+    // Cambio de delegación actualiza áreas
     document.getElementById('delegacion').addEventListener('change', function() {
         const delegacionId = this.value;
         const selectArea = document.getElementById('area');
         selectArea.innerHTML = '<option value="">Seleccione...</option>';
+        
         if (delegacionId && catalogos.areas[delegacionId]) {
             selectArea.disabled = false;
             catalogos.areas[delegacionId].forEach(a => {
@@ -206,29 +119,39 @@ function configurarEventListeners() {
             selectArea.disabled = true;
         }
     });
-
-    // Jurisdicción
+    
+    // Cambio de jurisdicción muestra campos correspondientes
     document.querySelectorAll('input[name="jurisdiccion"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const esLocal = this.value === 'LOCAL';
             document.getElementById('campoLocal').style.display = esLocal ? 'block' : 'none';
             document.getElementById('campoFederal').style.display = esLocal ? 'none' : 'block';
+            
+            // Reset campos
+            document.getElementById('numeroLocal').value = '';
+            document.getElementById('numeroLocal').required = esLocal;
+            document.getElementById('numeroFederal').value = '';
+            document.getElementById('numeroFederal').required = !esLocal;
+            document.getElementById('añoFederal').value = '';
+            document.getElementById('añoFederal').required = !esLocal;
         });
     });
-
-    // Validaciones números
-    document.getElementById('numeroFederal').addEventListener('input', function() {
+    
+    // Validación solo números en expediente federal
+    document.getElementById('numeroFederal').addEventListener('input', function(e) {
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
     });
-    document.getElementById('añoFederal').addEventListener('input', function() {
+    
+    document.getElementById('añoFederal').addEventListener('input', function(e) {
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
     });
-
-    // Tipo Juicio -> Subtipos
+    
+    // Cambio de tipo de juicio actualiza subtipos Y casos acumulables
     document.getElementById('tipoJuicio').addEventListener('change', function() {
         const tipo = this.value;
         const selectSubtipo = document.getElementById('subtipoJuicio');
         selectSubtipo.innerHTML = '<option value="">Seleccione...</option>';
+        
         if (tipo && catalogos.tiposJuicio[tipo]) {
             selectSubtipo.disabled = false;
             catalogos.tiposJuicio[tipo].forEach(st => {
@@ -236,98 +159,100 @@ function configurarEventListeners() {
                 option.value = st.id;
                 option.textContent = st.nombre;
                 option.dataset.subtipos = JSON.stringify(st.subtipos || []);
+                option.dataset.jurisdiccion = st.jurisdiccion || '';
+                option.dataset.requiereDescripcion = st.requiere_descripcion || false;
                 selectSubtipo.appendChild(option);
             });
         } else {
             selectSubtipo.disabled = true;
         }
+        
         document.getElementById('grupSubsubtipo').style.display = 'none';
+        
+        // Actualizar casos acumulables según materia
         actualizarCasosAcumulables();
     });
-
-    // Subtipo -> Sub-subtipos
+    
+    // Cambio de subtipo puede mostrar sub-subtipos
     document.getElementById('subtipoJuicio').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const subtipos = selectedOption ? JSON.parse(selectedOption.dataset.subtipos || '[]') : [];
+        
         const grupoSubsub = document.getElementById('grupSubsubtipo');
         const selectSubsub = document.getElementById('subsubtipoJuicio');
+        
         if (subtipos.length > 0) {
             grupoSubsub.style.display = 'block';
             selectSubsub.innerHTML = '<option value="">Ninguno</option>';
             subtipos.forEach(ss => {
-                const opt = document.createElement('option');
-                opt.value = ss.id;
-                opt.textContent = ss.nombre;
-                selectSubsub.appendChild(opt);
+                const option = document.createElement('option');
+                option.value = ss.id;
+                option.textContent = ss.nombre;
+                selectSubsub.appendChild(option);
             });
         } else {
             grupoSubsub.style.display = 'none';
+            selectSubsub.value = '';
         }
     });
-
-    // IMSS Es -> Mostrar/Ocultar Secciones
+    
+    // Cambio de posición IMSS muestra/oculta secciones
     document.querySelectorAll('input[name="imssEs"]').forEach(radio => {
-        radio.addEventListener('change', actualizarSeccionesPersonas);
+        radio.addEventListener('change', function() {
+            const valor = this.value;
+            
+            // Mostrar/ocultar sección Actor
+            const seccionActor = document.getElementById('seccionActor');
+            seccionActor.style.display = (valor !== 'ACTOR') ? 'block' : 'none';
+            
+            // Mostrar/ocultar sección Demandados
+            const seccionDemandados = document.getElementById('seccionDemandados');
+            seccionDemandados.style.display = (valor !== 'DEMANDADO') ? 'block' : 'none';
+            
+            // Limpiar si se ocultan
+            if (valor === 'ACTOR') {
+                document.querySelectorAll('input[name="actorTipo"]').forEach(r => r.checked = false);
+                document.getElementById('actorFisicaCampos').style.display = 'none';
+                document.getElementById('actorMoralCampos').style.display = 'none';
+            }
+            
+            if (valor === 'DEMANDADO') {
+                document.getElementById('listaDemandados').innerHTML = '';
+                contadorDemandados = 0;
+            }
+        });
     });
-
-    // Actor Tipo -> Mostrar/Ocultar Campos
+    
+    // Cambio de tipo de persona Actor
     document.querySelectorAll('input[name="actorTipo"]').forEach(radio => {
-        radio.addEventListener('change', actualizarCamposActor);
+        radio.addEventListener('change', function() {
+            const esFisica = this.value === 'FISICA';
+            document.getElementById('actorFisicaCampos').style.display = esFisica ? 'block' : 'none';
+            document.getElementById('actorMoralCampos').style.display = esFisica ? 'none' : 'block';
+            
+            // Limpiar campos
+            document.getElementById('actorNombres').value = '';
+            document.getElementById('actorPaterno').value = '';
+            document.getElementById('actorMaterno').value = '';
+            document.getElementById('actorEmpresa').value = '';
+        });
     });
-
-    // Submit
+    
+    // Submit del formulario
     document.getElementById('formNuevoCaso').addEventListener('submit', guardarCaso);
 }
 
-// ==========================================
-// GUARDAR / ACTUALIZAR
-// ==========================================
-function guardarCaso(e) {
-    e.preventDefault();
-    const caso = construirObjetoCaso();
-    if (!validarCaso(caso)) return;
-
-    const casosStr = localStorage.getItem('casos');
-    const casos = casosStr ? JSON.parse(casosStr) : [];
-
-    if (casoEditando) {
-        // ACTUALIZAR
-        const index = casos.findIndex(c => c.id === casoEditando.id);
-        if (index !== -1) {
-            caso.id = casoEditando.id; // Mantener ID original
-            caso.numero = casoEditando.numero;
-            caso.fecha_creacion = casoEditando.fecha_creacion;
-            casos[index] = caso;
-            alert('✅ Caso actualizado correctamente');
-        }
-    } else {
-        // CREAR NUEVO
-        caso.id = casos.length > 0 ? Math.max(...casos.map(c => c.id)) + 1 : 1;
-        caso.numero = casos.length + 1;
-        caso.fecha_creacion = new Date().toISOString();
-        casos.push(caso);
-        alert('✅ Caso creado exitosamente');
-    }
-
-    localStorage.setItem('casos', JSON.stringify(casos));
-    window.location.href = 'casos.html';
-}
-
-// ... (Las funciones construirObjetoCaso, llenarDelegaciones, etc. se mantienen igual, 
-// solo asegúrate de copiar también las funciones agregarDemandado, cambiarTipoDemandado del archivo anterior si faltan)
-
-// Asegúrate de incluir estas funciones al final si no las tienes:
 function agregarDemandado() {
     contadorDemandados++;
     const id = `demandado_${contadorDemandados}`;
-    // ... (Tu código HTML de demandado aquí) ...
-    // NOTA: Usa el mismo HTML que tenías, es correcto.
+    
     const html = `
         <div class="dynamic-field" id="${id}">
             <div class="dynamic-field-header">
                 <span class="dynamic-field-title">Demandado ${contadorDemandados}</span>
                 <button type="button" class="btn-remove" onclick="eliminarDemandado('${id}')">Eliminar</button>
             </div>
+            
             <div class="form-group">
                 <label class="form-label required">Tipo de Persona</label>
                 <div class="form-radio-group">
@@ -341,21 +266,40 @@ function agregarDemandado() {
                     </div>
                 </div>
             </div>
+            
             <div id="${id}_fisica_campos" style="display: none;">
                 <div class="form-grid">
-                    <div class="form-group"><label class="form-label">Nombres</label><input type="text" id="${id}_nombres" class="form-input"></div>
-                    <div class="form-group"><label class="form-label">A. Paterno</label><input type="text" id="${id}_paterno" class="form-input"></div>
-                    <div class="form-group"><label class="form-label">A. Materno</label><input type="text" id="${id}_materno" class="form-input"></div>
+                    <div class="form-group">
+                        <label class="form-label required">Nombres</label>
+                        <input type="text" id="${id}_nombres" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Apellido Paterno</label>
+                        <input type="text" id="${id}_paterno" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Apellido Materno</label>
+                        <input type="text" id="${id}_materno" class="form-input">
+                    </div>
                 </div>
             </div>
+            
             <div id="${id}_moral_campos" style="display: none;">
-                <div class="form-group"><label class="form-label">Empresa</label><input type="text" id="${id}_empresa" class="form-input"></div>
+                <div class="form-group">
+                    <label class="form-label required">Nombre de la Empresa</label>
+                    <input type="text" id="${id}_empresa" class="form-input">
+                </div>
             </div>
-        </div>`;
+        </div>
+    `;
+    
     document.getElementById('listaDemandados').insertAdjacentHTML('beforeend', html);
 }
 
-function eliminarDemandado(id) { document.getElementById(id).remove(); }
+function eliminarDemandado(id) {
+    document.getElementById(id).remove();
+}
+
 function cambiarTipoDemandado(id, tipo) {
     const esFisica = tipo === 'FISICA';
     document.getElementById(`${id}_fisica_campos`).style.display = esFisica ? 'block' : 'none';
@@ -363,15 +307,16 @@ function cambiarTipoDemandado(id, tipo) {
 }
 
 function agregarCodemandado() {
-    // Misma lógica que demandado pero con contadorCodemandados
-     contadorCodemandados++;
+    contadorCodemandados++;
     const id = `codemandado_${contadorCodemandados}`;
+    
     const html = `
         <div class="dynamic-field" id="${id}">
             <div class="dynamic-field-header">
                 <span class="dynamic-field-title">Codemandado ${contadorCodemandados}</span>
-                <button type="button" class="btn-remove" onclick="eliminarCodemandado('${id}')">Eliminar</button>
+                ${contadorCodemandados > 1 ? `<button type="button" class="btn-remove" onclick="eliminarCodemandado('${id}')">Eliminar</button>` : ''}
             </div>
+            
             <div class="form-group">
                 <label class="form-label required">Tipo de Persona</label>
                 <div class="form-radio-group">
@@ -385,29 +330,86 @@ function agregarCodemandado() {
                     </div>
                 </div>
             </div>
+            
             <div id="${id}_fisica_campos" style="display: none;">
                 <div class="form-grid">
-                    <div class="form-group"><label class="form-label">Nombres</label><input type="text" id="${id}_nombres" class="form-input"></div>
-                    <div class="form-group"><label class="form-label">A. Paterno</label><input type="text" id="${id}_paterno" class="form-input"></div>
-                    <div class="form-group"><label class="form-label">A. Materno</label><input type="text" id="${id}_materno" class="form-input"></div>
+                    <div class="form-group">
+                        <label class="form-label required">Nombres</label>
+                        <input type="text" id="${id}_nombres" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Apellido Paterno</label>
+                        <input type="text" id="${id}_paterno" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Apellido Materno</label>
+                        <input type="text" id="${id}_materno" class="form-input">
+                    </div>
                 </div>
             </div>
+            
             <div id="${id}_moral_campos" style="display: none;">
-                <div class="form-group"><label class="form-label">Empresa</label><input type="text" id="${id}_empresa" class="form-input"></div>
+                <div class="form-group">
+                    <label class="form-label required">Nombre de la Empresa</label>
+                    <input type="text" id="${id}_empresa" class="form-input">
+                </div>
             </div>
-        </div>`;
+        </div>
+    `;
+    
     document.getElementById('listaCodemandados').insertAdjacentHTML('beforeend', html);
 }
-function eliminarCodemandado(id) { document.getElementById(id).remove(); }
+
+function eliminarCodemandado(id) {
+    document.getElementById(id).remove();
+    contadorCodemandados--;
+}
+
 function cambiarTipoCodemandado(id, tipo) {
     const esFisica = tipo === 'FISICA';
     document.getElementById(`${id}_fisica_campos`).style.display = esFisica ? 'block' : 'none';
     document.getElementById(`${id}_moral_campos`).style.display = esFisica ? 'none' : 'block';
 }
 
+function guardarCaso(e) {
+    e.preventDefault();
+    
+    // Construir objeto del caso
+    const caso = construirObjetoCaso();
+    
+    // Validar
+    if (!validarCaso(caso)) {
+        return;
+    }
+    
+    // Guardar en localStorage
+    const casosStr = localStorage.getItem('casos');
+    const casos = casosStr ? JSON.parse(casosStr) : [];
+    
+    // Asignar ID y número
+    caso.id = casos.length > 0 ? Math.max(...casos.map(c => c.id)) + 1 : 1;
+    caso.numero = casos.length + 1;
+    caso.fecha_creacion = new Date().toISOString();
+    
+    // Si se acumula a otro caso, actualizar ese caso
+    if (caso.acumulado_a) {
+        const casoAcumulador = casos.find(c => c.id === caso.acumulado_a);
+        if (casoAcumulador) {
+            if (!casoAcumulador.juicios_acumulados) {
+                casoAcumulador.juicios_acumulados = [];
+            }
+            casoAcumulador.juicios_acumulados.push(caso.id);
+        }
+    }
+    
+    casos.push(caso);
+    localStorage.setItem('casos', JSON.stringify(casos));
+    
+    alert('✅ Caso guardado exitosamente');
+    window.location.href = 'casos.html';
+}
+
 function construirObjetoCaso() {
-    // Copia tu función construirObjetoCaso existente aquí tal cual estaba
-    // ...
     const jurisdiccion = document.querySelector('input[name="jurisdiccion"]:checked').value;
     const esLocal = jurisdiccion === 'LOCAL';
     
@@ -517,18 +519,16 @@ function obtenerPersonasDinamicas(prefijo) {
             });
         }
     });
+    
     return personas;
 }
 
 function validarCaso(caso) {
+    // Validar prestación
     if (!caso.prestacion_reclamada) {
         alert('Debe seleccionar una prestación reclamada');
         return false;
     }
+    
     return true;
 }
-function llenarDelegaciones() { /* ... tu código ... */ const select = document.getElementById('delegacion'); catalogos.delegaciones.forEach(d => { const option = document.createElement('option'); option.value = d.id; option.textContent = d.nombre; select.appendChild(option); }); }
-function llenarTribunales() { /* ... tu código ... */ const select = document.getElementById('tribunal'); catalogos.tribunales.forEach(t => { const option = document.createElement('option'); option.value = t.id; option.textContent = t.nombre; select.appendChild(option); }); }
-function llenarPrestaciones() { /* ... tu código ... */ const select = document.getElementById('prestacionReclamada'); catalogos.prestaciones.forEach(p => { const option = document.createElement('option'); option.value = p.id; option.textContent = p.nombre; select.appendChild(option); }); }
-function cargarCasosParaAcumular() { actualizarCasosAcumulables(); }
-function actualizarCasosAcumulables() { /* ... tu código ... */ const select = document.getElementById('acumuladoA'); const tipoJuicioActual = document.getElementById('tipoJuicio').value; select.innerHTML = '<option value="">No está acumulado</option>'; const casosStr = localStorage.getItem('casos'); if (!casosStr) return; const casos = JSON.parse(casosStr); casos.filter(c => { const cumpleEstatus = c.estatus === 'TRAMITE' && !c.acumulado_a; const cumpleMateria = !tipoJuicioActual || c.tipo_juicio === tipoJuicioActual; return cumpleEstatus && cumpleMateria; }).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio)).forEach(c => { const option = document.createElement('option'); option.value = c.id; option.textContent = `${c.numero_expediente} - ${c.tipo_juicio} - ${formatearFecha(c.fecha_inicio)}`; select.appendChild(option); }); }
