@@ -4,6 +4,7 @@
 
 let contadorDemandados = 0;
 let contadorCodemandados = 0;
+let casoEditando = null; // Caso actual si estamos editando
 
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -28,8 +29,205 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarFormulario();
     configurarEventListeners();
     
-    // NO agregar codemandado por defecto (ya no es obligatorio)
+    // Verificar si estamos en modo edición
+    const urlParams = new URLSearchParams(window.location.search);
+    const casoId = urlParams.get('editar');
+    
+    if (casoId) {
+        cargarDatosParaEdicion(parseInt(casoId));
+    }
 });
+
+function cargarDatosParaEdicion(casoId) {
+    // Obtener casos de localStorage
+    const casosGuardados = localStorage.getItem('casos');
+    const casos = casosGuardados ? JSON.parse(casosGuardados) : casosFake;
+    
+    casoEditando = casos.find(c => c.id === casoId);
+    
+    if (!casoEditando) {
+        alert('Caso no encontrado');
+        window.location.href = 'casos.html';
+        return;
+    }
+    
+    // Cambiar título de la página
+    document.querySelector('.page-title').textContent = `Editar Caso: ${casoEditando.numero_expediente}`;
+    document.querySelector('.page-subtitle').textContent = 'Modifique los datos necesarios';
+    
+    // Cambiar botón de guardar
+    const btnGuardar = document.querySelector('button[type="submit"]');
+    if (btnGuardar) {
+        btnGuardar.textContent = 'Guardar Cambios';
+    }
+    
+    // Llenar campos con datos del caso
+    llenarFormularioConDatos();
+}
+
+function llenarFormularioConDatos() {
+    if (!casoEditando) return;
+    
+    // Delegación y Área
+    document.getElementById('delegacion').value = casoEditando.delegacion_id;
+    actualizarAreas(); // Cargar áreas de la delegación
+    setTimeout(() => {
+        document.getElementById('area').value = casoEditando.area_generadora_id;
+    }, 100);
+    
+    // Jurisdicción
+    document.querySelector(`input[name="jurisdiccion"][value="${casoEditando.jurisdiccion}"]`).checked = true;
+    actualizarCamposJurisdiccion();
+    
+    // Tipo de Juicio
+    document.querySelector(`input[name="tipoJuicio"][value="${casoEditando.tipo_juicio}"]`).checked = true;
+    actualizarSubtiposJuicio();
+    
+    setTimeout(() => {
+        // Subtipo (buscar por nombre ya que puede tener IDs diferentes)
+        const subtipoSelect = document.getElementById('subtipoJuicio');
+        for (let option of subtipoSelect.options) {
+            if (option.textContent === casoEditando.subtipo_juicio) {
+                option.selected = true;
+                break;
+            }
+        }
+        actualizarSubSubtipos();
+        
+        // Sub-subtipo si existe
+        if (casoEditando.sub_subtipo_juicio) {
+            setTimeout(() => {
+                const subsubtipoSelect = document.getElementById('subSubtipoJuicio');
+                if (subsubtipoSelect) {
+                    for (let option of subsubtipoSelect.options) {
+                        if (option.textContent === casoEditando.sub_subtipo_juicio) {
+                            option.selected = true;
+                            break;
+                        }
+                    }
+                }
+            }, 100);
+        }
+    }, 100);
+    
+    // Número de expediente
+    if (casoEditando.jurisdiccion === 'FEDERAL') {
+        document.getElementById('numeroJuicio').value = casoEditando.numero_juicio;
+        document.getElementById('año').value = casoEditando.año;
+    } else {
+        document.getElementById('numeroJuicioLocal').value = casoEditando.numero_juicio_local || casoEditando.numero_expediente;
+    }
+    
+    // Acumulado
+    if (casoEditando.acumulado_a) {
+        document.getElementById('acumuladoA').value = casoEditando.acumulado_a;
+    }
+    
+    // Tribunal
+    document.getElementById('tribunal').value = casoEditando.tribunal_id;
+    
+    // Fecha inicio
+    document.getElementById('fechaInicio').value = casoEditando.fecha_inicio;
+    
+    // IMSS es
+    document.getElementById('imss_es').value = casoEditando.imss_es;
+    actualizarSeccionesPersonas();
+    
+    setTimeout(() => {
+        // Actor (si aplica)
+        if (casoEditando.imss_es !== 'ACTOR' && casoEditando.actor) {
+            document.querySelector(`input[name="tipoPersonaActor"][value="${casoEditando.actor.tipo_persona}"]`).checked = true;
+            actualizarCamposActor();
+            
+            setTimeout(() => {
+                if (casoEditando.actor.tipo_persona === 'FISICA') {
+                    document.getElementById('nombresActor').value = casoEditando.actor.nombres || '';
+                    document.getElementById('apellidoPaternoActor').value = casoEditando.actor.apellido_paterno || '';
+                    document.getElementById('apellidoMaternoActor').value = casoEditando.actor.apellido_materno || '';
+                } else {
+                    document.getElementById('empresaActor').value = casoEditando.actor.empresa || '';
+                }
+            }, 50);
+        }
+        
+        // Demandados (si aplica)
+        if (casoEditando.imss_es !== 'DEMANDADO' && casoEditando.demandados && casoEditando.demandados.length > 0) {
+            casoEditando.demandados.forEach((dem, index) => {
+                if (index === 0) {
+                    // Primer demandado (ya existe en HTML)
+                    document.querySelector(`input[name="tipoPersonaDemandado1"][value="${dem.tipo_persona}"]`).checked = true;
+                    actualizarCamposDemandado(1);
+                    
+                    setTimeout(() => {
+                        if (dem.tipo_persona === 'FISICA') {
+                            document.getElementById('nombresDemandado1').value = dem.nombres || '';
+                            document.getElementById('apellidoPaternoDemandado1').value = dem.apellido_paterno || '';
+                            document.getElementById('apellidoMaternoDemandado1').value = dem.apellido_materno || '';
+                        } else {
+                            document.getElementById('empresaDemandado1').value = dem.empresa || '';
+                        }
+                    }, 50);
+                } else {
+                    // Demandados adicionales
+                    agregarDemandado();
+                    const numero = contadorDemandados;
+                    
+                    setTimeout(() => {
+                        document.querySelector(`input[name="tipoPersonaDemandado${numero}"][value="${dem.tipo_persona}"]`).checked = true;
+                        actualizarCamposDemandado(numero);
+                        
+                        setTimeout(() => {
+                            if (dem.tipo_persona === 'FISICA') {
+                                document.getElementById(`nombresDemandado${numero}`).value = dem.nombres || '';
+                                document.getElementById(`apellidoPaternoDemandado${numero}`).value = dem.apellido_paterno || '';
+                                document.getElementById(`apellidoMaternoDemandado${numero}`).value = dem.apellido_materno || '';
+                            } else {
+                                document.getElementById(`empresaDemandado${numero}`).value = dem.empresa || '';
+                            }
+                        }, 50);
+                    }, 50);
+                }
+            });
+        }
+        
+        // Codemandados (si existen)
+        if (casoEditando.codemandados && casoEditando.codemandados.length > 0) {
+            casoEditando.codemandados.forEach((codem, index) => {
+                agregarCodemandado();
+                const numero = contadorCodemandados;
+                
+                setTimeout(() => {
+                    document.querySelector(`input[name="tipoPersonaCodemandado${numero}"][value="${codem.tipo_persona}"]`).checked = true;
+                    actualizarCamposCodemandado(numero);
+                    
+                    setTimeout(() => {
+                        if (codem.tipo_persona === 'FISICA') {
+                            document.getElementById(`nombresCodemandado${numero}`).value = codem.nombres || '';
+                            document.getElementById(`apellidoPaternoCodemandado${numero}`).value = codem.apellido_paterno || '';
+                            document.getElementById(`apellidoMaternoCodemandado${numero}`).value = codem.apellido_materno || '';
+                        } else {
+                            document.getElementById(`empresaCodemandado${numero}`).value = codem.empresa || '';
+                        }
+                    }, 50);
+                }, 50);
+            });
+        }
+    }, 200);
+    
+    // Prestación
+    document.getElementById('prestacionReclamada').value = casoEditando.prestacion_reclamada;
+    
+    // Notas de prestaciones
+    if (casoEditando.prestaciones_notas) {
+        document.getElementById('prestacionesNotas').value = casoEditando.prestaciones_notas;
+    }
+    
+    // Importe
+    if (casoEditando.importe_demandado !== undefined) {
+        document.getElementById('importeDemandado').value = casoEditando.importe_demandado;
+    }
+}
+
 
 function inicializarFormulario() {
     llenarDelegaciones();
@@ -384,28 +582,81 @@ function guardarCaso(e) {
     
     // Guardar en localStorage
     const casosStr = localStorage.getItem('casos');
-    const casos = casosStr ? JSON.parse(casosStr) : [];
+    let casos = casosStr ? JSON.parse(casosStr) : [];
     
-    // Asignar ID y número
-    caso.id = casos.length > 0 ? Math.max(...casos.map(c => c.id)) + 1 : 1;
-    caso.numero = casos.length + 1;
-    caso.fecha_creacion = new Date().toISOString();
-    
-    // Si se acumula a otro caso, actualizar ese caso
-    if (caso.acumulado_a) {
-        const casoAcumulador = casos.find(c => c.id === caso.acumulado_a);
-        if (casoAcumulador) {
-            if (!casoAcumulador.juicios_acumulados) {
-                casoAcumulador.juicios_acumulados = [];
-            }
-            casoAcumulador.juicios_acumulados.push(caso.id);
+    if (casoEditando) {
+        // MODO EDICIÓN: Actualizar caso existente
+        caso.id = casoEditando.id;
+        caso.numero = casoEditando.numero;
+        caso.fecha_creacion = casoEditando.fecha_creacion;
+        caso.seguimiento = casoEditando.seguimiento; // Mantener datos de seguimiento
+        
+        // Encontrar índice del caso y reemplazarlo
+        const index = casos.findIndex(c => c.id === caso.id);
+        if (index !== -1) {
+            casos[index] = caso;
         }
+        
+        // Si cambió la acumulación, actualizar referencias
+        if (caso.acumulado_a !== casoEditando.acumulado_a) {
+            // Quitar del caso anterior si tenía
+            if (casoEditando.acumulado_a) {
+                const casoAnterior = casos.find(c => c.id === casoEditando.acumulado_a);
+                if (casoAnterior && casoAnterior.juicios_acumulados) {
+                    casoAnterior.juicios_acumulados = casoAnterior.juicios_acumulados.filter(id => id !== caso.id);
+                }
+            }
+            
+            // Agregar al nuevo caso acumulador
+            if (caso.acumulado_a) {
+                const casoNuevo = casos.find(c => c.id === caso.acumulado_a);
+                if (casoNuevo) {
+                    if (!casoNuevo.juicios_acumulados) {
+                        casoNuevo.juicios_acumulados = [];
+                    }
+                    if (!casoNuevo.juicios_acumulados.includes(caso.id)) {
+                        casoNuevo.juicios_acumulados.push(caso.id);
+                    }
+                }
+            }
+        }
+        
+        localStorage.setItem('casos', JSON.stringify(casos));
+        alert('✅ Caso actualizado exitosamente');
+        
+    } else {
+        // MODO CREACIÓN: Crear nuevo caso
+        caso.id = casos.length > 0 ? Math.max(...casos.map(c => c.id)) + 1 : 1;
+        caso.numero = casos.length + 1;
+        caso.fecha_creacion = new Date().toISOString();
+        
+        // Agregar campos de seguimiento vacíos
+        caso.seguimiento = {
+            pronostico: null,
+            sentencia: null,
+            importe_sentencia: null,
+            observaciones: null,
+            fecha_estado_procesal: null,
+            ultimo_estado_procesal: null,
+            abogado_responsable: null
+        };
+        
+        // Si se acumula a otro caso, actualizar ese caso
+        if (caso.acumulado_a) {
+            const casoAcumulador = casos.find(c => c.id === caso.acumulado_a);
+            if (casoAcumulador) {
+                if (!casoAcumulador.juicios_acumulados) {
+                    casoAcumulador.juicios_acumulados = [];
+                }
+                casoAcumulador.juicios_acumulados.push(caso.id);
+            }
+        }
+        
+        casos.push(caso);
+        localStorage.setItem('casos', JSON.stringify(casos));
+        alert('✅ Caso guardado exitosamente');
     }
     
-    casos.push(caso);
-    localStorage.setItem('casos', JSON.stringify(casos));
-    
-    alert('✅ Caso guardado exitosamente');
     window.location.href = 'casos.html';
 }
 
