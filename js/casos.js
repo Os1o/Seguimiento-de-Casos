@@ -83,25 +83,26 @@ function llenarFiltros() {
 }
 
 function filtrarCasos() {
-    const searchInput = document.getElementById('searchInput');
-    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const delegacionId = document.getElementById('filtroDelegacion').value;
     const estatus = document.getElementById('filtroEstatus').value;
     const tipo = document.getElementById('filtroTipo').value;
     const posicionIMSS = document.getElementById('filtroPosicionIMSS').value;
+    const fechaDesde = document.getElementById('fechaDesde').value;
+    const fechaHasta = document.getElementById('fechaHasta').value;
     
     casosFiltrados = todosLosCasos.filter(caso => {
-        // 1. Obtener valores seguros (si es null, usamos string vacío)
-        const expediente = (caso.numero_expediente || '').toLowerCase();
-        const actor = getActorNombre(caso.actor).toLowerCase();
-        const demandados = getDemandadosNombres(caso).toLowerCase();
-
-        // Filtro de búsqueda (Buscador ahora es a prueba de fallos)
-        const cumpleBusqueda = !searchTerm || 
-            expediente.includes(searchTerm) ||
-            actor.includes(searchTerm) ||
-            demandados.includes(searchTerm);
+        // Filtro de búsqueda SIMPLIFICADO: solo expediente, actor y demandado
+        let cumpleBusqueda = true;
+        if (searchTerm) {
+            const expediente = (caso.numero_expediente || '').toLowerCase();
+            const actorNombre = getActorNombre(caso.actor).toLowerCase();
+            const demandadosNombre = getDemandadosNombres(caso).toLowerCase();
+            
+            cumpleBusqueda = expediente.includes(searchTerm) ||
+                            actorNombre.includes(searchTerm) ||
+                            demandadosNombre.includes(searchTerm);
+        }
         
         // Filtro de delegación
         const cumpleDelegacion = !delegacionId || caso.delegacion_id == delegacionId;
@@ -109,13 +110,35 @@ function filtrarCasos() {
         // Filtro de estatus
         const cumpleEstatus = !estatus || caso.estatus === estatus;
         
-        // Filtro de tipo
+        // Filtro de tipo de juicio
         const cumpleTipo = !tipo || caso.tipo_juicio === tipo;
-
-        // Filtro de posicion
-        const cumplePosicion = !posicionIMSS || caso.imss_es === posicionIMSS;
         
-        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumplePosicion;
+        // Filtro de posición IMSS
+        const cumplePosicionIMSS = !posicionIMSS || caso.imss_es === posicionIMSS;
+        
+        /* FILTRO TIPO PERSONA - COMENTADO PARA FUTURO USO O DASHBOARD
+        let cumpleTipoPersona = true;
+        if (tipoPersona) {
+            const tieneActorTipo = caso.actor && caso.actor.tipo_persona === tipoPersona;
+            const tieneDemandadoTipo = caso.demandados && caso.demandados.some(d => d.tipo_persona === tipoPersona);
+            const tieneCodemandadoTipo = caso.codemandados && caso.codemandados.some(c => c.tipo_persona === tipoPersona);
+            cumpleTipoPersona = tieneActorTipo || tieneDemandadoTipo || tieneCodemandadoTipo;
+        }
+        */
+        
+        // Filtro de fecha desde
+        let cumpleFechaDesde = true;
+        if (fechaDesde) {
+            cumpleFechaDesde = caso.fecha_inicio >= fechaDesde;
+        }
+        
+        // Filtro de fecha hasta
+        let cumpleFechaHasta = true;
+        if (fechaHasta) {
+            cumpleFechaHasta = caso.fecha_inicio <= fechaHasta;
+        }
+        
+        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumplePosicionIMSS && cumpleFechaDesde && cumpleFechaHasta;
     });
     
     actualizarEstadisticas();
@@ -190,10 +213,13 @@ function renderizarTabla() {
                         </button>
                         <div class="menu-dropdown" id="menu-${caso.id}">
                             <div class="menu-item" onclick="editarCaso(${caso.id})">
-                                Editar
+                                ✏️ Editar datos
                             </div>
-                            <div class="menu-item danger" onclick="eliminarCaso(${caso.id})">
-                                Eliminar
+                            <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
+                                📝 Actualizar seguimiento
+                            </div>
+                            <div class="menu-item danger" onclick="confirmarEliminar(${caso.id})">
+                                🗑️ Eliminar
                             </div>
                         </div>
                     </div>
@@ -205,15 +231,10 @@ function renderizarTabla() {
 
 function getActorNombre(actor) {
     if (!actor) return 'IMSS';
-    
-    // Verificamos que existan las propiedades antes de usarlas
     if (actor.tipo_persona === 'FISICA') {
-        const nombreCompleto = `${actor.nombres || ''} ${actor.apellido_paterno || ''} ${actor.apellido_materno || ''}`;
-        return nombreCompleto.trim() || 'Nombre desconocido';
+        return `${actor.nombres} ${actor.apellido_paterno} ${actor.apellido_materno}`;
     }
-    
-    // Si es MORAL, devolvemos la empresa o un texto por defecto
-    return actor.empresa || 'Empresa desconocida';
+    return actor.empresa;
 }
 
 function getActorNombreConTipo(actor) {
@@ -232,11 +253,10 @@ function getDemandadosNombres(caso) {
     
     return caso.demandados.map(d => {
         if (d.tipo_persona === 'FISICA') {
-            const nombre = `${d.nombres || ''} ${d.apellido_paterno || ''}`;
-            return nombre.trim();
+            return `${d.nombres} ${d.apellido_paterno}`;
         }
-        return d.empresa || 'Empresa S/N';
-    }).join(', '); // El .join siempre devuelve string, así que es seguro
+        return d.empresa;
+    }).join(', ');
 }
 
 function getDemandadosNombresConTipo(caso) {
@@ -321,26 +341,8 @@ function cerrarModalAcumulados() {
 }
 
 function verDetalle(casoId) {
-    const caso = todosLosCasos.find(c => c.id === casoId);
-    if (!caso) return;
-    
-    // Por ahora muestra un alert con info básica
-    // En futuro: ir a detalle-caso.html?id=X
-    const delegacion = obtenerDelegacion(caso.delegacion_id);
-    const prestacion = catalogos.prestaciones.find(p => p.id === caso.prestacion_reclamada);
-    
-    let detalle = `EXPEDIENTE: ${caso.numero_expediente}\n`;
-    detalle += `DELEGACIÓN: ${delegacion ? delegacion.nombre : 'N/A'}\n`;
-    detalle += `TIPO: ${caso.tipo_juicio} - ${caso.subtipo_juicio}\n`;
-    detalle += `FECHA INICIO: ${formatearFecha(caso.fecha_inicio)}\n`;
-    detalle += `ACTOR: ${getActorNombre(caso.actor)}\n`;
-    detalle += `DEMANDADO: ${getDemandadosNombres(caso)}\n`;
-    detalle += `IMPORTE: ${caso.importe_demandado > 0 ? formatearMoneda(caso.importe_demandado) : 'Sin cuantía'}\n`;
-    detalle += `PRESTACIÓN: ${prestacion ? prestacion.nombre : 'N/A'}\n`;
-    detalle += `IMSS ES: ${caso.imss_es}\n`;
-    detalle += `ESTATUS: ${caso.estatus}`;
-    
-    alert(detalle);
+    // Redirigir a página de detalle
+    window.location.href = `detalle-caso.html?id=${casoId}`;
 }
 
 function toggleMenu(casoId) {
@@ -361,12 +363,20 @@ function editarCaso(casoId) {
     const menu = document.getElementById(`menu-${casoId}`);
     if (menu) menu.classList.remove('show');
     
-    // Por ahora solo alert
-    // En futuro: ir a editar-caso.html?id=X
-    alert(`Editar caso #${casoId}\n\n(En la versión completa esto abrirá el formulario de edición)`);
+    // Redirigir a formulario de edición
+    window.location.href = `nuevo-caso.html?editar=${casoId}`;
 }
 
-function eliminarCaso(casoId) {
+function actualizarSeguimiento(casoId) {
+    // Cerrar menú
+    const menu = document.getElementById(`menu-${casoId}`);
+    if (menu) menu.classList.remove('show');
+    
+    // Por ahora alert, implementaremos modal después
+    alert(`Actualizar seguimiento del caso #${casoId}\n\n(Función en desarrollo - siguiente paso)`);
+}
+
+function confirmarEliminar(casoId) {
     // Cerrar menú
     const menu = document.getElementById(`menu-${casoId}`);
     if (menu) menu.classList.remove('show');
@@ -374,8 +384,23 @@ function eliminarCaso(casoId) {
     const caso = todosLosCasos.find(c => c.id === casoId);
     if (!caso) return;
     
-    if (!confirm(`¿Estás seguro de eliminar el caso ${caso.numero_expediente}?\n\nEsta acción no se puede deshacer.`)) {
+    // VALIDAR: No se puede eliminar si tiene casos acumulados
+    if (caso.juicios_acumulados && caso.juicios_acumulados.length > 0) {
+        alert(`⚠️ No se puede eliminar\n\nEl expediente ${caso.numero_expediente} tiene ${caso.juicios_acumulados.length} caso(s) acumulado(s).\n\nDebe desacumularlos primero.`);
         return;
+    }
+    
+    // Confirmar eliminación
+    if (!confirm(`⚠️ Confirmar eliminación\n\n¿Está seguro de eliminar el expediente ${caso.numero_expediente}?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    // Si el caso está acumulado a otro, quitarlo del array del padre
+    if (caso.acumulado_a) {
+        const casoPadre = todosLosCasos.find(c => c.id === caso.acumulado_a);
+        if (casoPadre && casoPadre.juicios_acumulados) {
+            casoPadre.juicios_acumulados = casoPadre.juicios_acumulados.filter(id => id !== casoId);
+        }
     }
     
     // Eliminar del array
@@ -387,8 +412,9 @@ function eliminarCaso(casoId) {
     // Refrescar tabla
     filtrarCasos();
     
-    alert('Caso eliminado exitosamente');
+    alert('✓ Caso eliminado exitosamente');
 }
+
 
 // Cerrar menús al hacer clic fuera
 document.addEventListener('click', function(e) {

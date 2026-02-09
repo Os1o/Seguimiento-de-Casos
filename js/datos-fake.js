@@ -231,7 +231,17 @@ const casosFake = [
     prestaciones_notas: "Daños ocasionados por negligencia médica durante procedimiento quirúrgico",
     importe_demandado: 500000.00,
     estatus: "TRAMITE",
-    fecha_creacion: "2024-01-15T10:30:00"
+    fecha_creacion: "2024-01-15T10:30:00",
+    // Campos de seguimiento (vacíos por default)
+    seguimiento: {
+      pronostico: null,
+      sentencia: null,
+      importe_sentencia: null,
+      observaciones: null,
+      fecha_estado_procesal: null,
+      ultimo_estado_procesal: null,
+      abogado_responsable: null
+    }
   },
   {
     id: 2,
@@ -269,8 +279,18 @@ const casosFake = [
     prestaciones_notas: "Caso relacionado con el expediente principal 123456/2024",
     importe_demandado: 250000.00,
     estatus: "CONCLUIDO", // Automático por estar acumulado
-    fecha_creacion: "2024-02-20T14:15:00"
-  },
+    fecha_creacion: "2024-02-20T14:15:00",
+ // Campos de seguimiento (vacíos por default)
+ seguimiento: {
+   pronostico: null,
+   sentencia: null,
+   importe_sentencia: null,
+   observaciones: null,
+   fecha_estado_procesal: null,
+   ultimo_estado_procesal: null,
+   abogado_responsable: null
+ }
+ },
   {
     id: 3,
     numero: 3,
@@ -310,8 +330,18 @@ const casosFake = [
     prestaciones_notas: "Incumplimiento de contrato de suministro médico",
     importe_demandado: 800000.00,
     estatus: "CONCLUIDO",
-    fecha_creacion: "2024-03-10T09:00:00"
-  },
+    fecha_creacion: "2024-03-10T09:00:00",
+ // Campos de seguimiento (vacíos por default)
+ seguimiento: {
+   pronostico: null,
+   sentencia: null,
+   importe_sentencia: null,
+   observaciones: null,
+   fecha_estado_procesal: null,
+   ultimo_estado_procesal: null,
+   abogado_responsable: null
+ }
+ },
   {
     id: 4,
     numero: 4,
@@ -353,8 +383,18 @@ const casosFake = [
     prestaciones_notas: "Cobro de pagaré vencido por suministro de equipo médico",
     importe_demandado: 1200000.00,
     estatus: "TRAMITE",
-    fecha_creacion: "2024-04-05T11:20:00"
-  },
+    fecha_creacion: "2024-04-05T11:20:00",
+ // Campos de seguimiento (vacíos por default)
+ seguimiento: {
+   pronostico: null,
+   sentencia: null,
+   importe_sentencia: null,
+   observaciones: null,
+   fecha_estado_procesal: null,
+   ultimo_estado_procesal: null,
+   abogado_responsable: null
+ }
+ },
   {
     id: 5,
     numero: 5,
@@ -392,8 +432,18 @@ const casosFake = [
     prestaciones_notas: "Desalojo de inmueble propiedad del IMSS",
     importe_demandado: 0,
     estatus: "TRAMITE",
-    fecha_creacion: "2024-05-12T08:45:00"
-  },
+    fecha_creacion: "2024-05-12T08:45:00",
+ // Campos de seguimiento (vacíos por default)
+ seguimiento: {
+   pronostico: null,
+   sentencia: null,
+   importe_sentencia: null,
+   observaciones: null,
+   fecha_estado_procesal: null,
+   ultimo_estado_procesal: null,
+   abogado_responsable: null
+ }
+ },
   {
     id: 6,
     numero: 6,
@@ -426,8 +476,18 @@ const casosFake = [
     prestaciones_notas: "Incumplimiento de convenio de subrogación de servicios médicos",
     importe_demandado: 2500000.00,
     estatus: "TRAMITE",
-    fecha_creacion: "2024-06-18T13:10:00"
-  },
+    fecha_creacion: "2024-06-18T13:10:00",
+ // Campos de seguimiento (vacíos por default)
+ seguimiento: {
+   pronostico: null,
+   sentencia: null,
+   importe_sentencia: null,
+   observaciones: null,
+   fecha_estado_procesal: null,
+   ultimo_estado_procesal: null,
+   abogado_responsable: null
+ }
+ },
   {
     id: 7,
     numero: 7,
@@ -466,8 +526,18 @@ const casosFake = [
     prestaciones_notas: "Controversia mercantil sobre cesión de derechos de crédito",
     importe_demandado: 950000.00,
     estatus: "TRAMITE",
-    fecha_creacion: "2024-07-22T10:00:00"
-  },
+    fecha_creacion: "2024-07-22T10:00:00",
+ // Campos de seguimiento (vacíos por default)
+ seguimiento: {
+   pronostico: null,
+   sentencia: null,
+   importe_sentencia: null,
+   observaciones: null,
+   fecha_estado_procesal: null,
+   ultimo_estado_procesal: null,
+   abogado_responsable: null
+ }
+ },
   {
     id: 8,
     numero: 8,
@@ -506,8 +576,18 @@ const casosFake = [
     prestaciones_notas: "Cobro de crédito por pago indebido de prestaciones",
     importe_demandado: 180000.00,
     estatus: "TRAMITE",
-    fecha_creacion: "2024-08-30T15:30:00"
-  },
+    fecha_creacion: "2024-08-30T15:30:00",
+ // Campos de seguimiento (vacíos por default)
+ seguimiento: {
+   pronostico: null,
+   sentencia: null,
+   importe_sentencia: null,
+   observaciones: null,
+   fecha_estado_procesal: null,
+   ultimo_estado_procesal: null,
+   abogado_responsable: null
+ }
+ },
   {
     id: 9,
     numero: 9,
@@ -547,8 +627,18 @@ const casosFake = [
     prestaciones_notas: "Demanda por mala praxis médica durante atención de emergencia",
     importe_demandado: 750000.00,
     estatus: "TRAMITE",
-    fecha_creacion: "2024-09-15T09:20:00"
-  },
+    fecha_creacion: "2024-09-15T09:20:00",
+ // Campos de seguimiento (vacíos por default)
+ seguimiento: {
+   pronostico: null,
+   sentencia: null,
+   importe_sentencia: null,
+   observaciones: null,
+   fecha_estado_procesal: null,
+   ultimo_estado_procesal: null,
+   abogado_responsable: null
+ }
+ },
   {
     id: 10,
     numero: 10,
@@ -585,8 +675,18 @@ const casosFake = [
     prestaciones_notas: "Cobro de cheque devuelto por fondos insuficientes",
     importe_demandado: 320000.00,
     estatus: "TRAMITE",
-    fecha_creacion: "2024-10-20T12:00:00"
-  }
+    fecha_creacion: "2024-10-20T12:00:00",
+ // Campos de seguimiento (vacíos por default)
+ seguimiento: {
+   pronostico: null,
+   sentencia: null,
+   importe_sentencia: null,
+   observaciones: null,
+   fecha_estado_procesal: null,
+   ultimo_estado_procesal: null,
+   abogado_responsable: null
+ }
+ }
 ];
 
 // USUARIO FAKE (para simular login)
