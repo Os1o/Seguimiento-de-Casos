@@ -298,6 +298,70 @@ function actualizarCasosAcumulables() {
         });
 }
 
+// Funciones auxiliares para mostrar/ocultar campos según tipo de persona
+function actualizarCamposActor() {
+    const tipoSeleccionado = document.querySelector('input[name="tipoPersonaActor"]:checked')?.value;
+    const seccionFisica = document.getElementById('actorFisicaCampos');
+    const seccionMoral = document.getElementById('actorMoralCampos');
+    
+    if (tipoSeleccionado === 'FISICA') {
+        seccionFisica.style.display = 'block';
+        seccionMoral.style.display = 'none';
+    } else if (tipoSeleccionado === 'MORAL') {
+        seccionFisica.style.display = 'none';
+        seccionMoral.style.display = 'block';
+    }
+}
+
+function actualizarCamposDemandado(numero) {
+    const tipoSeleccionado = document.querySelector(`input[name="tipoPersonaDemandado${numero}"]:checked`)?.value;
+    const seccionFisica = document.getElementById(`demandadoFisicaCampos${numero}`);
+    const seccionMoral = document.getElementById(`demandadoMoralCampos${numero}`);
+    
+    if (seccionFisica && seccionMoral) {
+        if (tipoSeleccionado === 'FISICA') {
+            seccionFisica.style.display = 'block';
+            seccionMoral.style.display = 'none';
+        } else if (tipoSeleccionado === 'MORAL') {
+            seccionFisica.style.display = 'none';
+            seccionMoral.style.display = 'block';
+        }
+    }
+}
+
+function actualizarCamposCodemandado(numero) {
+    const tipoSeleccionado = document.querySelector(`input[name="tipoPersonaCodemandado${numero}"]:checked`)?.value;
+    const seccionFisica = document.getElementById(`codemandadoFisicaCampos${numero}`);
+    const seccionMoral = document.getElementById(`codemandadoMoralCampos${numero}`);
+    
+    if (seccionFisica && seccionMoral) {
+        if (tipoSeleccionado === 'FISICA') {
+            seccionFisica.style.display = 'block';
+            seccionMoral.style.display = 'none';
+        } else if (tipoSeleccionado === 'MORAL') {
+            seccionFisica.style.display = 'none';
+            seccionMoral.style.display = 'block';
+        }
+    }
+}
+
+function actualizarSeccionesPersonas() {
+    const imssEs = document.getElementById('imss_es').value;
+    const seccionActor = document.getElementById('seccionActor');
+    const seccionDemandados = document.getElementById('seccionDemandados');
+    
+    if (imssEs === 'ACTOR') {
+        seccionActor.style.display = 'none';
+        seccionDemandados.style.display = 'block';
+    } else if (imssEs === 'DEMANDADO') {
+        seccionActor.style.display = 'block';
+        seccionDemandados.style.display = 'none';
+    } else {
+        seccionActor.style.display = 'block';
+        seccionDemandados.style.display = 'block';
+    }
+}
+
 function configurarEventListeners() {
     // Cambio de delegación actualiza áreas
     document.getElementById('delegacion').addEventListener('change', function() {
