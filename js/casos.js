@@ -364,7 +364,7 @@ function editarCaso(casoId) {
     if (menu) menu.classList.remove('show');
     
     // Redirigir a formulario de edición
-    window.location.href = `nuevo-caso.html?editar=${casoId}`;
+    window.location.href = `editar-caso.html?editar=${casoId}`;
 }
 
 function actualizarSeguimiento(casoId) {
