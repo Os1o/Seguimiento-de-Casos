@@ -359,12 +359,11 @@ function toggleMenu(casoId) {
 }
 
 function editarCaso(casoId) {
-    // Cerrar menú
     const menu = document.getElementById(`menu-${casoId}`);
     if (menu) menu.classList.remove('show');
     
-    // Redirigir a formulario de edición
-    window.location.href = `editar-caso.html?editar=${casoId}`;
+    // CAMBIO: Usar '?id=' en lugar de '?editar='
+    window.location.href = `editar-caso.html?id=${casoId}`;
 }
 
 function actualizarSeguimiento(casoId) {
