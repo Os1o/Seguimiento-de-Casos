@@ -71,45 +71,35 @@ function llenarFormularioConDatos() {
     // 1. Delegación y Área
     document.getElementById('delegacion').value = casoEditando.delegacion_id;
     
-    // Cargar áreas de la delegación seleccionada
-    const selectArea = document.getElementById('area');
-    selectArea.innerHTML = '<option value="">Seleccione...</option>';
-    if (catalogos.areas[casoEditando.delegacion_id]) {
-        selectArea.disabled = false;
-        catalogos.areas[casoEditando.delegacion_id].forEach(a => {
-            const option = document.createElement('option');
-            option.value = a.id;
-            option.textContent = a.nombre;
-            selectArea.appendChild(option);
-        });
-        selectArea.value = casoEditando.area_generadora_id;
-    }
+    // Disparar evento change manualmente para cargar el select de áreas
+    // Esto es vital: simulamos que el usuario cambió la delegación
+    const eventDelegacion = new Event('change');
+    document.getElementById('delegacion').dispatchEvent(eventDelegacion);
+    
+    // Ahora sí podemos setear el área (porque el select ya se llenó)
+    document.getElementById('area').value = casoEditando.area_generadora_id;
     
     // 2. Jurisdicción
     const radioJurisdiccion = document.querySelector(`input[name="jurisdiccion"][value="${casoEditando.jurisdiccion}"]`);
     if (radioJurisdiccion) {
         radioJurisdiccion.checked = true;
-        const esLocal = casoEditando.jurisdiccion === 'LOCAL';
-        document.getElementById('campoLocal').style.display = esLocal ? 'block' : 'none';
-        document.getElementById('campoFederal').style.display = esLocal ? 'none' : 'block';
+        radioJurisdiccion.dispatchEvent(new Event('change')); // Actualiza visualmente
     }
     
     // 3. Tipo de Juicio
     document.getElementById('tipoJuicio').value = casoEditando.tipo_juicio;
+    document.getElementById('tipoJuicio').dispatchEvent(new Event('change')); // Carga subtipos
     
-    // Cargar subtipos
+    // Buscar y setear subtipo por texto
     const selectSubtipo = document.getElementById('subtipoJuicio');
-    selectSubtipo.innerHTML = '<option value="">Seleccione...</option>';
-    const tiposJuicio = catalogos.tiposJuicio[casoEditando.tipo_juicio];
-    if (tiposJuicio) {
-        selectSubtipo.disabled = false;
-        tiposJuicio.forEach(tipo => {
-            const option = document.createElement('option');
-            option.value = tipo.nombre;
-            option.textContent = tipo.nombre;
-            selectSubtipo.appendChild(option);
+    if (casoEditando.subtipo_juicio) {
+        // Buscamos la opción que tenga el mismo texto
+        Array.from(selectSubtipo.options).forEach(opt => {
+            if (opt.text === casoEditando.subtipo_juicio) {
+                selectSubtipo.value = opt.value;
+            }
         });
-        selectSubtipo.value = casoEditando.subtipo_juicio;
+        selectSubtipo.dispatchEvent(new Event('change')); // Carga sub-subtipos
     }
     
     // 4. Número de expediente
@@ -133,77 +123,75 @@ function llenarFormularioConDatos() {
     const radioImss = document.querySelector(`input[name="imssEs"][value="${casoEditando.imss_es}"]`);
     if (radioImss) {
         radioImss.checked = true;
+        // Importante: Llamar a la función que muestra/oculta secciones
         actualizarSeccionesPersonas();
     }
     
-    // 8. Actor (si aplica)
+    // 8. Actor (CORREGIDO: Sin timeouts y usando nombres correctos)
     if (casoEditando.imss_es !== 'ACTOR' && casoEditando.actor) {
         const radioActorTipo = document.querySelector(`input[name="actorTipo"][value="${casoEditando.actor.tipo_persona}"]`);
         if (radioActorTipo) {
             radioActorTipo.checked = true;
-            actualizarCamposActor();
+            actualizarCamposActor(); // Ahora sí funcionará con el fix del paso 1
             
-            setTimeout(() => {
-                if (casoEditando.actor.tipo_persona === 'FISICA') {
-                    document.getElementById('actorNombres').value = casoEditando.actor.nombres || '';
-                    document.getElementById('actorPaterno').value = casoEditando.actor.apellido_paterno || '';
-                    document.getElementById('actorMaterno').value = casoEditando.actor.apellido_materno || '';
-                } else {
-                    document.getElementById('actorEmpresa').value = casoEditando.actor.empresa || '';
-                }
-            }, 100);
+            if (casoEditando.actor.tipo_persona === 'FISICA') {
+                document.getElementById('actorNombres').value = casoEditando.actor.nombres || '';
+                document.getElementById('actorPaterno').value = casoEditando.actor.apellido_paterno || '';
+                document.getElementById('actorMaterno').value = casoEditando.actor.apellido_materno || '';
+            } else {
+                document.getElementById('actorEmpresa').value = casoEditando.actor.empresa || '';
+            }
         }
     }
     
-    // 9. Demandados (si aplica)
+    // 9. Demandados (CORREGIDO: Sin timeouts)
+    // Limpiamos la lista primero para no duplicar si se llama dos veces
+    document.getElementById('listaDemandados').innerHTML = '';
+    contadorDemandados = 0;
+
     if (casoEditando.imss_es !== 'DEMANDADO' && casoEditando.demandados && casoEditando.demandados.length > 0) {
-        casoEditando.demandados.forEach((dem, index) => {
-            agregarDemandado();
+        casoEditando.demandados.forEach(dem => {
+            agregarDemandado(); // Crea el HTML síncronamente
             const id = `demandado_${contadorDemandados}`;
             
-            setTimeout(() => {
-                const radioDemTipo = document.querySelector(`input[name="${id}_tipo"][value="${dem.tipo_persona}"]`);
-                if (radioDemTipo) {
-                    radioDemTipo.checked = true;
-                    cambiarTipoDemandado(id, dem.tipo_persona);
-                    
-                    setTimeout(() => {
-                        if (dem.tipo_persona === 'FISICA') {
-                            document.getElementById(`${id}_nombres`).value = dem.nombres || '';
-                            document.getElementById(`${id}_paterno`).value = dem.apellido_paterno || '';
-                            document.getElementById(`${id}_materno`).value = dem.apellido_materno || '';
-                        } else {
-                            document.getElementById(`${id}_empresa`).value = dem.empresa || '';
-                        }
-                    }, 50);
+            const radioDemTipo = document.querySelector(`input[name="${id}_tipo"][value="${dem.tipo_persona}"]`);
+            if (radioDemTipo) {
+                radioDemTipo.checked = true;
+                cambiarTipoDemandado(id, dem.tipo_persona); // Muestra los campos
+                
+                if (dem.tipo_persona === 'FISICA') {
+                    document.getElementById(`${id}_nombres`).value = dem.nombres || '';
+                    document.getElementById(`${id}_paterno`).value = dem.apellido_paterno || '';
+                    document.getElementById(`${id}_materno`).value = dem.apellido_materno || '';
+                } else {
+                    document.getElementById(`${id}_empresa`).value = dem.empresa || '';
                 }
-            }, 50 * (index + 1));
+            }
         });
     }
     
-    // 10. Codemandados (si existen)
+    // 10. Codemandados (CORREGIDO: Sin timeouts)
+    document.getElementById('listaCodemandados').innerHTML = '';
+    contadorCodemandados = 0;
+
     if (casoEditando.codemandados && casoEditando.codemandados.length > 0) {
-        casoEditando.codemandados.forEach((codem, index) => {
+        casoEditando.codemandados.forEach(codem => {
             agregarCodemandado();
             const id = `codemandado_${contadorCodemandados}`;
             
-            setTimeout(() => {
-                const radioCodemTipo = document.querySelector(`input[name="${id}_tipo"][value="${codem.tipo_persona}"]`);
-                if (radioCodemTipo) {
-                    radioCodemTipo.checked = true;
-                    cambiarTipoCodemandado(id, codem.tipo_persona);
-                    
-                    setTimeout(() => {
-                        if (codem.tipo_persona === 'FISICA') {
-                            document.getElementById(`${id}_nombres`).value = codem.nombres || '';
-                            document.getElementById(`${id}_paterno`).value = codem.apellido_paterno || '';
-                            document.getElementById(`${id}_materno`).value = codem.apellido_materno || '';
-                        } else {
-                            document.getElementById(`${id}_empresa`).value = codem.empresa || '';
-                        }
-                    }, 50);
+            const radioCodemTipo = document.querySelector(`input[name="${id}_tipo"][value="${codem.tipo_persona}"]`);
+            if (radioCodemTipo) {
+                radioCodemTipo.checked = true;
+                cambiarTipoCodemandado(id, codem.tipo_persona);
+                
+                if (codem.tipo_persona === 'FISICA') {
+                    document.getElementById(`${id}_nombres`).value = codem.nombres || '';
+                    document.getElementById(`${id}_paterno`).value = codem.apellido_paterno || '';
+                    document.getElementById(`${id}_materno`).value = codem.apellido_materno || '';
+                } else {
+                    document.getElementById(`${id}_empresa`).value = codem.empresa || '';
                 }
-            }, 50 * (index + 1));
+            }
         });
     }
     
@@ -285,7 +273,8 @@ function actualizarCasosAcumulables() {
 
 // Funciones auxiliares para mostrar/ocultar campos según tipo de persona
 function actualizarCamposActor() {
-    const tipoSeleccionado = document.querySelector('input[name="tipoPersonaActor"]:checked')?.value;
+    // CORRECCIÓN: El name correcto es "actorTipo", no "tipoPersonaActor"
+    const tipoSeleccionado = document.querySelector('input[name="actorTipo"]:checked')?.value;
     const seccionFisica = document.getElementById('actorFisicaCampos');
     const seccionMoral = document.getElementById('actorMoralCampos');
     
