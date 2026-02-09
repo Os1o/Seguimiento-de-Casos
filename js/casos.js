@@ -213,13 +213,13 @@ function renderizarTabla() {
                         </button>
                         <div class="menu-dropdown" id="menu-${caso.id}">
                             <div class="menu-item" onclick="editarCaso(${caso.id})">
-                                ✏️ Editar datos
+                                 Editar datos
                             </div>
                             <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
-                                📝 Actualizar seguimiento
+                                 Actualizar seguimiento
                             </div>
                             <div class="menu-item danger" onclick="confirmarEliminar(${caso.id})">
-                                🗑️ Eliminar
+                                 Eliminar
                             </div>
                         </div>
                     </div>
