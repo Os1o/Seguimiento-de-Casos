@@ -143,13 +143,15 @@ function llenarFormularioConDatos() {
             radioActorTipo.checked = true;
             actualizarCamposActor();
             
-            if (casoEditando.actor.tipo_persona === 'FISICA') {
-                document.getElementById('actorNombres').value = casoEditando.actor.nombres || '';
-                document.getElementById('actorPaterno').value = casoEditando.actor.apellido_paterno || '';
-                document.getElementById('actorMaterno').value = casoEditando.actor.apellido_materno || '';
-            } else {
-                document.getElementById('actorEmpresa').value = casoEditando.actor.empresa || '';
-            }
+            setTimeout(() => {
+                if (casoEditando.actor.tipo_persona === 'FISICA') {
+                    document.getElementById('actorNombres').value = casoEditando.actor.nombres || '';
+                    document.getElementById('actorPaterno').value = casoEditando.actor.apellido_paterno || '';
+                    document.getElementById('actorMaterno').value = casoEditando.actor.apellido_materno || '';
+                } else {
+                    document.getElementById('actorEmpresa').value = casoEditando.actor.empresa || '';
+                }
+            }, 100);
         }
     }
     
@@ -159,19 +161,23 @@ function llenarFormularioConDatos() {
             agregarDemandado();
             const id = `demandado_${contadorDemandados}`;
             
-            const radioDemTipo = document.querySelector(`input[name="${id}_tipo"][value="${dem.tipo_persona}"]`);
-            if (radioDemTipo) {
-                radioDemTipo.checked = true;
-                cambiarTipoDemandado(id, dem.tipo_persona);
-                
-                if (dem.tipo_persona === 'FISICA') {
-                    document.getElementById(`${id}_nombres`).value = dem.nombres || '';
-                    document.getElementById(`${id}_paterno`).value = dem.apellido_paterno || '';
-                    document.getElementById(`${id}_materno`).value = dem.apellido_materno || '';
-                } else {
-                    document.getElementById(`${id}_empresa`).value = dem.empresa || '';
+            setTimeout(() => {
+                const radioDemTipo = document.querySelector(`input[name="${id}_tipo"][value="${dem.tipo_persona}"]`);
+                if (radioDemTipo) {
+                    radioDemTipo.checked = true;
+                    cambiarTipoDemandado(id, dem.tipo_persona);
+                    
+                    setTimeout(() => {
+                        if (dem.tipo_persona === 'FISICA') {
+                            document.getElementById(`${id}_nombres`).value = dem.nombres || '';
+                            document.getElementById(`${id}_paterno`).value = dem.apellido_paterno || '';
+                            document.getElementById(`${id}_materno`).value = dem.apellido_materno || '';
+                        } else {
+                            document.getElementById(`${id}_empresa`).value = dem.empresa || '';
+                        }
+                    }, 50);
                 }
-            }
+            }, 50 * (index + 1));
         });
     }
     
@@ -181,19 +187,23 @@ function llenarFormularioConDatos() {
             agregarCodemandado();
             const id = `codemandado_${contadorCodemandados}`;
             
-            const radioCodemTipo = document.querySelector(`input[name="${id}_tipo"][value="${codem.tipo_persona}"]`);
-            if (radioCodemTipo) {
-                radioCodemTipo.checked = true;
-                cambiarTipoCodemandado(id, codem.tipo_persona);
-                
-                if (codem.tipo_persona === 'FISICA') {
-                    document.getElementById(`${id}_nombres`).value = codem.nombres || '';
-                    document.getElementById(`${id}_paterno`).value = codem.apellido_paterno || '';
-                    document.getElementById(`${id}_materno`).value = codem.apellido_materno || '';
-                } else {
-                    document.getElementById(`${id}_empresa`).value = codem.empresa || '';
+            setTimeout(() => {
+                const radioCodemTipo = document.querySelector(`input[name="${id}_tipo"][value="${codem.tipo_persona}"]`);
+                if (radioCodemTipo) {
+                    radioCodemTipo.checked = true;
+                    cambiarTipoCodemandado(id, codem.tipo_persona);
+                    
+                    setTimeout(() => {
+                        if (codem.tipo_persona === 'FISICA') {
+                            document.getElementById(`${id}_nombres`).value = codem.nombres || '';
+                            document.getElementById(`${id}_paterno`).value = codem.apellido_paterno || '';
+                            document.getElementById(`${id}_materno`).value = codem.apellido_materno || '';
+                        } else {
+                            document.getElementById(`${id}_empresa`).value = codem.empresa || '';
+                        }
+                    }, 50);
                 }
-            }
+            }, 50 * (index + 1));
         });
     }
     
