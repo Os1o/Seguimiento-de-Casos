@@ -39,8 +39,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('filtroEstatus').addEventListener('change', filtrarCasos);
     document.getElementById('filtroTipo').addEventListener('change', filtrarCasos);
     document.getElementById('filtroPosicionIMSS').addEventListener('change', filtrarCasos);
-    document.getElementById('fechaDesde').addEventListener('change', filtrarCasos);
-    document.getElementById('fechaHasta').addEventListener('change', filtrarCasos);
+    // fechaDesde / fechaHasta - COMENTADO, se usará en otra funcionalidad
+    // document.getElementById('fechaDesde').addEventListener('change', filtrarCasos);
+    // document.getElementById('fechaHasta').addEventListener('change', filtrarCasos);
     
     // Mostrar casos
     filtrarCasos();
@@ -52,8 +53,8 @@ function limpiarFiltros() {
     document.getElementById('filtroEstatus').value = '';
     document.getElementById('filtroTipo').value = '';
     document.getElementById('filtroPosicionIMSS').value = '';
-    document.getElementById('fechaDesde').value = '';
-    document.getElementById('fechaHasta').value = '';
+    // document.getElementById('fechaDesde').value = '';
+    // document.getElementById('fechaHasta').value = '';
     filtrarCasos();
 }
 
@@ -88,11 +89,10 @@ function filtrarCasos() {
     const estatus = document.getElementById('filtroEstatus').value;
     const tipo = document.getElementById('filtroTipo').value;
     const posicionIMSS = document.getElementById('filtroPosicionIMSS').value;
-    const fechaDesde = document.getElementById('fechaDesde').value;
-    const fechaHasta = document.getElementById('fechaHasta').value;
+    // const fechaDesde = document.getElementById('fechaDesde').value;
+    // const fechaHasta = document.getElementById('fechaHasta').value;
     
     casosFiltrados = todosLosCasos.filter(caso => {
-        // Filtro de búsqueda SIMPLIFICADO: solo expediente, actor y demandado
         let cumpleBusqueda = true;
         if (searchTerm) {
             const expediente = (caso.numero_expediente || '').toLowerCase();
@@ -104,19 +104,12 @@ function filtrarCasos() {
                             demandadosNombre.includes(searchTerm);
         }
         
-        // Filtro de delegación
         const cumpleDelegacion = !delegacionId || caso.delegacion_id == delegacionId;
-        
-        // Filtro de estatus
         const cumpleEstatus = !estatus || caso.estatus === estatus;
-        
-        // Filtro de tipo de juicio
         const cumpleTipo = !tipo || caso.tipo_juicio === tipo;
-        
-        // Filtro de posición IMSS
         const cumplePosicionIMSS = !posicionIMSS || caso.imss_es === posicionIMSS;
         
-        /* FILTRO TIPO PERSONA - COMENTADO PARA FUTURO USO O DASHBOARD
+        /* FILTRO TIPO PERSONA - COMENTADO PARA FUTURO USO
         let cumpleTipoPersona = true;
         if (tipoPersona) {
             const tieneActorTipo = caso.actor && caso.actor.tipo_persona === tipoPersona;
@@ -125,20 +118,16 @@ function filtrarCasos() {
             cumpleTipoPersona = tieneActorTipo || tieneDemandadoTipo || tieneCodemandadoTipo;
         }
         */
-        
-        // Filtro de fecha desde
+
+        /* FILTRO FECHAS - COMENTADO, se usará en otra funcionalidad
         let cumpleFechaDesde = true;
-        if (fechaDesde) {
-            cumpleFechaDesde = caso.fecha_inicio >= fechaDesde;
-        }
-        
-        // Filtro de fecha hasta
+        if (fechaDesde) cumpleFechaDesde = caso.fecha_inicio >= fechaDesde;
         let cumpleFechaHasta = true;
-        if (fechaHasta) {
-            cumpleFechaHasta = caso.fecha_inicio <= fechaHasta;
-        }
-        
+        if (fechaHasta) cumpleFechaHasta = caso.fecha_inicio <= fechaHasta;
         return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumplePosicionIMSS && cumpleFechaDesde && cumpleFechaHasta;
+        */
+        
+        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumplePosicionIMSS;
     });
     
     actualizarEstadisticas();
@@ -173,23 +162,31 @@ function renderizarTabla() {
         const demandadosNombres = getDemandadosNombresConTipo(caso);
         const codemandadosNombres = getCodemandadosNombresConTipo(caso);
         
-        // Color del número según estatus
-        const claseNumero = caso.estatus === 'CONCLUIDO' ? 'numero-concluido' : 'numero-tramite';
+        // Tribunal con prefijo de jurisdicción
+        const tribunal = catalogos.tribunales.find(t => t.id === caso.tribunal_id);
+        const prefJurisdiccion = caso.jurisdiccion === 'FEDERAL' ? '<small class="tag-federal">(F)</small>' : '<small class="tag-local">(L)</small>';
+        const tribunalNombre = tribunal ? `${prefJurisdiccion} ${tribunal.nombre}` : '-';
+        
+        // Badge de estatus
+        const badgeEstatus = caso.estatus === 'TRAMITE'
+            ? '<span class="badge badge-tramite">En Trámite</span>'
+            : '<span class="badge badge-concluido">Concluido</span>';
         
         return `
             <tr>
-                <td><strong class="${claseNumero}">${caso.numero}</strong></td>
+                <td><small>${delegacion ? delegacion.nombre : 'N/A'}</small></td>
+                <td>${badgeEstatus}</td>
                 <td>
                     <a href="#" class="expediente-link" onclick="verDetalle(${caso.id}); return false;">
                         <strong>${caso.numero_expediente}</strong>
                     </a>
-                    ${caso.acumulado_a ? '<br><small style="color: var(--color-text-light);">↳ Acumulado a ' + obtenerNumeroExpediente(caso.acumulado_a) + '</small>' : ''}
+                    ${caso.acumulado_a ? '<br><small style="color: var(--color-text-light);">↳ ' + obtenerNumeroExpediente(caso.acumulado_a) + '</small>' : ''}
                 </td>
-                <td>${delegacion ? delegacion.nombre : 'N/A'}</td>
                 <td>
                     <span style="font-weight: 600;">${caso.tipo_juicio}</span><br>
                     <small style="color: var(--color-text-light);">${caso.subtipo_juicio || ''}${caso.sub_subtipo_juicio ? ' - ' + caso.sub_subtipo_juicio : ''}</small>
                 </td>
+                <td>${tribunalNombre}</td>
                 <td>${formatearFecha(caso.fecha_inicio)}</td>
                 <td>${actorNombre}</td>
                 <td>${demandadosNombres}</td>
@@ -213,13 +210,13 @@ function renderizarTabla() {
                         </button>
                         <div class="menu-dropdown" id="menu-${caso.id}">
                             <div class="menu-item" onclick="editarCaso(${caso.id})">
-                                 Editar datos
+                                ✏️ Editar datos
                             </div>
                             <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
-                                 Actualizar seguimiento
+                                📝 Actualizar seguimiento
                             </div>
                             <div class="menu-item danger" onclick="confirmarEliminar(${caso.id})">
-                                 Eliminar
+                                🗑️ Eliminar
                             </div>
                         </div>
                     </div>
@@ -359,11 +356,12 @@ function toggleMenu(casoId) {
 }
 
 function editarCaso(casoId) {
+    // Cerrar menú
     const menu = document.getElementById(`menu-${casoId}`);
     if (menu) menu.classList.remove('show');
     
-    // CAMBIO: Usar '?id=' en lugar de '?editar='
-    window.location.href = `editar-caso.html?id=${casoId}`;
+    // Redirigir a formulario de edición
+    window.location.href = `nuevo-caso.html?editar=${casoId}`;
 }
 
 function actualizarSeguimiento(casoId) {

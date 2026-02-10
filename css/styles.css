@@ -1217,3 +1217,46 @@ body {
   color: #4b5563;
   font-weight: 500;
 }
+
+/* =====================================================
+   FILTROS DENTRO DE ENCABEZADOS DE TABLA
+   ===================================================== */
+.filtro-columna {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-weight: normal;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 4px;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  cursor: pointer;
+}
+
+.filtro-columna option {
+  background: #621132;
+  color: white;
+}
+
+/* Tags de jurisdicción en columna Tribunal */
+.tag-federal {
+  background: #1e40af;
+  color: white;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.tag-local {
+  background: #065f46;
+  color: white;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}

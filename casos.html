@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casos Civiles y Mercantiles - Sistema de Gestión de Juicios</title>
+    <title>Casos Civiles, Mercantiles y Procedimientos Especiales - Sistema de Gestión de Juicios</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -25,7 +25,7 @@
         <!-- Encabezado de Página -->
         <div class="page-header">
             <div>
-                <h1 class="page-title">Casos Civiles y Mercantiles</h1>
+                <h1 class="page-title">Casos Civiles, Mercantiles y Procedimientos Especiales</h1>
                 <p class="page-subtitle">Gestión y seguimiento de expedientes</p>
             </div>
             <a href="nuevo-caso.html" class="btn btn-primary">
@@ -43,40 +43,13 @@
                     placeholder="Buscar por expediente, actor o demandado..."
                 >
                 
-                <select id="filtroDelegacion" class="form-select" style="max-width: 250px;">
-                    <option value="">Todas las delegaciones</option>
-                </select>
-                
-                <select id="filtroEstatus" class="form-select" style="max-width: 200px;">
-                    <option value="">Todos los estatus</option>
-                    <option value="TRAMITE">En Trámite</option>
-                    <option value="CONCLUIDO">Concluido</option>
-                </select>
-                
-                <select id="filtroTipo" class="form-select" style="max-width: 200px;">
-                    <option value="">Todos los tipos</option>
-                    <option value="CIVIL">Civil</option>
-                    <option value="MERCANTIL">Mercantil</option>
-                </select>
-                
-                <select id="filtroPosicionIMSS" class="form-select" style="max-width: 200px;">
-                    <option value="">IMSS es...</option>
-                    <option value="ACTOR">Actor</option>
-                    <option value="DEMANDADO">Demandado</option>
-                    <option value="TERCERO">Tercero</option>
-                </select>
-                
-                <!-- FILTRO TIPO PERSONA - COMENTADO PARA FUTURO USO
-                <select id="filtroTipoPersona" class="form-select" style="max-width: 200px;">
-                    <option value="">Tipo de persona</option>
-                    <option value="FISICA">Física</option>
-                    <option value="MORAL">Moral</option>
-                </select>
-                -->
+                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
+                    Limpiar Filtros
+                </button>
             </div>
         </div>
 
-        <!-- Filtros de Fecha -->
+        <!-- Filtros de Fecha - COMENTADO PARA USO FUTURO
         <div class="card" style="padding: 16px; margin-bottom: 24px;">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; align-items: end;">
                 <div class="form-group" style="margin: 0;">
@@ -87,11 +60,9 @@
                     <label class="form-label" style="font-size: 14px;">Fecha hasta:</label>
                     <input type="date" id="fechaHasta" class="form-input">
                 </div>
-                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()" style="height: 44px;">
-                    Limpiar Filtros
-                </button>
             </div>
         </div>
+        -->
 
         <!-- Estadísticas Rápidas -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
@@ -114,16 +85,44 @@
             <table class="table" id="tablaCasos">
                 <thead>
                     <tr>
-                        <th>No.</th>
-                        <th>Expediente</th>
-                        <th>Delegación</th>
-                        <th>Tipo</th>
+                        <th>
+                            OOAD
+                            <select id="filtroDelegacion" class="filtro-columna">
+                                <option value="">Todas</option>
+                            </select>
+                        </th>
+                        <th>
+                            Estatus
+                            <select id="filtroEstatus" class="filtro-columna">
+                                <option value="">Todos</option>
+                                <option value="TRAMITE">En Trámite</option>
+                                <option value="CONCLUIDO">Concluido</option>
+                            </select>
+                        </th>
+                        <th>Núm. Expediente</th>
+                        <th>
+                            Tipo
+                            <select id="filtroTipo" class="filtro-columna">
+                                <option value="">Todos</option>
+                                <option value="CIVIL">Civil</option>
+                                <option value="MERCANTIL">Mercantil</option>
+                            </select>
+                        </th>
+                        <th>Tribunal / Juzgado</th>
                         <th>Fecha Inicio</th>
                         <th>Actor</th>
                         <th>Demandado</th>
                         <th>Codemandado</th>
                         <th>Importe</th>
-                        <th>IMSS es</th>
+                        <th>
+                            IMSS es
+                            <select id="filtroPosicionIMSS" class="filtro-columna">
+                                <option value="">Todos</option>
+                                <option value="ACTOR">Actor</option>
+                                <option value="DEMANDADO">Demandado</option>
+                                <option value="TERCERO">Tercero</option>
+                            </select>
+                        </th>
                         <th>Acumulados</th>
                         <th style="width: 50px;"></th>
                     </tr>
