@@ -4,6 +4,8 @@
 
 let casosFiltrados = [];
 let todosLosCasos = [];
+let paginaActual = 1;
+const REGISTROS_POR_PAGINA = 10;
 
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -19,40 +21,40 @@ function cerrarSesion() {
     window.location.href = 'login.html';
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Verificar sesión
     const usuario = verificarSesion();
     if (!usuario) return;
-    
+
     // Mostrar nombre de usuario
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
-    
+
     // Cargar casos (fake o localStorage)
     cargarCasos();
-    
+
     // Llenar filtros
     llenarFiltros();
-    
+
     // Event listeners para búsqueda
     document.getElementById('searchInput').addEventListener('input', filtrarCasos);
     // Los filtros de columna usan seleccionarFiltro() directamente (dropdown personalizado)
-    
+
     // Mostrar casos
     filtrarCasos();
 });
 
 function limpiarFiltros() {
     document.getElementById('searchInput').value = '';
-    
+
     // Resetear estado
     Object.keys(estadoFiltros).forEach(k => estadoFiltros[k] = '');
-    
+
     // Restaurar etiquetas de botones
     document.querySelectorAll('.filtro-btn-custom').forEach(btn => {
         btn.innerHTML = `${btn.dataset.nombre} ▾`;
         btn.classList.remove('filtro-activo');
     });
-    
+
     cerrarTodosLosFiltros();
     filtrarCasos();
 }
@@ -60,7 +62,7 @@ function limpiarFiltros() {
 function cargarCasos() {
     // Intentar cargar casos del localStorage
     const casosGuardados = localStorage.getItem('casos');
-    
+
     if (casosGuardados) {
         todosLosCasos = JSON.parse(casosGuardados);
     } else {
@@ -170,14 +172,14 @@ function seleccionarFiltro(filtroId, valor, etiqueta) {
 }
 
 // Clic afuera cierra el panel
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     if (!e.target.closest('.th-filtrable') && !e.target.closest('#filtroPanel')) {
         cerrarTodosLosFiltros();
     }
 });
 
 // ESC cierra panel y modal
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
         cerrarTodosLosFiltros();
         cerrarModalAcumulados();
@@ -188,22 +190,19 @@ function filtrarCasos() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const { filtroDelegacion: delegacionId, filtroEstatus: estatus, filtroTipo: tipo, filtroJurisdiccion: jurisdiccion, filtroPosicionIMSS: posicionIMSS } = estadoFiltros;
 
+    casosFiltrados = todosLosCasos.filter(caso => {
+        let cumpleBusqueda = true;
+        if (searchTerm) {
+            // Protecciones añadidas: ( ... || '')
+            const expediente = (caso.numero_expediente || '').toLowerCase();
+            const actorNombre = (getActorNombre(caso.actor) || '').toLowerCase();
+            const demandadosNombre = (getDemandadosNombres(caso) || '').toLowerCase();
 
-casosFiltrados = todosLosCasos.filter(caso => {
-    let cumpleBusqueda = true;
-    if (searchTerm) {
-        
-        const expediente = (caso.numero_expediente || '').toLowerCase();
-        const actorNombre = (getActorNombre(caso.actor) || '').toLowerCase(); 
-        const demandadosNombre = (getDemandadosNombres(caso) || '').toLowerCase();
+            cumpleBusqueda = expediente.includes(searchTerm) ||
+                actorNombre.includes(searchTerm) ||
+                demandadosNombre.includes(searchTerm);
+        }
 
-        cumpleBusqueda = expediente.includes(searchTerm) ||
-                        actorNombre.includes(searchTerm) ||
-                        demandadosNombre.includes(searchTerm);
-    }
-    
-  
-        
         const cumpleDelegacion = !delegacionId || caso.delegacion_id == delegacionId;
         const cumpleEstatus = !estatus || caso.estatus === estatus;
         const cumpleTipo = !tipo || caso.tipo_juicio === tipo;
@@ -214,10 +213,14 @@ casosFiltrados = todosLosCasos.filter(caso => {
         let cumpleFechaDesde = !fechaDesde || caso.fecha_inicio >= fechaDesde;
         let cumpleFechaHasta = !fechaHasta || caso.fecha_inicio <= fechaHasta;
         */
-        
+
         return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleJurisdiccion && cumplePosicionIMSS;
     });
-    
+
+    // Ordenar por fecha_actualizacion descendente (más reciente primero)
+    casosFiltrados.sort((a, b) => new Date(b.fecha_actualizacion) - new Date(a.fecha_actualizacion));
+
+    paginaActual = 1;
     actualizarEstadisticas();
     renderizarTabla();
 }
@@ -226,7 +229,7 @@ function actualizarEstadisticas() {
     const total = todosLosCasos.length;
     const tramite = todosLosCasos.filter(c => c.estatus === 'TRAMITE').length;
     const concluidos = todosLosCasos.filter(c => c.estatus === 'CONCLUIDO').length;
-    
+
     document.getElementById('totalCasos').textContent = total;
     document.getElementById('casosTramite').textContent = tramite;
     document.getElementById('casosConcluidos').textContent = concluidos;
@@ -235,31 +238,39 @@ function actualizarEstadisticas() {
 function renderizarTabla() {
     const tbody = document.getElementById('tablaCasosBody');
     const mensajeVacio = document.getElementById('mensajeVacio');
-    
+
     if (casosFiltrados.length === 0) {
         tbody.innerHTML = '';
         mensajeVacio.style.display = 'block';
+        document.getElementById('paginacion').style.display = 'none';
         return;
     }
-    
+
     mensajeVacio.style.display = 'none';
-    
-    tbody.innerHTML = casosFiltrados.map(caso => {
+
+    // Calcular página
+    const totalPaginas = Math.ceil(casosFiltrados.length / REGISTROS_POR_PAGINA);
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    const inicio = (paginaActual - 1) * REGISTROS_POR_PAGINA;
+    const fin = inicio + REGISTROS_POR_PAGINA;
+    const casosPagina = casosFiltrados.slice(inicio, fin);
+
+    tbody.innerHTML = casosPagina.map(caso => {
         const delegacion = obtenerDelegacion(caso.delegacion_id);
         const actorNombre = getActorNombreConTipo(caso.actor);
         const demandadosNombres = getDemandadosNombresConTipo(caso);
         const codemandadosNombres = getCodemandadosNombresConTipo(caso);
-        
+
         // Tribunal con prefijo de jurisdicción (sin color)
         const tribunal = catalogos.tribunales.find(t => t.id === caso.tribunal_id);
         const prefJurisdiccion = caso.jurisdiccion === 'FEDERAL' ? '<small class="tag-jurisdiccion">(F)</small>' : '<small class="tag-jurisdiccion">(L)</small>';
         const tribunalNombre = tribunal ? `${prefJurisdiccion} ${tribunal.nombre}` : '-';
-        
+
         // Badge estatus compacto con tooltip
         const badgeEstatus = caso.estatus === 'TRAMITE'
             ? '<span class="badge-mini badge-mini-tramite" title="En Trámite">T</span>'
             : '<span class="badge-mini badge-mini-concluido" title="Concluido">C</span>';
-        
+
         return `
             <tr>
                 <td><small>${delegacion ? delegacion.nombre : 'N/A'}</small></td>
@@ -286,10 +297,10 @@ function renderizarTabla() {
                     </span>
                 </td>
                 <td>
-                    ${caso.juicios_acumulados && caso.juicios_acumulados.length > 0 
-                        ? `<button onclick="verAcumulados(${caso.id})" class="btn-link">${caso.juicios_acumulados.length} casos</button>`
-                        : '-'
-                    }
+                    ${caso.juicios_acumulados && caso.juicios_acumulados.length > 0
+                ? `<button onclick="verAcumulados(${caso.id})" class="btn-link">${caso.juicios_acumulados.length} casos</button>`
+                : '-'
+            }
                 </td>
                 <td>
                     <div class="menu-container">
@@ -312,24 +323,58 @@ function renderizarTabla() {
             </tr>
         `;
     }).join('');
+
+    // Renderizar controles de paginación
+    renderizarPaginacion(totalPaginas);
+}
+
+function renderizarPaginacion(totalPaginas) {
+    const contenedor = document.getElementById('paginacion');
+    const inicio = (paginaActual - 1) * REGISTROS_POR_PAGINA + 1;
+    const fin = Math.min(paginaActual * REGISTROS_POR_PAGINA, casosFiltrados.length);
+
+    if (totalPaginas <= 1) {
+        contenedor.style.display = 'none';
+        return;
+    }
+
+    contenedor.style.display = 'flex';
+    contenedor.innerHTML = `
+        <span class="paginacion-info">Mostrando ${inicio}–${fin} de ${casosFiltrados.length} registros</span>
+        <div class="paginacion-controles">
+            <button class="paginacion-btn" onclick="irAPagina(1)" ${paginaActual === 1 ? 'disabled' : ''}>«</button>
+            <button class="paginacion-btn" onclick="irAPagina(${paginaActual - 1})" ${paginaActual === 1 ? 'disabled' : ''}>‹ Anterior</button>
+            <span class="paginacion-pagina">Página ${paginaActual} de ${totalPaginas}</span>
+            <button class="paginacion-btn" onclick="irAPagina(${paginaActual + 1})" ${paginaActual === totalPaginas ? 'disabled' : ''}>Siguiente ›</button>
+            <button class="paginacion-btn" onclick="irAPagina(${totalPaginas})" ${paginaActual === totalPaginas ? 'disabled' : ''}>»</button>
+        </div>
+    `;
+}
+
+function irAPagina(pagina) {
+    const totalPaginas = Math.ceil(casosFiltrados.length / REGISTROS_POR_PAGINA);
+    if (pagina < 1 || pagina > totalPaginas) return;
+    paginaActual = pagina;
+    renderizarTabla();
+    document.querySelector('.table-container').scrollTop = 0;
 }
 
 function getActorNombre(actor) {
     if (!actor) return 'IMSS';
-    
+
     if (actor.tipo_persona === 'FISICA') {
         // Usamos || '' para evitar que se imprima "undefined" si falta algún apellido
         return `${actor.nombres || ''} ${actor.apellido_paterno || ''} ${actor.apellido_materno || ''}`.trim();
     }
-    
+
     // Si no hay empresa, devolvemos una cadena vacía en lugar de undefined
     return actor.empresa || '';
 }
 
 function getActorNombreConTipo(actor) {
     if (!actor) return 'IMSS';
-    const nombre = actor.tipo_persona === 'FISICA' 
-        ? `${actor.nombres} ${actor.apellido_paterno}` 
+    const nombre = actor.tipo_persona === 'FISICA'
+        ? `${actor.nombres} ${actor.apellido_paterno}`
         : actor.empresa;
     const tipo = actor.tipo_persona === 'FISICA' ? 'F' : 'M';
     return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
@@ -337,9 +382,9 @@ function getActorNombreConTipo(actor) {
 
 function getDemandadosNombres(caso) {
     if (caso.imss_es === 'DEMANDADO') return 'IMSS';
-    
+
     if (!caso.demandados || caso.demandados.length === 0) return 'N/A';
-    
+
     return caso.demandados.map(d => {
         if (d.tipo_persona === 'FISICA') {
             return `${d.nombres} ${d.apellido_paterno}`;
@@ -350,12 +395,12 @@ function getDemandadosNombres(caso) {
 
 function getDemandadosNombresConTipo(caso) {
     if (caso.imss_es === 'DEMANDADO') return 'IMSS';
-    
+
     if (!caso.demandados || caso.demandados.length === 0) return 'N/A';
-    
+
     return caso.demandados.map(d => {
-        const nombre = d.tipo_persona === 'FISICA' 
-            ? `${d.nombres} ${d.apellido_paterno}` 
+        const nombre = d.tipo_persona === 'FISICA'
+            ? `${d.nombres} ${d.apellido_paterno}`
             : d.empresa;
         const tipo = d.tipo_persona === 'FISICA' ? 'F' : 'M';
         return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
@@ -364,10 +409,10 @@ function getDemandadosNombresConTipo(caso) {
 
 function getCodemandadosNombresConTipo(caso) {
     if (!caso.codemandados || caso.codemandados.length === 0) return 'N/A';
-    
+
     return caso.codemandados.map(c => {
-        const nombre = c.tipo_persona === 'FISICA' 
-            ? `${c.nombres} ${c.apellido_paterno}` 
+        const nombre = c.tipo_persona === 'FISICA'
+            ? `${c.nombres} ${c.apellido_paterno}`
             : c.empresa;
         const tipo = c.tipo_persona === 'FISICA' ? 'F' : 'M';
         return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
@@ -376,7 +421,7 @@ function getCodemandadosNombresConTipo(caso) {
 
 function getCodemandadosNombres(caso) {
     if (!caso.codemandados || caso.codemandados.length === 0) return '';
-    
+
     return caso.codemandados.map(c => {
         if (c.tipo_persona === 'FISICA') {
             return `${c.nombres} ${c.apellido_paterno}`;
@@ -391,7 +436,7 @@ function obtenerNumeroExpediente(casoId) {
 }
 
 function getBadgeClass(imssEs) {
-    switch(imssEs) {
+    switch (imssEs) {
         case 'ACTOR': return 'badge-actor';
         case 'DEMANDADO': return 'badge-demandado';
         case 'TERCERO': return 'badge-tercero';
@@ -402,11 +447,11 @@ function getBadgeClass(imssEs) {
 function verAcumulados(casoId) {
     const caso = todosLosCasos.find(c => c.id === casoId);
     if (!caso || !caso.juicios_acumulados || caso.juicios_acumulados.length === 0) return;
-    
+
     const casosAcumulados = caso.juicios_acumulados
         .map(id => todosLosCasos.find(c => c.id === id))
         .filter(Boolean);
-    
+
     const html = casosAcumulados.map(c => `
         <div style="padding: 12px; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -422,7 +467,7 @@ function verAcumulados(casoId) {
             </div>
         </div>
     `).join('');
-    
+
     document.getElementById('listaAcumulados').innerHTML = html;
     document.getElementById('modalAcumulados').style.display = 'flex';
 }
@@ -443,7 +488,7 @@ function toggleMenu(casoId) {
             menu.classList.remove('show');
         }
     });
-    
+
     // Toggle este menú
     const menu = document.getElementById(`menu-${casoId}`);
     menu.classList.toggle('show');
@@ -453,7 +498,7 @@ function editarCaso(casoId) {
     // Cerrar menú
     const menu = document.getElementById(`menu-${casoId}`);
     if (menu) menu.classList.remove('show');
-    
+
     // Redirigir a formulario de edición
     window.location.href = `nuevo-caso.html?editar=${casoId}`;
 }
@@ -462,7 +507,7 @@ function actualizarSeguimiento(casoId) {
     // Cerrar menú
     const menu = document.getElementById(`menu-${casoId}`);
     if (menu) menu.classList.remove('show');
-    
+
     // Por ahora alert, implementaremos modal después
     alert(`Actualizar seguimiento del caso #${casoId}\n\n(Función en desarrollo - siguiente paso)`);
 }
@@ -471,21 +516,21 @@ function confirmarEliminar(casoId) {
     // Cerrar menú
     const menu = document.getElementById(`menu-${casoId}`);
     if (menu) menu.classList.remove('show');
-    
+
     const caso = todosLosCasos.find(c => c.id === casoId);
     if (!caso) return;
-    
+
     // VALIDAR: No se puede eliminar si tiene casos acumulados
     if (caso.juicios_acumulados && caso.juicios_acumulados.length > 0) {
         alert(`⚠️ No se puede eliminar\n\nEl expediente ${caso.numero_expediente} tiene ${caso.juicios_acumulados.length} caso(s) acumulado(s).\n\nDebe desacumularlos primero.`);
         return;
     }
-    
+
     // Confirmar eliminación
     if (!confirm(`⚠️ Confirmar eliminación\n\n¿Está seguro de eliminar el expediente ${caso.numero_expediente}?\n\nEsta acción no se puede deshacer.`)) {
         return;
     }
-    
+
     // Si el caso está acumulado a otro, quitarlo del array del padre
     if (caso.acumulado_a) {
         const casoPadre = todosLosCasos.find(c => c.id === caso.acumulado_a);
@@ -493,22 +538,22 @@ function confirmarEliminar(casoId) {
             casoPadre.juicios_acumulados = casoPadre.juicios_acumulados.filter(id => id !== casoId);
         }
     }
-    
+
     // Eliminar del array
     todosLosCasos = todosLosCasos.filter(c => c.id !== casoId);
-    
+
     // Actualizar localStorage
     localStorage.setItem('casos', JSON.stringify(todosLosCasos));
-    
+
     // Refrescar tabla
     filtrarCasos();
-    
+
     alert('✓ Caso eliminado exitosamente');
 }
 
 
 // Cerrar menús al hacer clic fuera
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     if (!e.target.closest('.menu-container')) {
         document.querySelectorAll('.menu-dropdown').forEach(menu => {
             menu.classList.remove('show');

@@ -1324,6 +1324,57 @@ body {
   color: var(--color-primary);
 }
 
+/* =====================================================
+   PAGINACIÓN
+   ===================================================== */
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 4px;
+  margin-top: 8px;
+}
+
+.paginacion-info {
+  font-size: 13px;
+  color: var(--color-text-light);
+}
+
+.paginacion-controles {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paginacion-btn {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--color-text);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.paginacion-btn:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.paginacion-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.paginacion-pagina {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  padding: 0 8px;
+}
+
 /* Tag de jurisdicción sin color */
 .tag-jurisdiccion {
   color: var(--color-text-light);
