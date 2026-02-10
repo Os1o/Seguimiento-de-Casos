@@ -1213,50 +1213,124 @@ body {
   color: #9ca3af;
 }
 
-.breadcrumb-current {
-  color: #4b5563;
-  font-weight: 500;
+/* =====================================================
+   CONTADORES
+   ===================================================== */
+.contadores-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.contador-card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.contador-numero {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.contador-label {
+  font-size: 13px;
+  color: var(--color-text-light);
 }
 
 /* =====================================================
-   FILTROS DENTRO DE ENCABEZADOS DE TABLA
+   FILTROS ESTILO EXCEL EN ENCABEZADOS
    ===================================================== */
-.filtro-columna {
-  display: block;
-  width: 100%;
-  margin-top: 6px;
-  padding: 4px 6px;
-  font-size: 11px;
-  font-weight: normal;
-  border: 1px solid rgba(255,255,255,0.4);
-  border-radius: 4px;
-  background: rgba(255,255,255,0.15);
+.th-filtrable {
+  position: relative;
+}
+
+.th-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.filtro-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.filtro-btn:hover,
+.filtro-btn.filtro-activo {
   color: white;
+  font-weight: bold;
+}
+
+.filtro-btn.filtro-activo {
+  color: #fcd34d;
+}
+
+.filtro-select {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  z-index: 200;
+  min-width: 160px;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: white;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   cursor: pointer;
 }
 
-.filtro-columna option {
-  background: #621132;
-  color: white;
+/* Tag de jurisdicción sin color */
+.tag-jurisdiccion {
+  color: var(--color-text-light);
+  font-size: 11px;
+  font-weight: 600;
 }
 
-/* Tags de jurisdicción en columna Tribunal */
-.tag-federal {
-  background: #1e40af;
-  color: white;
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+/* =====================================================
+   BADGE MINI DE ESTATUS (T / C)
+   ===================================================== */
+.badge-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: default;
 }
 
-.tag-local {
-  background: #065f46;
-  color: white;
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+.badge-mini-tramite {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.badge-mini-concluido {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.breadcrumb-current {
+  color: #4b5563;
+  font-weight: 500;
 }
