@@ -188,16 +188,21 @@ function filtrarCasos() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const { filtroDelegacion: delegacionId, filtroEstatus: estatus, filtroTipo: tipo, filtroJurisdiccion: jurisdiccion, filtroPosicionIMSS: posicionIMSS } = estadoFiltros;
 
-    casosFiltrados = todosLosCasos.filter(caso => {
-        let cumpleBusqueda = true;
-        if (searchTerm) {
-            const expediente = (caso.numero_expediente || '').toLowerCase();
-            const actorNombre = getActorNombre(caso.actor).toLowerCase();
-            const demandadosNombre = getDemandadosNombres(caso).toLowerCase();
-            cumpleBusqueda = expediente.includes(searchTerm) ||
-                            actorNombre.includes(searchTerm) ||
-                            demandadosNombre.includes(searchTerm);
-        }
+
+casosFiltrados = todosLosCasos.filter(caso => {
+    let cumpleBusqueda = true;
+    if (searchTerm) {
+        
+        const expediente = (caso.numero_expediente || '').toLowerCase();
+        const actorNombre = (getActorNombre(caso.actor) || '').toLowerCase(); 
+        const demandadosNombre = (getDemandadosNombres(caso) || '').toLowerCase();
+
+        cumpleBusqueda = expediente.includes(searchTerm) ||
+                        actorNombre.includes(searchTerm) ||
+                        demandadosNombre.includes(searchTerm);
+    }
+    
+  
         
         const cumpleDelegacion = !delegacionId || caso.delegacion_id == delegacionId;
         const cumpleEstatus = !estatus || caso.estatus === estatus;
@@ -311,10 +316,14 @@ function renderizarTabla() {
 
 function getActorNombre(actor) {
     if (!actor) return 'IMSS';
+    
     if (actor.tipo_persona === 'FISICA') {
-        return `${actor.nombres} ${actor.apellido_paterno} ${actor.apellido_materno}`;
+        // Usamos || '' para evitar que se imprima "undefined" si falta algún apellido
+        return `${actor.nombres || ''} ${actor.apellido_paterno || ''} ${actor.apellido_materno || ''}`.trim();
     }
-    return actor.empresa;
+    
+    // Si no hay empresa, devolvemos una cadena vacía en lugar de undefined
+    return actor.empresa || '';
 }
 
 function getActorNombreConTipo(actor) {
