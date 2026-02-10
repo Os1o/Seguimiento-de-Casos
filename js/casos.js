@@ -33,16 +33,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Llenar filtros
     llenarFiltros();
     
-    // Event listeners para filtros y búsqueda
+    // Event listeners para búsqueda
     document.getElementById('searchInput').addEventListener('input', filtrarCasos);
-    document.getElementById('filtroDelegacion').addEventListener('change', filtrarCasos);
-    document.getElementById('filtroEstatus').addEventListener('change', filtrarCasos);
-    document.getElementById('filtroTipo').addEventListener('change', filtrarCasos);
-    document.getElementById('filtroJurisdiccion').addEventListener('change', filtrarCasos);
-    document.getElementById('filtroPosicionIMSS').addEventListener('change', filtrarCasos);
-    // fechaDesde / fechaHasta - COMENTADO, se usará en otra funcionalidad
-    // document.getElementById('fechaDesde').addEventListener('change', filtrarCasos);
-    // document.getElementById('fechaHasta').addEventListener('change', filtrarCasos);
+    // Los filtros de columna usan seleccionarFiltro() directamente (dropdown personalizado)
     
     // Mostrar casos
     filtrarCasos();
@@ -50,18 +43,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function limpiarFiltros() {
     document.getElementById('searchInput').value = '';
-    document.getElementById('filtroDelegacion').value = '';
-    document.getElementById('filtroEstatus').value = '';
-    document.getElementById('filtroTipo').value = '';
-    document.getElementById('filtroJurisdiccion').value = '';
-    document.getElementById('filtroPosicionIMSS').value = '';
-    // Ocultar todos los selects de filtro
-    document.querySelectorAll('.filtro-select').forEach(s => {
-        s.style.display = 'none';
-        s.closest('th').querySelector('.filtro-btn').classList.remove('filtro-activo');
+    
+    // Resetear estado
+    Object.keys(estadoFiltros).forEach(k => estadoFiltros[k] = '');
+    
+    // Restaurar etiquetas de botones
+    document.querySelectorAll('.filtro-btn-custom').forEach(btn => {
+        btn.innerHTML = `${btn.dataset.nombre} ▾`;
+        btn.classList.remove('filtro-activo');
     });
-    // document.getElementById('fechaDesde').value = '';
-    // document.getElementById('fechaHasta').value = '';
+    
+    cerrarTodosLosFiltros();
     filtrarCasos();
 }
 
@@ -80,51 +72,74 @@ function cargarCasos() {
 }
 
 function llenarFiltros() {
-    const selectDelegacion = document.getElementById('filtroDelegacion');
-    
+    // Construir opciones de delegación dinámicamente en el dropdown
+    const ddDelegacion = document.getElementById('dd_filtroDelegacion');
     catalogos.delegaciones.forEach(deleg => {
-        const option = document.createElement('option');
-        option.value = deleg.id;
-        option.textContent = deleg.nombre;
-        selectDelegacion.appendChild(option);
+        const item = document.createElement('div');
+        item.className = 'filtro-opcion';
+        item.textContent = deleg.nombre;
+        item.onclick = () => seleccionarFiltro('filtroDelegacion', deleg.id, deleg.nombre);
+        ddDelegacion.appendChild(item);
     });
+}
+
+// Estado de filtros (dropdown personalizado)
+const estadoFiltros = {
+    filtroDelegacion: '',
+    filtroEstatus: '',
+    filtroTipo: '',
+    filtroJurisdiccion: '',
+    filtroPosicionIMSS: ''
+};
+
+function cerrarTodosLosFiltros() {
+    document.querySelectorAll('.filtro-dropdown').forEach(d => d.classList.remove('abierto'));
 }
 
 function toggleFiltro(id) {
-    const select = document.getElementById(id);
-    const btn = select.closest('th').querySelector('.filtro-btn');
-    const visible = select.style.display !== 'none';
-    
-    // Cerrar todos los demás
-    document.querySelectorAll('.filtro-select').forEach(s => s.style.display = 'none');
-    
-    // Abrir/cerrar el actual
-    if (!visible) {
-        select.style.display = 'block';
-        select.focus();
-    }
+    const dropdown = document.getElementById('dd_' + id);
+    const yaAbierto = dropdown.classList.contains('abierto');
+    cerrarTodosLosFiltros();
+    if (!yaAbierto) dropdown.classList.add('abierto');
 }
+
+function seleccionarFiltro(filtroId, valor, etiqueta) {
+    estadoFiltros[filtroId] = valor;
+    
+    // Actualizar etiqueta visible en el botón
+    const btn = document.getElementById('btn_' + filtroId);
+    const nombreColumna = btn.dataset.nombre;
+    if (valor) {
+        btn.innerHTML = `${nombreColumna} <span class="filtro-valor-badge">${etiqueta}</span> ▾`;
+        btn.classList.add('filtro-activo');
+    } else {
+        btn.innerHTML = `${nombreColumna} ▾`;
+        btn.classList.remove('filtro-activo');
+    }
+    
+    cerrarTodosLosFiltros();
+    filtrarCasos();
+}
+
+// Clic afuera cierra dropdowns
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.th-filtrable')) {
+        cerrarTodosLosFiltros();
+    }
+});
+
+// ESC cierra modal y dropdowns
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarTodosLosFiltros();
+        cerrarModalAcumulados();
+    }
+});
 
 function filtrarCasos() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-    const delegacionId = document.getElementById('filtroDelegacion').value;
-    const estatus = document.getElementById('filtroEstatus').value;
-    const tipo = document.getElementById('filtroTipo').value;
-    const jurisdiccion = document.getElementById('filtroJurisdiccion').value;
-    const posicionIMSS = document.getElementById('filtroPosicionIMSS').value;
-    // const fechaDesde = document.getElementById('fechaDesde').value;
-    // const fechaHasta = document.getElementById('fechaHasta').value;
-    
-    // Marcar botones con filtro activo
-    const filtros = { filtroDelegacion: delegacionId, filtroEstatus: estatus, filtroTipo: tipo, filtroJurisdiccion: jurisdiccion, filtroPosicionIMSS: posicionIMSS };
-    Object.entries(filtros).forEach(([id, val]) => {
-        const el = document.getElementById(id);
-        if (el) {
-            const btn = el.closest('th') && el.closest('th').querySelector('.filtro-btn');
-            if (btn) btn.classList.toggle('filtro-activo', !!val);
-        }
-    });
-    
+    const { filtroDelegacion: delegacionId, filtroEstatus: estatus, filtroTipo: tipo, filtroJurisdiccion: jurisdiccion, filtroPosicionIMSS: posicionIMSS } = estadoFiltros;
+
     casosFiltrados = todosLosCasos.filter(caso => {
         let cumpleBusqueda = true;
         if (searchTerm) {
@@ -143,10 +158,8 @@ function filtrarCasos() {
         const cumplePosicionIMSS = !posicionIMSS || caso.imss_es === posicionIMSS;
 
         /* FILTRO FECHAS - COMENTADO, se usará en otra funcionalidad
-        let cumpleFechaDesde = true;
-        if (fechaDesde) cumpleFechaDesde = caso.fecha_inicio >= fechaDesde;
-        let cumpleFechaHasta = true;
-        if (fechaHasta) cumpleFechaHasta = caso.fecha_inicio <= fechaHasta;
+        let cumpleFechaDesde = !fechaDesde || caso.fecha_inicio >= fechaDesde;
+        let cumpleFechaHasta = !fechaHasta || caso.fecha_inicio <= fechaHasta;
         */
         
         return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleJurisdiccion && cumplePosicionIMSS;

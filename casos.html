@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casos Civiles y Mercantiles - Sistema de Gestión de Juicios</title>
+    <title>Casos Civiles, Mercantiles y Procedimientos Especiales - Sistema de Gestión</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -25,7 +25,7 @@
         <!-- Encabezado de Página -->
         <div class="page-header">
             <div>
-                <h1 class="page-title">Casos Civiles y Mercantiles</h1>
+                <h1 class="page-title">Casos Civiles, Mercantiles y Procedimientos Especiales</h1>
                 <p class="page-subtitle">Gestión y seguimiento de expedientes</p>
             </div>
             <a href="nuevo-caso.html" class="btn btn-primary">
@@ -75,47 +75,36 @@
                 <thead>
                     <tr>
                         <th class="th-filtrable">
-                            <div class="th-header">
-                                <span>OOAD/UMAE</span>
-                                <button class="filtro-btn" onclick="toggleFiltro('filtroDelegacion')">▾</button>
+                            <button id="btn_filtroDelegacion" class="filtro-btn-custom" data-nombre="OOAD/UMAE" onclick="toggleFiltro('filtroDelegacion')">OOAD/UMAE ▾</button>
+                            <div id="dd_filtroDelegacion" class="filtro-dropdown">
+                                <div class="filtro-opcion filtro-opcion-todos" onclick="seleccionarFiltro('filtroDelegacion', '', 'Todas')">Todas</div>
+                                <!-- Se llena dinámicamente -->
                             </div>
-                            <select id="filtroDelegacion" class="filtro-select" style="display:none;" onchange="filtrarCasos()">
-                                <option value="">Todas</option>
-                            </select>
                         </th>
                         <th class="th-filtrable">
-                            <div class="th-header">
-                                <span>Est.</span>
-                                <button class="filtro-btn" onclick="toggleFiltro('filtroEstatus')">▾</button>
+                            <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus" onclick="toggleFiltro('filtroEstatus')">Estatus ▾</button>
+                            <div id="dd_filtroEstatus" class="filtro-dropdown">
+                                <div class="filtro-opcion filtro-opcion-todos" onclick="seleccionarFiltro('filtroEstatus', '', 'Todos')">Todos</div>
+                                <div class="filtro-opcion" onclick="seleccionarFiltro('filtroEstatus', 'TRAMITE', 'Trámite')">Trámite</div>
+                                <div class="filtro-opcion" onclick="seleccionarFiltro('filtroEstatus', 'CONCLUIDO', 'Concluido')">Concluido</div>
                             </div>
-                            <select id="filtroEstatus" class="filtro-select" style="display:none;" onchange="filtrarCasos()">
-                                <option value="">Todos</option>
-                                <option value="TRAMITE">Trámite</option>
-                                <option value="CONCLUIDO">Concluido</option>
-                            </select>
                         </th>
                         <th>Núm. Expediente</th>
                         <th class="th-filtrable">
-                            <div class="th-header">
-                                <span>Tipo</span>
-                                <button class="filtro-btn" onclick="toggleFiltro('filtroTipo')">▾</button>
+                            <button id="btn_filtroTipo" class="filtro-btn-custom" data-nombre="Tipo" onclick="toggleFiltro('filtroTipo')">Tipo ▾</button>
+                            <div id="dd_filtroTipo" class="filtro-dropdown">
+                                <div class="filtro-opcion filtro-opcion-todos" onclick="seleccionarFiltro('filtroTipo', '', 'Todos')">Todos</div>
+                                <div class="filtro-opcion" onclick="seleccionarFiltro('filtroTipo', 'CIVIL', 'Civil')">Civil</div>
+                                <div class="filtro-opcion" onclick="seleccionarFiltro('filtroTipo', 'MERCANTIL', 'Mercantil')">Mercantil</div>
                             </div>
-                            <select id="filtroTipo" class="filtro-select" style="display:none;" onchange="filtrarCasos()">
-                                <option value="">Todos</option>
-                                <option value="CIVIL">Civil</option>
-                                <option value="MERCANTIL">Mercantil</option>
-                            </select>
                         </th>
                         <th class="th-filtrable">
-                            <div class="th-header">
-                                <span>Tribunal / Juzgado</span>
-                                <button class="filtro-btn" onclick="toggleFiltro('filtroJurisdiccion')">▾</button>
+                            <button id="btn_filtroJurisdiccion" class="filtro-btn-custom" data-nombre="Tribunal / Juzgado" onclick="toggleFiltro('filtroJurisdiccion')">Tribunal / Juzgado ▾</button>
+                            <div id="dd_filtroJurisdiccion" class="filtro-dropdown">
+                                <div class="filtro-opcion filtro-opcion-todos" onclick="seleccionarFiltro('filtroJurisdiccion', '', 'Todos')">Todos</div>
+                                <div class="filtro-opcion" onclick="seleccionarFiltro('filtroJurisdiccion', 'LOCAL', 'Local')">Local</div>
+                                <div class="filtro-opcion" onclick="seleccionarFiltro('filtroJurisdiccion', 'FEDERAL', 'Federal')">Federal</div>
                             </div>
-                            <select id="filtroJurisdiccion" class="filtro-select" style="display:none;" onchange="filtrarCasos()">
-                                <option value="">Todos</option>
-                                <option value="LOCAL">Local</option>
-                                <option value="FEDERAL">Federal</option>
-                            </select>
                         </th>
                         <th>Fecha Inicio</th>
                         <th>Actor</th>
@@ -123,16 +112,13 @@
                         <th>Codemandado</th>
                         <th>Importe</th>
                         <th class="th-filtrable">
-                            <div class="th-header">
-                                <span>IMSS es</span>
-                                <button class="filtro-btn" onclick="toggleFiltro('filtroPosicionIMSS')">▾</button>
+                            <button id="btn_filtroPosicionIMSS" class="filtro-btn-custom" data-nombre="IMSS es" onclick="toggleFiltro('filtroPosicionIMSS')">IMSS es ▾</button>
+                            <div id="dd_filtroPosicionIMSS" class="filtro-dropdown">
+                                <div class="filtro-opcion filtro-opcion-todos" onclick="seleccionarFiltro('filtroPosicionIMSS', '', 'Todos')">Todos</div>
+                                <div class="filtro-opcion" onclick="seleccionarFiltro('filtroPosicionIMSS', 'ACTOR', 'Actor')">Actor</div>
+                                <div class="filtro-opcion" onclick="seleccionarFiltro('filtroPosicionIMSS', 'DEMANDADO', 'Demandado')">Demandado</div>
+                                <div class="filtro-opcion" onclick="seleccionarFiltro('filtroPosicionIMSS', 'TERCERO', 'Tercero')">Tercero</div>
                             </div>
-                            <select id="filtroPosicionIMSS" class="filtro-select" style="display:none;" onchange="filtrarCasos()">
-                                <option value="">Todos</option>
-                                <option value="ACTOR">Actor</option>
-                                <option value="DEMANDADO">Demandado</option>
-                                <option value="TERCERO">Tercero</option>
-                            </select>
                         </th>
                         <th>Acumulados</th>
                         <th style="width: 50px;"></th>
