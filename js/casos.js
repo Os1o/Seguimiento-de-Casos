@@ -482,16 +482,41 @@ function verDetalle(casoId) {
 }
 
 function toggleMenu(casoId) {
-    // Cerrar otros menús abiertos
+    // 1. Cerrar otros menús primero
     document.querySelectorAll('.menu-dropdown').forEach(menu => {
         if (menu.id !== `menu-${casoId}`) {
             menu.classList.remove('show');
+            // Limpiar estilos inline por si acaso
+            menu.style.top = '';
+            menu.style.bottom = '';
         }
     });
-
-    // Toggle este menú
+    
+    // 2. Obtener el menú actual y su botón activador
     const menu = document.getElementById(`menu-${casoId}`);
+    const boton = document.getElementById(`menu-trigger-${casoId}`);
+    
+    // 3. Alternar visibilidad
     menu.classList.toggle('show');
+    
+    // 4. LÓGICA DE POSICIONAMIENTO INTELIGENTE
+    if (menu.classList.contains('show')) {
+        const rect = boton.getBoundingClientRect();
+        const espacioAbajo = window.innerHeight - rect.bottom;
+        const alturaMenuEstimada = 150; // Altura aproximada del menú desplegado
+
+        // Si hay menos espacio abajo que la altura del menú, ábrelo hacia arriba
+        if (espacioAbajo < alturaMenuEstimada) {
+            menu.style.top = 'auto';
+            menu.style.bottom = '100%'; // Se pega al borde superior del botón
+            menu.style.marginBottom = '4px'; // Un pequeño margen
+        } else {
+            // Si cabe abajo, resetear estilos para que use el CSS original (top: 100%)
+            menu.style.top = ''; 
+            menu.style.bottom = '';
+            menu.style.marginBottom = '';
+        }
+    }
 }
 
 function editarCaso(casoId) {
