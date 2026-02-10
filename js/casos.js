@@ -72,14 +72,8 @@ function cargarCasos() {
 }
 
 function llenarFiltros() {
-    // Construir opciones de delegación dinámicamente en el dropdown
-    const ddDelegacion = document.getElementById('dd_filtroDelegacion');
     catalogos.delegaciones.forEach(deleg => {
-        const item = document.createElement('div');
-        item.className = 'filtro-opcion';
-        item.textContent = deleg.nombre;
-        item.onclick = () => seleccionarFiltro('filtroDelegacion', deleg.id, deleg.nombre);
-        ddDelegacion.appendChild(item);
+        opcionesFiltros.filtroDelegacion.push({ valor: deleg.id, etiqueta: deleg.nombre });
     });
 }
 
@@ -92,43 +86,97 @@ const estadoFiltros = {
     filtroPosicionIMSS: ''
 };
 
+// Opciones de cada filtro
+const opcionesFiltros = {
+    filtroDelegacion: [], // Se llena dinámicamente
+    filtroEstatus: [
+        { valor: 'TRAMITE', etiqueta: 'Trámite' },
+        { valor: 'CONCLUIDO', etiqueta: 'Concluido' }
+    ],
+    filtroTipo: [
+        { valor: 'CIVIL', etiqueta: 'Civil' },
+        { valor: 'MERCANTIL', etiqueta: 'Mercantil' }
+    ],
+    filtroJurisdiccion: [
+        { valor: 'LOCAL', etiqueta: 'Local' },
+        { valor: 'FEDERAL', etiqueta: 'Federal' }
+    ],
+    filtroPosicionIMSS: [
+        { valor: 'ACTOR', etiqueta: 'Actor' },
+        { valor: 'DEMANDADO', etiqueta: 'Demandado' },
+        { valor: 'TERCERO', etiqueta: 'Tercero' }
+    ]
+};
+
+let filtroAbierto = null;
+
 function cerrarTodosLosFiltros() {
-    document.querySelectorAll('.filtro-dropdown').forEach(d => d.classList.remove('abierto'));
+    const panel = document.getElementById('filtroPanel');
+    if (panel) panel.style.display = 'none';
+    filtroAbierto = null;
 }
 
-function toggleFiltro(id) {
-    const dropdown = document.getElementById('dd_' + id);
-    const yaAbierto = dropdown.classList.contains('abierto');
-    cerrarTodosLosFiltros();
-    if (!yaAbierto) dropdown.classList.add('abierto');
+function toggleFiltro(id, boton) {
+    if (filtroAbierto === id) {
+        cerrarTodosLosFiltros();
+        return;
+    }
+
+    const panel = document.getElementById('filtroPanel');
+    const lista = document.getElementById('filtroPanelLista');
+
+    // Calcular posición del botón en la pantalla
+    const rect = boton.getBoundingClientRect();
+    panel.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+    panel.style.left = (rect.left + window.scrollX) + 'px';
+
+    // Construir opciones
+    lista.innerHTML = '';
+
+    const opcionTodos = document.createElement('div');
+    opcionTodos.className = 'filtro-opcion filtro-opcion-todos';
+    opcionTodos.textContent = 'Todos';
+    opcionTodos.onclick = () => seleccionarFiltro(id, '', 'Todos');
+    lista.appendChild(opcionTodos);
+
+    opcionesFiltros[id].forEach(op => {
+        const item = document.createElement('div');
+        item.className = 'filtro-opcion';
+        if (estadoFiltros[id] === op.valor) item.classList.add('filtro-opcion-seleccionada');
+        item.textContent = op.etiqueta;
+        item.onclick = () => seleccionarFiltro(id, op.valor, op.etiqueta);
+        lista.appendChild(item);
+    });
+
+    panel.style.display = 'block';
+    filtroAbierto = id;
 }
 
 function seleccionarFiltro(filtroId, valor, etiqueta) {
     estadoFiltros[filtroId] = valor;
-    
-    // Actualizar etiqueta visible en el botón
+
     const btn = document.getElementById('btn_' + filtroId);
     const nombreColumna = btn.dataset.nombre;
     if (valor) {
-        btn.innerHTML = `${nombreColumna} <span class="filtro-valor-badge">${etiqueta}</span> ▾`;
+        btn.innerHTML = `${nombreColumna} <span class="filtro-valor-badge">${etiqueta}</span> &#9660;`;
         btn.classList.add('filtro-activo');
     } else {
-        btn.innerHTML = `${nombreColumna} ▾`;
+        btn.innerHTML = `${nombreColumna} &#9660;`;
         btn.classList.remove('filtro-activo');
     }
-    
+
     cerrarTodosLosFiltros();
     filtrarCasos();
 }
 
-// Clic afuera cierra dropdowns
+// Clic afuera cierra el panel
 document.addEventListener('click', function(e) {
-    if (!e.target.closest('.th-filtrable')) {
+    if (!e.target.closest('.th-filtrable') && !e.target.closest('#filtroPanel')) {
         cerrarTodosLosFiltros();
     }
 });
 
-// ESC cierra modal y dropdowns
+// ESC cierra panel y modal
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         cerrarTodosLosFiltros();
@@ -245,13 +293,13 @@ function renderizarTabla() {
                         </button>
                         <div class="menu-dropdown" id="menu-${caso.id}">
                             <div class="menu-item" onclick="editarCaso(${caso.id})">
-                                ✏️ Editar datos
+                                Editar datos
                             </div>
                             <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
-                                📝 Actualizar seguimiento
+                                Actualizar seguimiento
                             </div>
                             <div class="menu-item danger" onclick="confirmarEliminar(${caso.id})">
-                                🗑️ Eliminar
+                                Eliminar
                             </div>
                         </div>
                     </div>

@@ -1291,22 +1291,14 @@ body {
   margin-left: 2px;
 }
 
-.filtro-dropdown {
-  display: none;
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 300;
-  min-width: 170px;
+/* Panel flotante fuera de la tabla — scroll independiente */
+.filtro-panel-lista {
   background: white;
   border: 1px solid var(--color-border);
   border-radius: 6px;
   box-shadow: 0 6px 16px rgba(0,0,0,0.15);
   overflow: hidden;
-}
-
-.filtro-dropdown.abierto {
-  display: block;
+  min-width: 170px;
 }
 
 .filtro-opcion {
@@ -1325,6 +1317,11 @@ body {
   color: var(--color-text-light);
   border-bottom: 1px solid var(--color-border);
   font-style: italic;
+}
+
+.filtro-opcion-seleccionada {
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
 /* Tag de jurisdicción sin color */
