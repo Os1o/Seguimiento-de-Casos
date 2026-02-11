@@ -1,5 +1,5 @@
 // =====================================================
-// EDITAR-CASO.JS - Lógica de Edición Corregida
+// EDITAR-CASO.JS - Lógica Corregida (Área y Fecha)
 // =====================================================
 
 let contadorDemandados = 0;
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarCatalogos();
     configurarEventListeners();
 
-    // 4. Cargar datos (Ahora sí, en orden correcto)
+    // 4. Cargar datos
     cargarDatosDelCaso();
 });
 
@@ -55,6 +55,26 @@ function llenarSelect(id, datos) {
     });
 }
 
+// --- NUEVA FUNCIÓN AUXILIAR PARA ÁREAS ---
+// La sacamos fuera para poder usarla tanto al cambiar el select como al cargar datos
+function cargarAreas(delegacionId) {
+    const selectArea = document.getElementById('area');
+    selectArea.innerHTML = '<option value="">Seleccione...</option>';
+    
+    // Convertimos a string para asegurar comparación, aunque los IDs suelen ser números
+    if (delegacionId && catalogos && catalogos.areas[delegacionId]) {
+        selectArea.disabled = false;
+        catalogos.areas[delegacionId].forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a.id;
+            opt.textContent = a.nombre;
+            selectArea.appendChild(opt);
+        });
+    } else {
+        selectArea.disabled = true;
+    }
+}
+
 function cargarDatosDelCaso() {
     const casosStr = localStorage.getItem('casos');
     const casos = casosStr ? JSON.parse(casosStr) : (typeof casosFake !== 'undefined' ? casosFake : []);
@@ -67,14 +87,17 @@ function cargarDatosDelCaso() {
         return;
     }
 
-    // --- 1. Delegación y Área (Corrección de Área Generadora) ---
+    // --- 1. Delegación y Área (CORREGIDO) ---
     const selectDelegacion = document.getElementById('delegacion');
     if (selectDelegacion) {
+        // A. Poner valor de delegación
         selectDelegacion.value = casoActual.delegacion_id || "";
-        // 1. Disparamos el cambio para que se llene el select de Área
-        selectDelegacion.dispatchEvent(new Event('change'));
         
-        // 2. Inmediatamente después seleccionamos el área
+        // B. LLAMADA DIRECTA: Llenar las áreas manualmente AHORA MISMO
+        // (No dependemos del evento 'change' asíncrono)
+        cargarAreas(selectDelegacion.value);
+        
+        // C. Ahora que el select de áreas ya tiene opciones, ponemos el valor
         const selectArea = document.getElementById('area');
         if (selectArea && casoActual.area_generadora_id) {
             selectArea.value = casoActual.area_generadora_id;
@@ -95,25 +118,21 @@ function cargarDatosDelCaso() {
         document.getElementById('añoFederal').value = casoActual.año || '';
     }
 
-    // --- 3. Tipo, Subtipo y Sub-subtipo (Corrección de Terciarios) ---
+    // --- 3. Tipo, Subtipo y Sub-subtipo ---
     const selectTipo = document.getElementById('tipoJuicio');
     if (selectTipo) {
-        // A. Seleccionar Tipo
         selectTipo.value = casoActual.tipo_juicio || "";
         selectTipo.dispatchEvent(new Event('change')); // Carga subtipos
 
-        // B. Seleccionar Subtipo
         const selectSub = document.getElementById('subtipoJuicio');
         if (casoActual.subtipo_juicio && selectSub) {
-            // Buscar la opción por texto
             Array.from(selectSub.options).forEach(opt => {
                 if (opt.text === casoActual.subtipo_juicio) selectSub.value = opt.value;
             });
             
-            // C. IMPORTANTE: Disparar cambio en Subtipo para cargar los Terciarios
+            // Disparar cambio para cargar Sub-subtipos (Nivel 3)
             selectSub.dispatchEvent(new Event('change'));
 
-            // D. Seleccionar Sub-subtipo (Terciario)
             const selectSubsub = document.getElementById('subsubtipoJuicio');
             if (casoActual.sub_subtipo_juicio && selectSubsub) {
                 Array.from(selectSubsub.options).forEach(opt => {
@@ -123,12 +142,11 @@ function cargarDatosDelCaso() {
         }
     }
 
-    // --- 4. Fecha de Inicio (Corrección de Fecha Adelantada) ---
-    if (casoActual.fecha_inicio) {
-        // Cortamos la cadena en la "T" para tomar solo "YYYY-MM-DD"
-        // Esto evita que la zona horaria mueva el día
-        const fechaPura = casoActual.fecha_inicio.split('T')[0];
-        document.getElementById('fechaInicio').value = fechaPura;
+    // --- 4. Fecha de Inicio (CORREGIDO) ---
+    // Usamos substring(0, 10) para tomar "YYYY-MM-DD" literal.
+    // Esto ignora cualquier hora o zona horaria que esté moviendo el día.
+    if (casoActual.fecha_inicio && casoActual.fecha_inicio.length >= 10) {
+        document.getElementById('fechaInicio').value = casoActual.fecha_inicio.substring(0, 10);
     }
 
     // --- 5. Posición IMSS ---
@@ -339,7 +357,7 @@ function construirObjetoCaso() {
 }
 
 // ==========================================
-// FUNCIONES DE EVENTOS Y DINAMISMO
+// CONFIGURACIÓN DE EVENTOS
 // ==========================================
 
 function configurarEventListeners() {
@@ -349,17 +367,8 @@ function configurarEventListeners() {
     // Delegación -> Área
     document.getElementById('delegacion').addEventListener('change', function() {
         const id = this.value;
-        const select = document.getElementById('area');
-        select.innerHTML = '<option value="">Seleccione...</option>';
-        if (id && catalogos && catalogos.areas[id]) {
-            select.disabled = false;
-            catalogos.areas[id].forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a.id;
-                opt.textContent = a.nombre;
-                select.appendChild(opt);
-            });
-        }
+        // Llamamos a la función auxiliar que ahora es compartida
+        cargarAreas(id);
     });
 
     // Tipo -> Subtipo
@@ -387,7 +396,7 @@ function configurarEventListeners() {
         actualizarCasosAcumulables();
     });
     
-    // Subtipo -> Sub-subtipo (ESTE ERA EL QUE FALTABA)
+    // Subtipo -> Sub-subtipo
     document.getElementById('subtipoJuicio').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const subtipos = selectedOption && selectedOption.dataset.subtipos ? JSON.parse(selectedOption.dataset.subtipos) : [];
