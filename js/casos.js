@@ -65,6 +65,14 @@ function cargarCasos() {
 
     if (casosGuardados) {
         todosLosCasos = JSON.parse(casosGuardados);
+        
+        // VALIDAR: Si los casos no tienen fecha_actualizacion o son menos de 50, recargar
+        const tienenFechaActualizacion = todosLosCasos.every(c => c.fecha_actualizacion);
+        if (!tienenFechaActualizacion || todosLosCasos.length < 50) {
+            console.log('Recargando desde casosFake (localStorage desactualizado)');
+            todosLosCasos = [...casosFake];
+            localStorage.setItem('casos', JSON.stringify(todosLosCasos));
+        }
     } else {
         // Usar casos fake
         todosLosCasos = [...casosFake];
