@@ -1,5 +1,5 @@
 // =====================================================
-// EDITAR-CASO.JS - Lógica Corregida (Área y Fecha)
+// EDITAR-CASO.JS - Versión Final (Áreas y Fechas Locales)
 // =====================================================
 
 let contadorDemandados = 0;
@@ -55,20 +55,18 @@ function llenarSelect(id, datos) {
     });
 }
 
-// --- NUEVA FUNCIÓN AUXILIAR PARA ÁREAS ---
-// La sacamos fuera para poder usarla tanto al cambiar el select como al cargar datos
+// Función auxiliar para cargar áreas
 function cargarAreas(delegacionId) {
     const selectArea = document.getElementById('area');
     selectArea.innerHTML = '<option value="">Seleccione...</option>';
     
-    // Convertimos a string para asegurar comparación, aunque los IDs suelen ser números
     if (delegacionId && catalogos && catalogos.areas[delegacionId]) {
         selectArea.disabled = false;
         catalogos.areas[delegacionId].forEach(a => {
-            const opt = document.createElement('option');
-            opt.value = a.id;
-            opt.textContent = a.nombre;
-            selectArea.appendChild(opt);
+            const option = document.createElement('option');
+            option.value = a.id;
+            option.textContent = a.nombre;
+            selectArea.appendChild(option);
         });
     } else {
         selectArea.disabled = true;
@@ -82,7 +80,7 @@ function cargarDatosDelCaso() {
     casoActual = casos.find(c => c.id === casoId);
 
     if (!casoActual) {
-        alert("Caso no encontrado en la base de datos.");
+        alert("Caso no encontrado.");
         window.location.href = 'casos.html';
         return;
     }
@@ -90,17 +88,23 @@ function cargarDatosDelCaso() {
     // --- 1. Delegación y Área (CORREGIDO) ---
     const selectDelegacion = document.getElementById('delegacion');
     if (selectDelegacion) {
-        // A. Poner valor de delegación
         selectDelegacion.value = casoActual.delegacion_id || "";
         
-        // B. LLAMADA DIRECTA: Llenar las áreas manualmente AHORA MISMO
-        // (No dependemos del evento 'change' asíncrono)
+        // Cargar las opciones del área basada en la delegación
         cargarAreas(selectDelegacion.value);
         
-        // C. Ahora que el select de áreas ya tiene opciones, ponemos el valor
+        // SELECCIÓN SEGURA DEL ÁREA:
         const selectArea = document.getElementById('area');
         if (selectArea && casoActual.area_generadora_id) {
-            selectArea.value = casoActual.area_generadora_id;
+            // Convertimos a string para asegurar que coincida con el value del option
+            const areaIdString = String(casoActual.area_generadora_id);
+            selectArea.value = areaIdString;
+            
+            // Verificación extra: si falló (sigue vacío), intentamos forzarlo
+            if (!selectArea.value) {
+                // A veces el value es number, probamos parsear
+                selectArea.value = parseInt(casoActual.area_generadora_id);
+            }
         }
     }
 
@@ -118,19 +122,17 @@ function cargarDatosDelCaso() {
         document.getElementById('añoFederal').value = casoActual.año || '';
     }
 
-    // --- 3. Tipo, Subtipo y Sub-subtipo ---
+    // --- 3. Tipo, Subtipo y Terciarios ---
     const selectTipo = document.getElementById('tipoJuicio');
     if (selectTipo) {
         selectTipo.value = casoActual.tipo_juicio || "";
-        selectTipo.dispatchEvent(new Event('change')); // Carga subtipos
+        selectTipo.dispatchEvent(new Event('change')); 
 
         const selectSub = document.getElementById('subtipoJuicio');
         if (casoActual.subtipo_juicio && selectSub) {
             Array.from(selectSub.options).forEach(opt => {
                 if (opt.text === casoActual.subtipo_juicio) selectSub.value = opt.value;
             });
-            
-            // Disparar cambio para cargar Sub-subtipos (Nivel 3)
             selectSub.dispatchEvent(new Event('change'));
 
             const selectSubsub = document.getElementById('subsubtipoJuicio');
@@ -142,11 +144,24 @@ function cargarDatosDelCaso() {
         }
     }
 
-    // --- 4. Fecha de Inicio (CORREGIDO) ---
-    // Usamos substring(0, 10) para tomar "YYYY-MM-DD" literal.
-    // Esto ignora cualquier hora o zona horaria que esté moviendo el día.
-    if (casoActual.fecha_inicio && casoActual.fecha_inicio.length >= 10) {
-        document.getElementById('fechaInicio').value = casoActual.fecha_inicio.substring(0, 10);
+    // --- 4. Fecha de Inicio (CORREGIDO - ZONA HORARIA) ---
+    if (casoActual.fecha_inicio) {
+        let fechaParaInput = '';
+        
+        // Si la fecha tiene formato largo (con hora), hay que convertirla a LOCAL
+        if (casoActual.fecha_inicio.includes('T')) {
+            const fechaObj = new Date(casoActual.fecha_inicio);
+            // Esto usa TU zona horaria (México) para calcular el día
+            const year = fechaObj.getFullYear();
+            const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+            const day = String(fechaObj.getDate()).padStart(2, '0');
+            fechaParaInput = `${year}-${month}-${day}`;
+        } else {
+            // Si ya viene simple (YYYY-MM-DD), la usamos tal cual
+            fechaParaInput = casoActual.fecha_inicio;
+        }
+        
+        document.getElementById('fechaInicio').value = fechaParaInput;
     }
 
     // --- 5. Posición IMSS ---
@@ -239,7 +254,7 @@ function guardarCambios(e) {
     try {
         const casoEditado = construirObjetoCaso();
         
-        // Mantener metadatos e hijos acumulados
+        // Preservar datos originales
         casoEditado.id = casoActual.id;
         casoEditado.numero = casoActual.numero;
         casoEditado.fecha_creacion = casoActual.fecha_creacion;
@@ -272,7 +287,7 @@ function guardarCambios(e) {
 }
 
 function construirObjetoCaso() {
-    // Validaciones básicas
+    // Validaciones
     const radioJurisdiccion = document.querySelector('input[name="jurisdiccion"]:checked');
     if (!radioJurisdiccion) throw new Error("Seleccione una jurisdicción");
     const jurisdiccion = radioJurisdiccion.value;
@@ -335,7 +350,7 @@ function construirObjetoCaso() {
         numero_expediente: numeroExpediente,
         acumulado_a: valAcumulado ? parseInt(valAcumulado) : null,
         tribunal_id: valTribunal ? parseInt(valTribunal) : null,
-        fecha_inicio: document.getElementById('fechaInicio').value,
+        fecha_inicio: document.getElementById('fechaInicio').value, // Esto guarda string simple, evitando problemas futuros
         imss_es: imssEs,
         actor: actor,
         demandados: demandados,
@@ -366,9 +381,8 @@ function configurarEventListeners() {
     
     // Delegación -> Área
     document.getElementById('delegacion').addEventListener('change', function() {
-        const id = this.value;
-        // Llamamos a la función auxiliar que ahora es compartida
-        cargarAreas(id);
+        // Al cambiar, recargamos el select de áreas
+        cargarAreas(this.value);
     });
 
     // Tipo -> Subtipo
@@ -376,7 +390,7 @@ function configurarEventListeners() {
         const id = this.value;
         const select = document.getElementById('subtipoJuicio');
         select.innerHTML = '<option value="">Seleccione...</option>';
-        // Limpiar también el nivel 3 (sub-subtipo)
+        
         const selectSubSub = document.getElementById('subsubtipoJuicio');
         if (selectSubSub) {
             selectSubSub.innerHTML = '<option value="">Ninguno</option>';
@@ -418,7 +432,7 @@ function configurarEventListeners() {
         }
     });
 
-    // Visibilidad Federal/Local
+    // Listeners visuales
     document.querySelectorAll('input[name="jurisdiccion"]').forEach(r => {
         r.addEventListener('change', function() {
             const esLocal = this.value === 'LOCAL';
@@ -429,7 +443,6 @@ function configurarEventListeners() {
         });
     });
 
-    // Visibilidad IMSS
     document.querySelectorAll('input[name="imssEs"]').forEach(r => {
         r.addEventListener('change', function() {
             const val = this.value;
@@ -440,7 +453,6 @@ function configurarEventListeners() {
         });
     });
 
-    // Visibilidad Actor (Física/Moral)
     document.querySelectorAll('input[name="actorTipo"]').forEach(r => {
         r.addEventListener('change', function() {
             const esFisica = this.value === 'FISICA';
