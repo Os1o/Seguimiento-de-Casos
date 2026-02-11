@@ -116,10 +116,10 @@ function llenarFormulario() {
     
     // 1. DELEGACIÓN Y ÁREA
     document.getElementById('delegacion').value = casoActual.delegacion_id;
-    cargarAreas(casoActual.delegacion_id);
-    setTimeout(() => {
+    cargarAreas(casoActual.delegacion_id, () => {
         document.getElementById('area').value = casoActual.area_generadora_id;
-    }, 50);
+        console.log('Área cargada:', casoActual.area_generadora_id);
+    });
     
     // 2. JURISDICCIÓN
     const radioJur = document.querySelector(`input[name="jurisdiccion"][value="${casoActual.jurisdiccion}"]`);
@@ -173,9 +173,13 @@ function llenarFormulario() {
     // 6. TRIBUNAL Y FECHA
     document.getElementById('tribunal').value = casoActual.tribunal_id;
     
-    // Fecha en formato correcto YYYY-MM-DD
-    const fecha = casoActual.fecha_inicio.split('T')[0];
-    document.getElementById('fechaInicio').value = fecha;
+    // Fecha: asegurar formato YYYY-MM-DD sin conversión de zona horaria
+    let fechaInicio = casoActual.fecha_inicio;
+    if (fechaInicio.includes('T')) {
+        fechaInicio = fechaInicio.split('T')[0];
+    }
+    document.getElementById('fechaInicio').value = fechaInicio;
+    console.log('Fecha cargada:', fechaInicio);
     
     // 7. IMSS ES
     const radioImss = document.querySelector(`input[name="imssEs"][value="${casoActual.imss_es}"]`);
@@ -256,7 +260,7 @@ function llenarFormulario() {
 // =====================================================
 // FUNCIONES AUXILIARES DE CARGA
 // =====================================================
-function cargarAreas(delegacionId) {
+function cargarAreas(delegacionId, callback) {
     const selectArea = document.getElementById('area');
     selectArea.innerHTML = '<option value="">Seleccione...</option>';
     
@@ -268,6 +272,11 @@ function cargarAreas(delegacionId) {
             option.textContent = a.nombre;
             selectArea.appendChild(option);
         });
+        
+        // Ejecutar callback después de cargar
+        if (callback) {
+            setTimeout(callback, 50);
+        }
     } else {
         selectArea.disabled = true;
     }
