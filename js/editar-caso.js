@@ -69,7 +69,11 @@ function cargarDatosDelCaso() {
     document.getElementById('delegacion').value = casoActual.delegacion_id;
     // Forzamos el evento change para actualizar el combo dependiente de Áreas
     document.getElementById('delegacion').dispatchEvent(new Event('change'));
-    document.getElementById('area').value = casoActual.area_generadora_id;
+    
+    // IMPORTANTE: Esperar a que se carguen las áreas antes de seleccionar
+    setTimeout(() => {
+        document.getElementById('area').value = casoActual.area_generadora_id;
+    }, 50);
 
     // 2. Jurisdicción y tipo de expediente
     const radioJur = document.querySelector(`input[name="jurisdiccion"][value="${casoActual.jurisdiccion}"]`);
@@ -89,14 +93,31 @@ function cargarDatosDelCaso() {
     document.getElementById('tipoJuicio').value = casoActual.tipo_juicio;
     document.getElementById('tipoJuicio').dispatchEvent(new Event('change')); // Carga lista de subtipos
 
-    // Selección de subtipo (Búsqueda por coincidencia de texto)
-    const selectSub = document.getElementById('subtipoJuicio');
-    if (casoActual.subtipo_juicio) {
-        Array.from(selectSub.options).forEach(opt => {
-            if (opt.text === casoActual.subtipo_juicio) selectSub.value = opt.value;
-        });
-        selectSub.dispatchEvent(new Event('change')); // Carga sub-subtipos si aplica
-    }
+    // Esperar a que se carguen los subtipos
+    setTimeout(() => {
+        const selectSub = document.getElementById('subtipoJuicio');
+        if (casoActual.subtipo_juicio) {
+            // Buscar por texto para seleccionar el valor correcto
+            Array.from(selectSub.options).forEach(opt => {
+                if (opt.text === casoActual.subtipo_juicio) {
+                    selectSub.value = opt.value;
+                }
+            });
+            selectSub.dispatchEvent(new Event('change')); // Carga sub-subtipos si aplica
+            
+            // Si existe sub-subtipo, cargarlo
+            if (casoActual.sub_subtipo_juicio) {
+                setTimeout(() => {
+                    const selectSubsub = document.getElementById('subsubtipoJuicio');
+                    Array.from(selectSubsub.options).forEach(opt => {
+                        if (opt.text === casoActual.sub_subtipo_juicio) {
+                            selectSubsub.value = opt.value;
+                        }
+                    });
+                }, 100);
+            }
+        }
+    }, 100);
 
     // 4. Rol del IMSS
     const radioImss = document.querySelector(`input[name="imssEs"][value="${casoActual.imss_es}"]`);
@@ -170,7 +191,11 @@ function cargarDatosDelCaso() {
 
     // 8. Datos generales del proceso
     document.getElementById('tribunal').value = casoActual.tribunal_id;
-    document.getElementById('fechaInicio').value = casoActual.fecha_inicio;
+    
+    // Asegurar formato de fecha correcto (YYYY-MM-DD)
+    const fechaInicio = casoActual.fecha_inicio.split('T')[0]; // Quitar hora si existe
+    document.getElementById('fechaInicio').value = fechaInicio;
+    
     document.getElementById('prestacionReclamada').value = casoActual.prestacion_reclamada;
     document.getElementById('prestacionesNotas').value = casoActual.prestaciones_notas || '';
     document.getElementById('importeDemandado').value = casoActual.importe_demandado || 0;
