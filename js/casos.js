@@ -585,3 +585,20 @@ document.addEventListener('click', function (e) {
         });
     }
 });
+
+// Agrega esto al final de js/casos.js
+
+function actualizarContadores() {
+    const total = todosLosCasos.length;
+    const activos = todosLosCasos.filter(c => c.estatus === 'TRAMITE').length;
+    const concluidos = todosLosCasos.filter(c => c.estatus === 'CONCLUIDO').length;
+    
+    // Validamos que existan los elementos antes de asignarles valor para evitar errores
+    const elTotal = document.getElementById('totalCasos');
+    const elActivos = document.getElementById('casosActivos');
+    const elConcluidos = document.getElementById('casosConcluidos');
+
+    if (elTotal) elTotal.textContent = total;
+    if (elActivos) elActivos.textContent = activos;
+    if (elConcluidos) elConcluidos.textContent = concluidos;
+}
