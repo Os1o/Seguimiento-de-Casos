@@ -59,26 +59,25 @@ function limpiarFiltros() {
     filtrarCasos();
 }
 
-function cargarCasos() {
-    // Intentar cargar casos del localStorage
-    const casosGuardados = localStorage.getItem('casos');
 
+function cargarCasos() {
+    const casosGuardados = localStorage.getItem('casos');
+    
     if (casosGuardados) {
         todosLosCasos = JSON.parse(casosGuardados);
         
-        // VALIDAR: Si los casos no tienen fecha_actualizacion o son menos de 50, recargar
-        const tienenFechaActualizacion = todosLosCasos.every(c => c.fecha_actualizacion);
-        if (!tienenFechaActualizacion || todosLosCasos.length < 50) {
-            console.log('Recargando desde casosFake (localStorage desactualizado)');
-            todosLosCasos = [...casosFake];
-            localStorage.setItem('casos', JSON.stringify(todosLosCasos));
-        }
+        todosLosCasos.sort((a, b) => b.id - a.id); 
     } else {
-        // Usar casos fake
-        todosLosCasos = [...casosFake];
-        // Guardar en localStorage para persistencia
+        // Si no hay localStorage, usamos los fake y también los ordenamos
+        todosLosCasos = (typeof casosFake !== 'undefined' ? casosFake : []);
+        todosLosCasos.sort((a, b) => b.id - a.id);
+        // Guardamos esta carga inicial ordenada
         localStorage.setItem('casos', JSON.stringify(todosLosCasos));
     }
+
+    // Inicializar la tabla
+    renderizarTabla(todosLosCasos);
+    actualizarContadores();
 }
 
 function llenarFiltros() {
