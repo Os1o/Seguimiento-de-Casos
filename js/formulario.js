@@ -1,5 +1,5 @@
 // =====================================================
-// FORMULARIO.JS - Lógica completa del formulario
+// FORMULARIO.JS - Lógica para CREAR nuevos casos
 // =====================================================
 
 let contadorDemandados = 0;
@@ -27,9 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     inicializarFormulario();
     configurarEventListeners();
-    
-    // NO agregar codemandado por defecto (ya no es obligatorio)
 });
+
+
 
 function inicializarFormulario() {
     llenarDelegaciones();
@@ -98,6 +98,70 @@ function actualizarCasosAcumulables() {
             option.textContent = `${c.numero_expediente} - ${c.tipo_juicio} - ${formatearFecha(c.fecha_inicio)}`;
             select.appendChild(option);
         });
+}
+
+// Funciones auxiliares para mostrar/ocultar campos según tipo de persona
+function actualizarCamposActor() {
+    const tipoSeleccionado = document.querySelector('input[name="tipoPersonaActor"]:checked')?.value;
+    const seccionFisica = document.getElementById('actorFisicaCampos');
+    const seccionMoral = document.getElementById('actorMoralCampos');
+    
+    if (tipoSeleccionado === 'FISICA') {
+        seccionFisica.style.display = 'block';
+        seccionMoral.style.display = 'none';
+    } else if (tipoSeleccionado === 'MORAL') {
+        seccionFisica.style.display = 'none';
+        seccionMoral.style.display = 'block';
+    }
+}
+
+function actualizarCamposDemandado(numero) {
+    const tipoSeleccionado = document.querySelector(`input[name="tipoPersonaDemandado${numero}"]:checked`)?.value;
+    const seccionFisica = document.getElementById(`demandadoFisicaCampos${numero}`);
+    const seccionMoral = document.getElementById(`demandadoMoralCampos${numero}`);
+    
+    if (seccionFisica && seccionMoral) {
+        if (tipoSeleccionado === 'FISICA') {
+            seccionFisica.style.display = 'block';
+            seccionMoral.style.display = 'none';
+        } else if (tipoSeleccionado === 'MORAL') {
+            seccionFisica.style.display = 'none';
+            seccionMoral.style.display = 'block';
+        }
+    }
+}
+
+function actualizarCamposCodemandado(numero) {
+    const tipoSeleccionado = document.querySelector(`input[name="tipoPersonaCodemandado${numero}"]:checked`)?.value;
+    const seccionFisica = document.getElementById(`codemandadoFisicaCampos${numero}`);
+    const seccionMoral = document.getElementById(`codemandadoMoralCampos${numero}`);
+    
+    if (seccionFisica && seccionMoral) {
+        if (tipoSeleccionado === 'FISICA') {
+            seccionFisica.style.display = 'block';
+            seccionMoral.style.display = 'none';
+        } else if (tipoSeleccionado === 'MORAL') {
+            seccionFisica.style.display = 'none';
+            seccionMoral.style.display = 'block';
+        }
+    }
+}
+
+function actualizarSeccionesPersonas() {
+    const imssEs = document.getElementById('imss_es').value;
+    const seccionActor = document.getElementById('seccionActor');
+    const seccionDemandados = document.getElementById('seccionDemandados');
+    
+    if (imssEs === 'ACTOR') {
+        seccionActor.style.display = 'none';
+        seccionDemandados.style.display = 'block';
+    } else if (imssEs === 'DEMANDADO') {
+        seccionActor.style.display = 'block';
+        seccionDemandados.style.display = 'none';
+    } else {
+        seccionActor.style.display = 'block';
+        seccionDemandados.style.display = 'block';
+    }
 }
 
 function configurarEventListeners() {
@@ -384,28 +448,83 @@ function guardarCaso(e) {
     
     // Guardar en localStorage
     const casosStr = localStorage.getItem('casos');
-    const casos = casosStr ? JSON.parse(casosStr) : [];
+    let casos = casosStr ? JSON.parse(casosStr) : [];
     
-    // Asignar ID y número
-    caso.id = casos.length > 0 ? Math.max(...casos.map(c => c.id)) + 1 : 1;
-    caso.numero = casos.length + 1;
-    caso.fecha_creacion = new Date().toISOString();
-    
-    // Si se acumula a otro caso, actualizar ese caso
-    if (caso.acumulado_a) {
-        const casoAcumulador = casos.find(c => c.id === caso.acumulado_a);
-        if (casoAcumulador) {
-            if (!casoAcumulador.juicios_acumulados) {
-                casoAcumulador.juicios_acumulados = [];
-            }
-            casoAcumulador.juicios_acumulados.push(caso.id);
+    if (casoEditando) {
+        // MODO EDICIÓN: Actualizar caso existente
+        caso.id = casoEditando.id;
+        caso.numero = casoEditando.numero;
+        caso.fecha_creacion = casoEditando.fecha_creacion;
+        caso.fecha_actualizacion = new Date().toISOString(); // Actualizar timestamp
+        caso.seguimiento = casoEditando.seguimiento; // Mantener datos de seguimiento
+        
+        // Encontrar índice del caso y reemplazarlo
+        const index = casos.findIndex(c => c.id === caso.id);
+        if (index !== -1) {
+            casos[index] = caso;
         }
+        
+        // Si cambió la acumulación, actualizar referencias
+        if (caso.acumulado_a !== casoEditando.acumulado_a) {
+            // Quitar del caso anterior si tenía
+            if (casoEditando.acumulado_a) {
+                const casoAnterior = casos.find(c => c.id === casoEditando.acumulado_a);
+                if (casoAnterior && casoAnterior.juicios_acumulados) {
+                    casoAnterior.juicios_acumulados = casoAnterior.juicios_acumulados.filter(id => id !== caso.id);
+                }
+            }
+            
+            // Agregar al nuevo caso acumulador
+            if (caso.acumulado_a) {
+                const casoNuevo = casos.find(c => c.id === caso.acumulado_a);
+                if (casoNuevo) {
+                    if (!casoNuevo.juicios_acumulados) {
+                        casoNuevo.juicios_acumulados = [];
+                    }
+                    if (!casoNuevo.juicios_acumulados.includes(caso.id)) {
+                        casoNuevo.juicios_acumulados.push(caso.id);
+                    }
+                }
+            }
+        }
+        
+        localStorage.setItem('casos', JSON.stringify(casos));
+        alert('✅ Caso actualizado exitosamente');
+        
+    } else {
+        // MODO CREACIÓN: Crear nuevo caso
+        caso.id = casos.length > 0 ? Math.max(...casos.map(c => c.id)) + 1 : 1;
+        caso.numero = casos.length + 1;
+        caso.fecha_creacion = new Date().toISOString();
+        caso.fecha_actualizacion = new Date().toISOString();
+        
+        // Agregar campos de seguimiento vacíos
+        caso.seguimiento = {
+            pronostico: null,
+            sentencia: null,
+            importe_sentencia: null,
+            observaciones: null,
+            fecha_estado_procesal: null,
+            ultimo_estado_procesal: null,
+            abogado_responsable: null
+        };
+        
+        // Si se acumula a otro caso, actualizar ese caso
+        if (caso.acumulado_a) {
+            const casoAcumulador = casos.find(c => c.id === caso.acumulado_a);
+            if (casoAcumulador) {
+                if (!casoAcumulador.juicios_acumulados) {
+                    casoAcumulador.juicios_acumulados = [];
+                }
+                casoAcumulador.juicios_acumulados.push(caso.id);
+            }
+        }
+        
+        casos.push(caso);
+        localStorage.setItem('casos', JSON.stringify(casos));
+        alert('✅ Caso guardado exitosamente');
     }
     
-    casos.push(caso);
-    localStorage.setItem('casos', JSON.stringify(casos));
-    
-    alert('✅ Caso guardado exitosamente');
     window.location.href = 'casos.html';
 }
 

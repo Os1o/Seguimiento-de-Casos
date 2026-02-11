@@ -191,6 +191,7 @@ function guardarCambios(e) {
     casoEditado.id = casoActual.id;
     casoEditado.numero = casoActual.numero;
     casoEditado.fecha_creacion = casoActual.fecha_creacion;
+    casoEditado.fecha_actualizacion = new Date().toISOString(); // Actualizar timestamp
     
     // Preservar relaciones padre-hijo existentes
     if (casoActual.juicios_acumulados && casoActual.juicios_acumulados.length > 0) {
@@ -369,6 +370,16 @@ function agregarCodemandado() {
 }
 function eliminarCodemandado(id) { document.getElementById(id).remove(); }
 function cambiarTipoCodemandado(id, tipo) { togglePersonaCampos(id, tipo === 'FISICA'); }
+
+function togglePersonaCampos(id, esFisica) {
+    document.getElementById(`${id}_fisica_campos`).style.display = esFisica ? 'block' : 'none';
+    document.getElementById(`${id}_moral_campos`).style.display = esFisica ? 'none' : 'block';
+}
+
+function cerrarSesion() {
+    sessionStorage.removeItem('usuario');
+    window.location.href = 'login.html';
+}
 
 function actualizarCasosAcumulables() {
     const select = document.getElementById('acumuladoA');
