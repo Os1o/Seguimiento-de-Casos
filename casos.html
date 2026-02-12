@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casos Civiles, Mercantiles y Procedimientos Especiales - Sistema de Gestión</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
     <!-- Header -->
     <header class="header-gob">
@@ -49,23 +51,12 @@
             </div>
         </div>
 
-        <!-- Actividad Reciente -->
-        <div class="seccion-actividad">
-            <h3 class="seccion-actividad-titulo">Actividad Reciente</h3>
-            <div id="actividadReciente" class="actividad-lista">
-                <!-- Se llena dinámicamente desde casos.js -->
-            </div>
-        </div>
 
         <!-- Búsqueda -->
         <div class="toolbar">
             <div class="toolbar-left">
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    class="search-input" 
-                    placeholder="Buscar por expediente, actor o demandado..."
-                >
+                <input type="text" id="searchInput" class="search-input"
+                    placeholder="Buscar por expediente, actor o demandado...">
                 <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
                     Limpiar Filtros
                 </button>
@@ -83,17 +74,22 @@
                 <thead>
                     <tr>
                         <th class="th-filtrable">
-                            <button id="btn_filtroDelegacion" class="filtro-btn-custom" data-nombre="OOAD/UMAE" onclick="toggleFiltro('filtroDelegacion', this)">OOAD/UMAE &#9660;</button>
+                            <button id="btn_filtroDelegacion" class="filtro-btn-custom" data-nombre="OOAD/UMAE"
+                                onclick="toggleFiltro('filtroDelegacion', this)">OOAD/UMAE &#9660;</button>
                         </th>
                         <th class="th-filtrable">
-                            <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus" onclick="toggleFiltro('filtroEstatus', this)">Estatus &#9660;</button>
+                            <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus"
+                                onclick="toggleFiltro('filtroEstatus', this)">Estatus &#9660;</button>
                         </th>
                         <th>Núm. Expediente</th>
                         <th class="th-filtrable">
-                            <button id="btn_filtroTipo" class="filtro-btn-custom" data-nombre="Tipo" onclick="toggleFiltro('filtroTipo', this)">Tipo &#9660;</button>
+                            <button id="btn_filtroTipo" class="filtro-btn-custom" data-nombre="Tipo"
+                                onclick="toggleFiltro('filtroTipo', this)">Tipo &#9660;</button>
                         </th>
                         <th class="th-filtrable">
-                            <button id="btn_filtroJurisdiccion" class="filtro-btn-custom" data-nombre="Tribunal / Juzgado" onclick="toggleFiltro('filtroJurisdiccion', this)">Tribunal / Juzgado &#9660;</button>
+                            <button id="btn_filtroJurisdiccion" class="filtro-btn-custom"
+                                data-nombre="Tribunal / Juzgado"
+                                onclick="toggleFiltro('filtroJurisdiccion', this)">Tribunal / Juzgado &#9660;</button>
                         </th>
                         <th>Fecha Inicio</th>
                         <th>Actor</th>
@@ -101,7 +97,8 @@
                         <th>Codemandado</th>
                         <th>Importe</th>
                         <th class="th-filtrable">
-                            <button id="btn_filtroPosicionIMSS" class="filtro-btn-custom" data-nombre="IMSS es" onclick="toggleFiltro('filtroPosicionIMSS', this)">IMSS es &#9660;</button>
+                            <button id="btn_filtroPosicionIMSS" class="filtro-btn-custom" data-nombre="IMSS es"
+                                onclick="toggleFiltro('filtroPosicionIMSS', this)">IMSS es &#9660;</button>
                         </th>
                         <th>Acumulados</th>
                         <th>Últ. Actualización</th>
@@ -126,10 +123,21 @@
                 No se encontraron casos con los filtros aplicados
             </p>
         </div>
+
+
+        <!-- Actividad Reciente -->
+        <div class="seccion-actividad">
+            <h3 class="seccion-actividad-titulo">Actividad Reciente</h3>
+            <div id="actividadReciente" class="actividad-lista">
+                <!-- Se llena dinámicamente desde casos.js -->
+            </div>
+        </div>
+
     </div>
 
     <!-- Modal para ver casos acumulados -->
-    <div id="modalAcumulados" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div id="modalAcumulados"
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
         <div class="card" style="max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h3 style="margin: 0; color: var(--color-primary);">Casos Acumulados</h3>
@@ -142,4 +150,5 @@
     <script src="js/datos-fake.js"></script>
     <script src="js/casos.js"></script>
 </body>
+
 </html>
