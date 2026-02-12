@@ -54,11 +54,19 @@ function cargarCaso(casoId) {
 function cargarCasosAcumulables(casos) {
     const select = document.getElementById('acumuladoA');
 
-    // Filtrar: solo casos en TRAMITE, no acumulados, y no el caso actual
+    // Obtener fecha de inicio del caso actual para comparar
+    const fechaActual = casoActual.fecha_inicio ? new Date(casoActual.fecha_inicio) : null;
+    // Obtener materia (tipo_juicio) del caso actual: CIVIL o MERCANTIL
+    const materiaActual = casoActual.tipo_juicio;
+
+    // Filtrar: solo casos en TRAMITE, no acumulados, no el caso actual,
+    // misma materia (Civil/Mercantil) y con fecha de inicio mas vieja
     const acumulables = casos.filter(c =>
         c.id !== casoActual.id &&
         c.estatus === 'TRAMITE' &&
-        !c.acumulado_a
+        !c.acumulado_a &&
+        c.tipo_juicio === materiaActual &&
+        fechaActual && c.fecha_inicio && new Date(c.fecha_inicio) < fechaActual
     );
 
     acumulables.forEach(c => {

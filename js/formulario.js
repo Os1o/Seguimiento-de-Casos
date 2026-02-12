@@ -103,6 +103,12 @@ function configurarEventListeners() {
             document.getElementById('numeroFederal').required = !esLocal;
             document.getElementById('anoFederal').value = '';
             document.getElementById('anoFederal').required = !esLocal;
+
+            // Re-disparar cambio de subtipo para filtrar sub-subtipos segun jurisdiccion
+            const subtipoSelect = document.getElementById('subtipoJuicio');
+            if (subtipoSelect.value) {
+                subtipoSelect.dispatchEvent(new Event('change'));
+            }
         });
     });
 
@@ -144,13 +150,23 @@ function configurarEventListeners() {
         const selectedOption = this.options[this.selectedIndex];
         const subtipos = selectedOption ? JSON.parse(selectedOption.dataset.subtipos || '[]') : [];
 
+        // Obtener jurisdiccion seleccionada
+        const jurisdiccionRadio = document.querySelector('input[name="jurisdiccion"]:checked');
+        const jurisdiccion = jurisdiccionRadio ? jurisdiccionRadio.value : '';
+
+        // Filtrar: si es FEDERAL, no mostrar "Oral" (solo LOCAL)
+        const subtiposFiltrados = subtipos.filter(ss => {
+            if (jurisdiccion === 'FEDERAL' && ss.jurisdiccion === 'LOCAL') return false;
+            return true;
+        });
+
         const grupoSubsub = document.getElementById('grupSubsubtipo');
         const selectSubsub = document.getElementById('subsubtipoJuicio');
 
-        if (subtipos.length > 0) {
+        if (subtiposFiltrados.length > 0) {
             grupoSubsub.style.display = 'block';
             selectSubsub.innerHTML = '<option value="">Ninguno</option>';
-            subtipos.forEach(ss => {
+            subtiposFiltrados.forEach(ss => {
                 const option = document.createElement('option');
                 option.value = ss.id;
                 option.textContent = ss.nombre;

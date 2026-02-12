@@ -332,13 +332,24 @@ function cargarSubsubtipos(subtipoId) {
     if (!selectedOption) return;
 
     const subtipos = JSON.parse(selectedOption.dataset.subtipos || '[]');
+
+    // Obtener jurisdiccion seleccionada
+    const jurisdiccionRadio = document.querySelector('input[name="jurisdiccion"]:checked');
+    const jurisdiccion = jurisdiccionRadio ? jurisdiccionRadio.value : '';
+
+    // Filtrar: si es FEDERAL, no mostrar sub-subtipos que son solo LOCAL (como "Oral")
+    const subtiposFiltrados = subtipos.filter(ss => {
+        if (jurisdiccion === 'FEDERAL' && ss.jurisdiccion === 'LOCAL') return false;
+        return true;
+    });
+
     const grupoSubsub = document.getElementById('grupSubsubtipo');
     const selectSubsub = document.getElementById('subsubtipoJuicio');
 
-    if (subtipos.length > 0) {
+    if (subtiposFiltrados.length > 0) {
         grupoSubsub.style.display = 'block';
         selectSubsub.innerHTML = '<option value="">Ninguno</option>';
-        subtipos.forEach(ss => {
+        subtiposFiltrados.forEach(ss => {
             const option = document.createElement('option');
             option.value = ss.id;
             option.textContent = ss.nombre;
@@ -378,6 +389,12 @@ function configurarEventListeners() {
     document.querySelectorAll('input[name="jurisdiccion"]').forEach(radio => {
         radio.addEventListener('change', function() {
             mostrarCamposJurisdiccion(this.value);
+
+            // Re-disparar carga de sub-subtipos para filtrar segun jurisdiccion
+            const subtipoSelect = document.getElementById('subtipoJuicio');
+            if (subtipoSelect.value) {
+                cargarSubsubtipos(subtipoSelect.value);
+            }
         });
     });
 
