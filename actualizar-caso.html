@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualizar Seguimiento - Sistema de Gestion de Juicios</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header-gob">
+        <div class="header-logo">
+            <span class="logo-text">Gobierno de Mexico</span>
+        </div>
+        <nav class="header-nav">
+            <div class="header-user">
+                <span id="nombreUsuario">Usuario</span>
+            </div>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesion</button>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="casos.html">Casos</a>
+            <span class="breadcrumb-separator">></span>
+            <a href="#" id="linkDetalle">Detalle del Caso</a>
+            <span class="breadcrumb-separator">></span>
+            <span>Actualizar Seguimiento</span>
+        </div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Actualizar Seguimiento</h1>
+                <p class="page-subtitle">Expediente: <span id="numExpediente">-</span></p>
+            </div>
+        </div>
+
+        <form id="formActualizar" class="card">
+            <!-- SECCION: Sentencia -->
+            <div class="form-section">
+                <h3 class="form-section-title">Sentencia</h3>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Sentencia</label>
+                        <input type="text" id="sentencia" class="form-input" placeholder="Descripcion de la sentencia">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Importe de Sentencia</label>
+                        <div class="importe-container">
+                            <div class="form-checkbox" style="margin-bottom: 8px;">
+                                <input type="checkbox" id="sinCuantiaSentencia">
+                                <label for="sinCuantiaSentencia">Sin cuantia</label>
+                            </div>
+                            <input type="text" id="importeSentencia" class="form-input" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCION: Estado Procesal -->
+            <div class="form-section">
+                <h3 class="form-section-title">Estado Procesal</h3>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Ultimo Estado Procesal</label>
+                        <input type="text" id="ultimoEstadoProcesal" class="form-input" placeholder="Descripcion del estado procesal">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Fecha de Ultimo Estado Procesal</label>
+                        <input type="date" id="fechaEstadoProcesal" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCION: Observaciones -->
+            <div class="form-section">
+                <h3 class="form-section-title">Observaciones</h3>
+
+                <div class="form-group">
+                    <label class="form-label">Observaciones Generales</label>
+                    <textarea id="observaciones" class="form-textarea" placeholder="Observaciones generales sobre el caso..." rows="4"></textarea>
+                </div>
+            </div>
+
+            <!-- SECCION: Acumulacion -->
+            <div class="form-section">
+                <h3 class="form-section-title">Acumulacion</h3>
+
+                <div class="form-group">
+                    <label class="form-label">Acumulado A</label>
+                    <select id="acumuladoA" class="form-select">
+                        <option value="">Sin acumular</option>
+                        <!-- Se llena dinamicamente -->
+                    </select>
+                    <small style="color: var(--color-text-light);">Al acumular, el estatus del caso cambiara a CONCLUIDO</small>
+                </div>
+            </div>
+
+            <!-- SECCION: Fecha de Vencimiento -->
+            <div class="form-section">
+                <h3 class="form-section-title">Fecha de Vencimiento</h3>
+
+                <div class="form-group">
+                    <label class="form-label">Fecha de Vencimiento</label>
+                    <input type="date" id="fechaVencimiento" class="form-input">
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px;">
+                <a href="#" id="btnCancelar" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-success">Guardar Actualizacion</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="js/datos-fake.js"></script>
+    <script src="js/actualizarCaso.js"></script>
+</body>
+</html>

@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle del Caso - Sistema de Gestión de Juicios</title>
+    <title>Detalle del Caso - Sistema de Gestion de Juicios</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <!-- Header -->
     <header class="header-gob">
         <div class="header-logo">
-            <span class="logo-text">Gobierno de México</span>
+            <span class="logo-text">Gobierno de Mexico</span>
         </div>
         <nav class="header-nav">
             <div class="header-user">
                 <span id="nombreUsuario">Cargando...</span>
             </div>
-            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesion</button>
         </nav>
     </header>
 
@@ -42,24 +42,24 @@
             </div>
         </div>
 
-        <!-- Sección 1: Datos del Registro -->
+        <!-- Seccion 1: Datos del Registro -->
         <div class="seccion">
             <h3>Datos del Registro</h3>
-            
+
             <div class="campo-grupo">
                 <div class="campo">
-                    <span class="campo-label">Delegación</span>
+                    <span class="campo-label">Delegacion</span>
                     <div class="campo-valor" id="delegacion">---</div>
                 </div>
                 <div class="campo">
-                    <span class="campo-label">Área Generadora</span>
+                    <span class="campo-label">Area Generadora</span>
                     <div class="campo-valor" id="area">---</div>
                 </div>
             </div>
 
             <div class="campo-grupo">
                 <div class="campo">
-                    <span class="campo-label">Jurisdicción</span>
+                    <span class="campo-label">Jurisdiccion</span>
                     <div class="campo-valor" id="jurisdiccion">---</div>
                 </div>
                 <div class="campo">
@@ -85,7 +85,7 @@
 
             <div class="campo-grupo">
                 <div class="campo">
-                    <span class="campo-label">Prestación Reclamada</span>
+                    <span class="campo-label">Prestaciones Reclamadas</span>
                     <div class="campo-valor" id="prestacion">---</div>
                 </div>
                 <div class="campo">
@@ -99,9 +99,24 @@
                 <div class="campo-valor" id="prestacionesNotas">---</div>
             </div>
 
+            <div class="campo-grupo">
+                <div class="campo">
+                    <span class="campo-label">Abogado Responsable</span>
+                    <div class="campo-valor" id="abogadoResponsable">
+                        <span class="campo-vacio">Sin asignar</span>
+                    </div>
+                </div>
+                <div class="campo">
+                    <span class="campo-label">Pronostico</span>
+                    <div class="campo-valor" id="pronostico">
+                        <span class="campo-vacio">Sin informacion</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Actor -->
             <div class="campo" id="seccionActor" style="display: none;">
-                <span class="campo-label">Actor</span>
+                <span class="campo-label">Actor(es)</span>
                 <div id="actorInfo"></div>
             </div>
 
@@ -130,51 +145,36 @@
             </div>
         </div>
 
-        <!-- Sección 2: Seguimiento del Juicio -->
+        <!-- Seccion 2: Seguimiento del Juicio -->
         <div class="seccion">
             <h3>Seguimiento del Juicio</h3>
-            
+
             <div class="campo-grupo">
-                <div class="campo">
-                    <span class="campo-label">Pronóstico</span>
-                    <div class="campo-valor" id="pronostico">
-                        <span class="campo-vacio">Sin información</span>
-                    </div>
-                </div>
                 <div class="campo">
                     <span class="campo-label">Sentencia</span>
                     <div class="campo-valor" id="sentencia">
-                        <span class="campo-vacio">Sin información</span>
+                        <span class="campo-vacio">Sin informacion</span>
                     </div>
                 </div>
-            </div>
-
-            <div class="campo-grupo">
                 <div class="campo">
                     <span class="campo-label">Importe de la Sentencia</span>
                     <div class="campo-valor" id="importeSentencia">
-                        <span class="campo-vacio">Sin información</span>
-                    </div>
-                </div>
-                <div class="campo">
-                    <span class="campo-label">Abogado Responsable</span>
-                    <div class="campo-valor" id="abogadoResponsable">
-                        <span class="campo-vacio">Sin asignar</span>
+                        <span class="campo-vacio">Sin informacion</span>
                     </div>
                 </div>
             </div>
 
             <div class="campo-grupo">
                 <div class="campo">
-                    <span class="campo-label">Último Estado Procesal</span>
+                    <span class="campo-label">Ultimo Estado Procesal</span>
                     <div class="campo-valor" id="ultimoEstadoProcesal">
-                        <span class="campo-vacio">Sin información</span>
+                        <span class="campo-vacio">Sin informacion</span>
                     </div>
                 </div>
                 <div class="campo">
                     <span class="campo-label">Fecha Estado Procesal</span>
                     <div class="campo-valor" id="fechaEstadoProcesal">
-                        <span class="campo-vacio">Sin información</span>
+                        <span class="campo-vacio">Sin informacion</span>
                     </div>
                 </div>
             </div>
@@ -185,17 +185,24 @@
                     <span class="campo-vacio">Sin observaciones</span>
                 </div>
             </div>
+
+            <div class="campo">
+                <span class="campo-label">Fecha de Vencimiento</span>
+                <div class="campo-valor" id="fechaVencimiento">
+                    <span class="campo-vacio">Sin informacion</span>
+                </div>
+            </div>
         </div>
 
-        <!-- Botones de Acción -->
+        <!-- Botones de Accion -->
         <div class="botones-accion">
             <button class="btn-volver" onclick="volver()">
-                ← Volver a la lista
+                &larr; Volver a la lista
             </button>
             <button class="btn-editar" onclick="editarDatos()">
                  Editar Datos
             </button>
-            <button class="btn-actualizar" onclick="abrirModalSeguimiento()">
+            <button class="btn-actualizar" id="btnActualizar" onclick="abrirActualizacion()">
                  Actualizar Seguimiento
             </button>
         </div>

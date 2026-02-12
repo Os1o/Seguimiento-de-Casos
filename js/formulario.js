@@ -1,7 +1,8 @@
 // =====================================================
-// FORMULARIO.JS - Lógica para CREAR nuevos casos
+// FORMULARIO.JS - Logica para CREAR nuevos casos
 // =====================================================
 
+let contadorActores = 0;
 let contadorDemandados = 0;
 let contadorCodemandados = 0;
 
@@ -22,20 +23,17 @@ function cerrarSesion() {
 document.addEventListener('DOMContentLoaded', function() {
     const usuario = verificarSesion();
     if (!usuario) return;
-    
+
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
-    
+
     inicializarFormulario();
     configurarEventListeners();
 });
-
-
 
 function inicializarFormulario() {
     llenarDelegaciones();
     llenarTribunales();
     llenarPrestaciones();
-    cargarCasosParaAcumular();
 }
 
 function llenarDelegaciones() {
@@ -59,118 +57,26 @@ function llenarTribunales() {
 }
 
 function llenarPrestaciones() {
-    const select = document.getElementById('prestacionReclamada');
+    const container = document.getElementById('prestacionesCheckboxes');
+    container.innerHTML = '';
     catalogos.prestaciones.forEach(p => {
-        const option = document.createElement('option');
-        option.value = p.id;
-        option.textContent = p.nombre;
-        select.appendChild(option);
+        const div = document.createElement('div');
+        div.className = 'form-checkbox';
+        div.innerHTML = `
+            <input type="checkbox" id="prestacion_${p.id}" name="prestaciones" value="${p.id}">
+            <label for="prestacion_${p.id}">${p.nombre}</label>
+        `;
+        container.appendChild(div);
     });
 }
 
-function cargarCasosParaAcumular() {
-    actualizarCasosAcumulables();
-}
-
-function actualizarCasosAcumulables() {
-    const select = document.getElementById('acumuladoA');
-    const tipoJuicioActual = document.getElementById('tipoJuicio').value;
-    
-    // Limpiar select
-    select.innerHTML = '<option value="">No está acumulado</option>';
-    
-    const casosStr = localStorage.getItem('casos');
-    if (!casosStr) return;
-    
-    const casos = JSON.parse(casosStr);
-    
-    // Filtrar solo casos en TRAMITE, no acumulados, y de la misma materia
-    casos
-        .filter(c => {
-            const cumpleEstatus = c.estatus === 'TRAMITE' && !c.acumulado_a;
-            const cumpleMateria = !tipoJuicioActual || c.tipo_juicio === tipoJuicioActual;
-            return cumpleEstatus && cumpleMateria;
-        })
-        .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))
-        .forEach(c => {
-            const option = document.createElement('option');
-            option.value = c.id;
-            option.textContent = `${c.numero_expediente} - ${c.tipo_juicio} - ${formatearFecha(c.fecha_inicio)}`;
-            select.appendChild(option);
-        });
-}
-
-// Funciones auxiliares para mostrar/ocultar campos según tipo de persona
-function actualizarCamposActor() {
-    const tipoSeleccionado = document.querySelector('input[name="tipoPersonaActor"]:checked')?.value;
-    const seccionFisica = document.getElementById('actorFisicaCampos');
-    const seccionMoral = document.getElementById('actorMoralCampos');
-    
-    if (tipoSeleccionado === 'FISICA') {
-        seccionFisica.style.display = 'block';
-        seccionMoral.style.display = 'none';
-    } else if (tipoSeleccionado === 'MORAL') {
-        seccionFisica.style.display = 'none';
-        seccionMoral.style.display = 'block';
-    }
-}
-
-function actualizarCamposDemandado(numero) {
-    const tipoSeleccionado = document.querySelector(`input[name="tipoPersonaDemandado${numero}"]:checked`)?.value;
-    const seccionFisica = document.getElementById(`demandadoFisicaCampos${numero}`);
-    const seccionMoral = document.getElementById(`demandadoMoralCampos${numero}`);
-    
-    if (seccionFisica && seccionMoral) {
-        if (tipoSeleccionado === 'FISICA') {
-            seccionFisica.style.display = 'block';
-            seccionMoral.style.display = 'none';
-        } else if (tipoSeleccionado === 'MORAL') {
-            seccionFisica.style.display = 'none';
-            seccionMoral.style.display = 'block';
-        }
-    }
-}
-
-function actualizarCamposCodemandado(numero) {
-    const tipoSeleccionado = document.querySelector(`input[name="tipoPersonaCodemandado${numero}"]:checked`)?.value;
-    const seccionFisica = document.getElementById(`codemandadoFisicaCampos${numero}`);
-    const seccionMoral = document.getElementById(`codemandadoMoralCampos${numero}`);
-    
-    if (seccionFisica && seccionMoral) {
-        if (tipoSeleccionado === 'FISICA') {
-            seccionFisica.style.display = 'block';
-            seccionMoral.style.display = 'none';
-        } else if (tipoSeleccionado === 'MORAL') {
-            seccionFisica.style.display = 'none';
-            seccionMoral.style.display = 'block';
-        }
-    }
-}
-
-function actualizarSeccionesPersonas() {
-    const imssEs = document.getElementById('imss_es').value;
-    const seccionActor = document.getElementById('seccionActor');
-    const seccionDemandados = document.getElementById('seccionDemandados');
-    
-    if (imssEs === 'ACTOR') {
-        seccionActor.style.display = 'none';
-        seccionDemandados.style.display = 'block';
-    } else if (imssEs === 'DEMANDADO') {
-        seccionActor.style.display = 'block';
-        seccionDemandados.style.display = 'none';
-    } else {
-        seccionActor.style.display = 'block';
-        seccionDemandados.style.display = 'block';
-    }
-}
-
 function configurarEventListeners() {
-    // Cambio de delegación actualiza áreas
+    // Cambio de delegacion actualiza areas
     document.getElementById('delegacion').addEventListener('change', function() {
         const delegacionId = this.value;
         const selectArea = document.getElementById('area');
         selectArea.innerHTML = '<option value="">Seleccione...</option>';
-        
+
         if (delegacionId && catalogos.areas[delegacionId]) {
             selectArea.disabled = false;
             catalogos.areas[delegacionId].forEach(a => {
@@ -183,39 +89,38 @@ function configurarEventListeners() {
             selectArea.disabled = true;
         }
     });
-    
-    // Cambio de jurisdicción muestra campos correspondientes
+
+    // Cambio de jurisdiccion muestra campos correspondientes
     document.querySelectorAll('input[name="jurisdiccion"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const esLocal = this.value === 'LOCAL';
             document.getElementById('campoLocal').style.display = esLocal ? 'block' : 'none';
             document.getElementById('campoFederal').style.display = esLocal ? 'none' : 'block';
-            
-            // Reset campos
+
             document.getElementById('numeroLocal').value = '';
             document.getElementById('numeroLocal').required = esLocal;
             document.getElementById('numeroFederal').value = '';
             document.getElementById('numeroFederal').required = !esLocal;
-            document.getElementById('añoFederal').value = '';
-            document.getElementById('añoFederal').required = !esLocal;
+            document.getElementById('anoFederal').value = '';
+            document.getElementById('anoFederal').required = !esLocal;
         });
     });
-    
-    // Validación solo números en expediente federal
-    document.getElementById('numeroFederal').addEventListener('input', function(e) {
+
+    // Validacion solo numeros en expediente federal
+    document.getElementById('numeroFederal').addEventListener('input', function() {
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
     });
-    
-    document.getElementById('añoFederal').addEventListener('input', function(e) {
+
+    document.getElementById('anoFederal').addEventListener('input', function() {
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
     });
-    
-    // Cambio de tipo de juicio actualiza subtipos Y casos acumulables
+
+    // Cambio de tipo de juicio actualiza subtipos
     document.getElementById('tipoJuicio').addEventListener('change', function() {
         const tipo = this.value;
         const selectSubtipo = document.getElementById('subtipoJuicio');
         selectSubtipo.innerHTML = '<option value="">Seleccione...</option>';
-        
+
         if (tipo && catalogos.tiposJuicio[tipo]) {
             selectSubtipo.disabled = false;
             catalogos.tiposJuicio[tipo].forEach(st => {
@@ -230,21 +135,18 @@ function configurarEventListeners() {
         } else {
             selectSubtipo.disabled = true;
         }
-        
+
         document.getElementById('grupSubsubtipo').style.display = 'none';
-        
-        // Actualizar casos acumulables según materia
-        actualizarCasosAcumulables();
     });
-    
+
     // Cambio de subtipo puede mostrar sub-subtipos
     document.getElementById('subtipoJuicio').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const subtipos = selectedOption ? JSON.parse(selectedOption.dataset.subtipos || '[]') : [];
-        
+
         const grupoSubsub = document.getElementById('grupSubsubtipo');
         const selectSubsub = document.getElementById('subsubtipoJuicio');
-        
+
         if (subtipos.length > 0) {
             grupoSubsub.style.display = 'block';
             selectSubsub.innerHTML = '<option value="">Ninguno</option>';
@@ -259,78 +161,93 @@ function configurarEventListeners() {
             selectSubsub.value = '';
         }
     });
-    
-    // Cambio de posición IMSS muestra/oculta secciones
+
+    // Cambio de posicion IMSS muestra/oculta secciones
     document.querySelectorAll('input[name="imssEs"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const valor = this.value;
-            
-            // Mostrar/ocultar sección Actor
+
             const seccionActor = document.getElementById('seccionActor');
             seccionActor.style.display = (valor !== 'ACTOR') ? 'block' : 'none';
-            
-            // Mostrar/ocultar sección Demandados
+
             const seccionDemandados = document.getElementById('seccionDemandados');
             seccionDemandados.style.display = (valor !== 'DEMANDADO') ? 'block' : 'none';
-            
-            // Limpiar si se ocultan
+
             if (valor === 'ACTOR') {
-                document.querySelectorAll('input[name="actorTipo"]').forEach(r => r.checked = false);
-                document.getElementById('actorFisicaCampos').style.display = 'none';
-                document.getElementById('actorMoralCampos').style.display = 'none';
+                document.getElementById('listaActores').innerHTML = '';
+                contadorActores = 0;
             }
-            
+
             if (valor === 'DEMANDADO') {
                 document.getElementById('listaDemandados').innerHTML = '';
                 contadorDemandados = 0;
             }
         });
     });
-    
-    // Cambio de tipo de persona Actor
-    document.querySelectorAll('input[name="actorTipo"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const esFisica = this.value === 'FISICA';
-            document.getElementById('actorFisicaCampos').style.display = esFisica ? 'block' : 'none';
-            document.getElementById('actorMoralCampos').style.display = esFisica ? 'none' : 'block';
-            
-            // Limpiar campos
-            document.getElementById('actorNombres').value = '';
-            document.getElementById('actorPaterno').value = '';
-            document.getElementById('actorMaterno').value = '';
-            document.getElementById('actorEmpresa').value = '';
-        });
+
+    // Checkbox sin cuantia
+    document.getElementById('sinCuantia').addEventListener('change', function() {
+        const importeInput = document.getElementById('importeDemandado');
+        if (this.checked) {
+            importeInput.value = '';
+            importeInput.disabled = true;
+            importeInput.placeholder = 'Sin cuantia';
+        } else {
+            importeInput.disabled = false;
+            importeInput.placeholder = '0.00';
+        }
     });
-    
+
+    // Formato de importe: solo numeros y comas
+    document.getElementById('importeDemandado').addEventListener('input', function() {
+        let valor = this.value.replace(/[^0-9.]/g, '');
+
+        // Solo permitir un punto decimal
+        const partes = valor.split('.');
+        if (partes.length > 2) {
+            valor = partes[0] + '.' + partes.slice(1).join('');
+        }
+
+        // Formatear con comas la parte entera
+        if (partes[0]) {
+            partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        this.value = partes.join('.');
+    });
+
     // Submit del formulario
     document.getElementById('formNuevoCaso').addEventListener('submit', guardarCaso);
 }
 
-function agregarDemandado() {
-    contadorDemandados++;
-    const id = `demandado_${contadorDemandados}`;
-    
+// =====================================================
+// ACTORES DINAMICOS
+// =====================================================
+function agregarActor() {
+    contadorActores++;
+    const id = `actor_${contadorActores}`;
+
     const html = `
         <div class="dynamic-field" id="${id}">
             <div class="dynamic-field-header">
-                <span class="dynamic-field-title">Demandado ${contadorDemandados}</span>
-                <button type="button" class="btn-remove" onclick="eliminarDemandado('${id}')">Eliminar</button>
+                <span class="dynamic-field-title">Actor ${contadorActores}</span>
+                <button type="button" class="btn-remove" onclick="eliminarActor('${id}')">Eliminar</button>
             </div>
-            
+
             <div class="form-group">
                 <label class="form-label required">Tipo de Persona</label>
                 <div class="form-radio-group">
                     <div class="form-radio">
-                        <input type="radio" id="${id}_fisica" name="${id}_tipo" value="FISICA" required onchange="cambiarTipoDemandado('${id}', 'FISICA')">
-                        <label for="${id}_fisica">Física</label>
+                        <input type="radio" id="${id}_fisica" name="${id}_tipo" value="FISICA" required onchange="cambiarTipoActor('${id}', 'FISICA')">
+                        <label for="${id}_fisica">Fisica</label>
                     </div>
                     <div class="form-radio">
-                        <input type="radio" id="${id}_moral" name="${id}_tipo" value="MORAL" onchange="cambiarTipoDemandado('${id}', 'MORAL')">
+                        <input type="radio" id="${id}_moral" name="${id}_tipo" value="MORAL" onchange="cambiarTipoActor('${id}', 'MORAL')">
                         <label for="${id}_moral">Moral</label>
                     </div>
                 </div>
             </div>
-            
+
             <div id="${id}_fisica_campos" style="display: none;">
                 <div class="form-grid">
                     <div class="form-group">
@@ -347,7 +264,7 @@ function agregarDemandado() {
                     </div>
                 </div>
             </div>
-            
+
             <div id="${id}_moral_campos" style="display: none;">
                 <div class="form-group">
                     <label class="form-label required">Nombre de la Empresa</label>
@@ -356,7 +273,74 @@ function agregarDemandado() {
             </div>
         </div>
     `;
-    
+
+    document.getElementById('listaActores').insertAdjacentHTML('beforeend', html);
+}
+
+function eliminarActor(id) {
+    document.getElementById(id).remove();
+}
+
+function cambiarTipoActor(id, tipo) {
+    const esFisica = tipo === 'FISICA';
+    document.getElementById(`${id}_fisica_campos`).style.display = esFisica ? 'block' : 'none';
+    document.getElementById(`${id}_moral_campos`).style.display = esFisica ? 'none' : 'block';
+}
+
+// =====================================================
+// DEMANDADOS DINAMICOS
+// =====================================================
+function agregarDemandado() {
+    contadorDemandados++;
+    const id = `demandado_${contadorDemandados}`;
+
+    const html = `
+        <div class="dynamic-field" id="${id}">
+            <div class="dynamic-field-header">
+                <span class="dynamic-field-title">Demandado ${contadorDemandados}</span>
+                <button type="button" class="btn-remove" onclick="eliminarDemandado('${id}')">Eliminar</button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Tipo de Persona</label>
+                <div class="form-radio-group">
+                    <div class="form-radio">
+                        <input type="radio" id="${id}_fisica" name="${id}_tipo" value="FISICA" required onchange="cambiarTipoDemandado('${id}', 'FISICA')">
+                        <label for="${id}_fisica">Fisica</label>
+                    </div>
+                    <div class="form-radio">
+                        <input type="radio" id="${id}_moral" name="${id}_tipo" value="MORAL" onchange="cambiarTipoDemandado('${id}', 'MORAL')">
+                        <label for="${id}_moral">Moral</label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="${id}_fisica_campos" style="display: none;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label required">Nombres</label>
+                        <input type="text" id="${id}_nombres" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Apellido Paterno</label>
+                        <input type="text" id="${id}_paterno" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Apellido Materno</label>
+                        <input type="text" id="${id}_materno" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <div id="${id}_moral_campos" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label required">Nombre de la Empresa</label>
+                    <input type="text" id="${id}_empresa" class="form-input">
+                </div>
+            </div>
+        </div>
+    `;
+
     document.getElementById('listaDemandados').insertAdjacentHTML('beforeend', html);
 }
 
@@ -370,23 +354,26 @@ function cambiarTipoDemandado(id, tipo) {
     document.getElementById(`${id}_moral_campos`).style.display = esFisica ? 'none' : 'block';
 }
 
+// =====================================================
+// CODEMANDADOS DINAMICOS
+// =====================================================
 function agregarCodemandado() {
     contadorCodemandados++;
     const id = `codemandado_${contadorCodemandados}`;
-    
+
     const html = `
         <div class="dynamic-field" id="${id}">
             <div class="dynamic-field-header">
                 <span class="dynamic-field-title">Codemandado ${contadorCodemandados}</span>
-                ${contadorCodemandados > 1 ? `<button type="button" class="btn-remove" onclick="eliminarCodemandado('${id}')">Eliminar</button>` : ''}
+                <button type="button" class="btn-remove" onclick="eliminarCodemandado('${id}')">Eliminar</button>
             </div>
-            
+
             <div class="form-group">
                 <label class="form-label required">Tipo de Persona</label>
                 <div class="form-radio-group">
                     <div class="form-radio">
                         <input type="radio" id="${id}_fisica" name="${id}_tipo" value="FISICA" required onchange="cambiarTipoCodemandado('${id}', 'FISICA')">
-                        <label for="${id}_fisica">Física</label>
+                        <label for="${id}_fisica">Fisica</label>
                     </div>
                     <div class="form-radio">
                         <input type="radio" id="${id}_moral" name="${id}_tipo" value="MORAL" onchange="cambiarTipoCodemandado('${id}', 'MORAL')">
@@ -394,39 +381,38 @@ function agregarCodemandado() {
                     </div>
                 </div>
             </div>
-            
+
             <div id="${id}_fisica_campos" style="display: none;">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label required">Nombres</label>
+                        <label class="form-label">Nombres</label>
                         <input type="text" id="${id}_nombres" class="form-input">
                     </div>
                     <div class="form-group">
-                        <label class="form-label required">Apellido Paterno</label>
+                        <label class="form-label">Apellido Paterno</label>
                         <input type="text" id="${id}_paterno" class="form-input">
                     </div>
                     <div class="form-group">
-                        <label class="form-label required">Apellido Materno</label>
+                        <label class="form-label">Apellido Materno</label>
                         <input type="text" id="${id}_materno" class="form-input">
                     </div>
                 </div>
             </div>
-            
+
             <div id="${id}_moral_campos" style="display: none;">
                 <div class="form-group">
-                    <label class="form-label required">Nombre de la Empresa</label>
+                    <label class="form-label">Nombre de la Empresa</label>
                     <input type="text" id="${id}_empresa" class="form-input">
                 </div>
             </div>
         </div>
     `;
-    
+
     document.getElementById('listaCodemandados').insertAdjacentHTML('beforeend', html);
 }
 
 function eliminarCodemandado(id) {
     document.getElementById(id).remove();
-    contadorCodemandados--;
 }
 
 function cambiarTipoCodemandado(id, tipo) {
@@ -435,148 +421,90 @@ function cambiarTipoCodemandado(id, tipo) {
     document.getElementById(`${id}_moral_campos`).style.display = esFisica ? 'none' : 'block';
 }
 
+// =====================================================
+// GUARDAR CASO
+// =====================================================
 function guardarCaso(e) {
     e.preventDefault();
-    
-    // Construir objeto del caso
+
     const caso = construirObjetoCaso();
-    
-    // Validar
+
     if (!validarCaso(caso)) {
         return;
     }
-    
-    // Guardar en localStorage
+
     const casosStr = localStorage.getItem('casos');
     let casos = casosStr ? JSON.parse(casosStr) : [];
-    
-    if (casoEditando) {
-        // MODO EDICIÓN: Actualizar caso existente
-        caso.id = casoEditando.id;
-        caso.numero = casoEditando.numero;
-        caso.fecha_creacion = casoEditando.fecha_creacion;
-        caso.fecha_actualizacion = new Date().toISOString(); // Actualizar timestamp
-        caso.seguimiento = casoEditando.seguimiento; // Mantener datos de seguimiento
-        
-        // Encontrar índice del caso y reemplazarlo
-        const index = casos.findIndex(c => c.id === caso.id);
-        if (index !== -1) {
-            casos[index] = caso;
-        }
-        
-        // Si cambió la acumulación, actualizar referencias
-        if (caso.acumulado_a !== casoEditando.acumulado_a) {
-            // Quitar del caso anterior si tenía
-            if (casoEditando.acumulado_a) {
-                const casoAnterior = casos.find(c => c.id === casoEditando.acumulado_a);
-                if (casoAnterior && casoAnterior.juicios_acumulados) {
-                    casoAnterior.juicios_acumulados = casoAnterior.juicios_acumulados.filter(id => id !== caso.id);
-                }
-            }
-            
-            // Agregar al nuevo caso acumulador
-            if (caso.acumulado_a) {
-                const casoNuevo = casos.find(c => c.id === caso.acumulado_a);
-                if (casoNuevo) {
-                    if (!casoNuevo.juicios_acumulados) {
-                        casoNuevo.juicios_acumulados = [];
-                    }
-                    if (!casoNuevo.juicios_acumulados.includes(caso.id)) {
-                        casoNuevo.juicios_acumulados.push(caso.id);
-                    }
-                }
-            }
-        }
-        
-        localStorage.setItem('casos', JSON.stringify(casos));
-        alert('✅ Caso actualizado exitosamente');
-        
-    } else {
-        // MODO CREACIÓN: Crear nuevo caso
-        caso.id = casos.length > 0 ? Math.max(...casos.map(c => c.id)) + 1 : 1;
-        caso.numero = casos.length + 1;
-        caso.fecha_creacion = new Date().toISOString();
-        caso.fecha_actualizacion = new Date().toISOString();
-        
-        // Agregar campos de seguimiento vacíos
-        caso.seguimiento = {
-            pronostico: null,
-            sentencia: null,
-            importe_sentencia: null,
-            observaciones: null,
-            fecha_estado_procesal: null,
-            ultimo_estado_procesal: null,
-            abogado_responsable: null
-        };
-        
-        // Si se acumula a otro caso, actualizar ese caso
-        if (caso.acumulado_a) {
-            const casoAcumulador = casos.find(c => c.id === caso.acumulado_a);
-            if (casoAcumulador) {
-                if (!casoAcumulador.juicios_acumulados) {
-                    casoAcumulador.juicios_acumulados = [];
-                }
-                casoAcumulador.juicios_acumulados.push(caso.id);
-            }
-        }
-        
-        casos.push(caso);
-        localStorage.setItem('casos', JSON.stringify(casos));
-        alert('✅ Caso guardado exitosamente');
-    }
-    
+
+    // MODO CREACION
+    caso.id = casos.length > 0 ? Math.max(...casos.map(c => c.id)) + 1 : 1;
+    caso.numero = casos.length + 1;
+    caso.fecha_creacion = new Date().toISOString();
+    caso.fecha_actualizacion = new Date().toISOString();
+
+    // Campos de seguimiento vacios (se llenan en actualizar-caso)
+    caso.seguimiento = {
+        sentencia: null,
+        importe_sentencia: null,
+        observaciones: null,
+        fecha_estado_procesal: null,
+        ultimo_estado_procesal: null
+    };
+
+    casos.push(caso);
+    localStorage.setItem('casos', JSON.stringify(casos));
+    alert('Caso guardado exitosamente');
+
     window.location.href = 'casos.html';
 }
 
 function construirObjetoCaso() {
     const jurisdiccion = document.querySelector('input[name="jurisdiccion"]:checked').value;
     const esLocal = jurisdiccion === 'LOCAL';
-    
+
     let numeroExpediente;
     if (esLocal) {
         numeroExpediente = document.getElementById('numeroLocal').value;
     } else {
         const num = document.getElementById('numeroFederal').value;
-        const año = document.getElementById('añoFederal').value;
-        numeroExpediente = `${num}/${año}`;
+        const ano = document.getElementById('anoFederal').value;
+        numeroExpediente = `${num}/${ano}`;
     }
-    
+
     const imssEs = document.querySelector('input[name="imssEs"]:checked').value;
-    
-    // Actor
-    let actor = null;
+
+    // Actores (array)
+    let actores = [];
     if (imssEs !== 'ACTOR') {
-        const actorTipo = document.querySelector('input[name="actorTipo"]:checked')?.value;
-        if (actorTipo === 'FISICA') {
-            actor = {
-                tipo_persona: 'FISICA',
-                nombres: document.getElementById('actorNombres').value,
-                apellido_paterno: document.getElementById('actorPaterno').value,
-                apellido_materno: document.getElementById('actorMaterno').value
-            };
-        } else if (actorTipo === 'MORAL') {
-            actor = {
-                tipo_persona: 'MORAL',
-                empresa: document.getElementById('actorEmpresa').value
-            };
-        }
+        actores = obtenerPersonasDinamicas('actor_');
     }
-    
+
     // Demandados
     let demandados = [];
     if (imssEs !== 'DEMANDADO') {
         demandados = obtenerPersonasDinamicas('demandado_');
     }
-    
+
     // Codemandados
     const codemandados = obtenerPersonasDinamicas('codemandado_');
-    
-    // Prestación (solo una)
-    const prestacionId = parseInt(document.getElementById('prestacionReclamada').value);
-    
+
+    // Prestaciones (array de IDs)
+    const prestacionesSeleccionadas = [];
+    document.querySelectorAll('input[name="prestaciones"]:checked').forEach(cb => {
+        prestacionesSeleccionadas.push(parseInt(cb.value));
+    });
+
+    // Importe
+    const sinCuantia = document.getElementById('sinCuantia').checked;
+    let importeDemandado = 0;
+    if (!sinCuantia) {
+        const valorImporte = document.getElementById('importeDemandado').value.replace(/,/g, '');
+        importeDemandado = parseFloat(valorImporte) || 0;
+    }
+
     const subtipoSelect = document.getElementById('subtipoJuicio');
     const subsubtipoSelect = document.getElementById('subsubtipoJuicio');
-    
+
     const caso = {
         delegacion_id: parseInt(document.getElementById('delegacion').value),
         area_generadora_id: parseInt(document.getElementById('area').value),
@@ -585,27 +513,30 @@ function construirObjetoCaso() {
         subtipo_juicio: subtipoSelect.options[subtipoSelect.selectedIndex]?.text || '',
         sub_subtipo_juicio: subsubtipoSelect.value ? subsubtipoSelect.options[subsubtipoSelect.selectedIndex].text : null,
         numero_expediente: numeroExpediente,
-        acumulado_a: document.getElementById('acumuladoA').value ? parseInt(document.getElementById('acumuladoA').value) : null,
+        acumulado_a: null,
         tribunal_id: parseInt(document.getElementById('tribunal').value),
         fecha_inicio: document.getElementById('fechaInicio').value,
         imss_es: imssEs,
-        actor: actor,
+        actores: actores,
         demandados: demandados,
         codemandados: codemandados,
-        prestacion_reclamada: prestacionId,
+        prestaciones_reclamadas: prestacionesSeleccionadas,
         prestaciones_notas: document.getElementById('prestacionesNotas').value,
-        importe_demandado: parseFloat(document.getElementById('importeDemandado').value) || 0,
-        estatus: document.getElementById('acumuladoA').value ? 'CONCLUIDO' : 'TRAMITE',
-        juicios_acumulados: []
+        importe_demandado: importeDemandado,
+        abogado_responsable: document.getElementById('abogadoResponsable').value || null,
+        pronostico: document.getElementById('pronostico').value || null,
+        estatus: 'TRAMITE',
+        juicios_acumulados: [],
+        fecha_vencimiento: null
     };
-    
+
     if (esLocal) {
         caso.numero_juicio_local = document.getElementById('numeroLocal').value;
     } else {
         caso.numero_juicio = document.getElementById('numeroFederal').value;
-        caso.año = document.getElementById('añoFederal').value;
+        caso.ano = document.getElementById('anoFederal').value;
     }
-    
+
     return caso;
 }
 
@@ -613,16 +544,16 @@ function obtenerPersonasDinamicas(prefijo) {
     const personas = [];
     const elementos = document.querySelectorAll(`[id^="${prefijo}"]`);
     const ids = new Set();
-    
+
     elementos.forEach(el => {
         const id = el.id.split('_')[0] + '_' + el.id.split('_')[1];
         ids.add(id);
     });
-    
+
     ids.forEach(id => {
         const tipoRadio = document.querySelector(`input[name="${id}_tipo"]:checked`);
         if (!tipoRadio) return;
-        
+
         const tipo = tipoRadio.value;
         if (tipo === 'FISICA') {
             personas.push({
@@ -638,16 +569,15 @@ function obtenerPersonasDinamicas(prefijo) {
             });
         }
     });
-    
+
     return personas;
 }
 
 function validarCaso(caso) {
-    // Validar prestación
-    if (!caso.prestacion_reclamada) {
-        alert('Debe seleccionar una prestación reclamada');
+    if (!caso.prestaciones_reclamadas || caso.prestaciones_reclamadas.length === 0) {
+        alert('Debe seleccionar al menos una prestacion reclamada');
         return false;
     }
-    
+
     return true;
 }

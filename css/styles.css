@@ -1521,3 +1521,17 @@ body {
   color: #4b5563;
   font-weight: 500;
 }
+
+/* =====================================================
+   IMPORTE CONTAINER
+   ===================================================== */
+.importe-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.importe-container .form-input:disabled {
+  background-color: #f0f0f0;
+  color: var(--color-text-light);
+  cursor: not-allowed;
+}

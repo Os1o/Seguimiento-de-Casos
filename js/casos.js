@@ -212,7 +212,7 @@ function filtrarCasos() {
         if (searchTerm) {
             // Protecciones añadidas: ( ... || '')
             const expediente = (caso.numero_expediente || '').toLowerCase();
-            const actorNombre = (getActorNombre(caso.actor) || '').toLowerCase();
+            const actorNombre = (getActorNombre(caso) || '').toLowerCase();
             const demandadosNombre = (getDemandadosNombres(caso) || '').toLowerCase();
 
             cumpleBusqueda = expediente.includes(searchTerm) ||
@@ -381,25 +381,42 @@ function irAPagina(pagina) {
     document.querySelector('.table-container').scrollTop = 0;
 }
 
-function getActorNombre(actor) {
-    if (!actor) return 'IMSS';
-
-    if (actor.tipo_persona === 'FISICA') {
-        // Usamos || '' para evitar que se imprima "undefined" si falta algún apellido
-        return `${actor.nombres || ''} ${actor.apellido_paterno || ''} ${actor.apellido_materno || ''}`.trim();
+function getActorNombre(actorOrCaso) {
+    // Compatibilidad: acepta un caso o un actor directamente
+    let actores;
+    if (actorOrCaso && actorOrCaso.imss_es) {
+        // Es un caso
+        if (actorOrCaso.imss_es === 'ACTOR') return 'IMSS';
+        actores = actorOrCaso.actores || (actorOrCaso.actor ? [actorOrCaso.actor] : []);
+    } else if (actorOrCaso && actorOrCaso.tipo_persona) {
+        actores = [actorOrCaso];
+    } else {
+        return 'IMSS';
     }
 
-    // Si no hay empresa, devolvemos una cadena vacía en lugar de undefined
-    return actor.empresa || '';
+    if (actores.length === 0) return 'N/A';
+
+    return actores.map(a => {
+        if (a.tipo_persona === 'FISICA') {
+            return `${a.nombres || ''} ${a.apellido_paterno || ''} ${a.apellido_materno || ''}`.trim();
+        }
+        return a.empresa || '';
+    }).join(', ');
 }
 
-function getActorNombreConTipo(actor) {
-    if (!actor) return 'IMSS';
-    const nombre = actor.tipo_persona === 'FISICA'
-        ? `${actor.nombres} ${actor.apellido_paterno}`
-        : actor.empresa;
-    const tipo = actor.tipo_persona === 'FISICA' ? 'F' : 'M';
-    return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
+function getActorNombreConTipo(caso) {
+    if (caso.imss_es === 'ACTOR') return 'IMSS';
+
+    const actores = caso.actores || (caso.actor ? [caso.actor] : []);
+    if (actores.length === 0) return 'N/A';
+
+    return actores.map(a => {
+        const nombre = a.tipo_persona === 'FISICA'
+            ? `${a.nombres} ${a.apellido_paterno}`
+            : a.empresa;
+        const tipo = a.tipo_persona === 'FISICA' ? 'F' : 'M';
+        return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
+    }).join('<br>');
 }
 
 function getDemandadosNombres(caso) {
@@ -483,7 +500,7 @@ function verAcumulados(casoId) {
                 <span class="badge-mini badge-mini-concluido" title="Concluido">C</span>
             </div>
             <div style="font-size: 13px; color: var(--color-text-light);">
-                <div>Actor: ${getActorNombre(c.actor)}</div>
+                <div>Actor: ${getActorNombre(c)}</div>
                 <div>Fecha: ${formatearFecha(c.fecha_inicio)}</div>
                 <div>Importe: ${c.importe_demandado > 0 ? formatearMoneda(c.importe_demandado) : '-'}</div>
             </div>
@@ -544,12 +561,10 @@ function editarCaso(casoId) {
 }
 
 function actualizarSeguimiento(casoId) {
-    // Cerrar menú
     const menu = document.getElementById(`menu-${casoId}`);
     if (menu) menu.classList.remove('show');
 
-    // Por ahora alert, implementaremos modal después
-    alert(`Actualizar seguimiento del caso #${casoId}\n\n(Función en desarrollo - siguiente paso)`);
+    window.location.href = `actualizar-caso.html?id=${casoId}`;
 }
 
 function confirmarEliminar(casoId) {
@@ -685,7 +700,7 @@ function renderizarActividadReciente() {
         const iconoActividad = editado ? '' : '';
         const claseActividad = editado ? 'actividad-editado' : 'actividad-nuevo';
         const fechaRelativa = formatearFechaRelativa(caso.fecha_actualizacion || caso.fecha_creacion);
-        const actorNombre = getActorNombre(caso.actor) || 'IMSS';
+        const actorNombre = getActorNombre(caso) || 'IMSS';
 
         const badgeEstatus = caso.estatus === 'TRAMITE'
             ? '<span class="badge-mini badge-mini-tramite" title="En Trámite">T</span>'
