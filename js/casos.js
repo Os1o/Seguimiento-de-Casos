@@ -682,7 +682,7 @@ function renderizarActividadReciente() {
     contenedor.innerHTML = recientes.map(caso => {
         const editado = fueEditado(caso);
         const tipoActividad = editado ? 'Editado' : 'Nuevo';
-        const iconoActividad = editado ? '✏️' : '🆕';
+        const iconoActividad = editado ? '' : '';
         const claseActividad = editado ? 'actividad-editado' : 'actividad-nuevo';
         const fechaRelativa = formatearFechaRelativa(caso.fecha_actualizacion || caso.fecha_creacion);
         const actorNombre = getActorNombre(caso.actor) || 'IMSS';

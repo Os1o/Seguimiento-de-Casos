@@ -1267,7 +1267,7 @@ body {
 }
 
 .seccion-actividad-titulo::before {
-  content: '⏱️';
+  content: '⏱';
 }
 
 .actividad-lista {
