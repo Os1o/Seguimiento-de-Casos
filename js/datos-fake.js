@@ -197,870 +197,595 @@ const catalogos = {
 
 // CASOS FAKE
 const casosFake = [
+  // CASO 1: PADRE (Tiene acumulados al 2 y 3)
   {
-    id: 101,
-    numero: 101,
-    delegacion_id: 1, // Aguascalientes
-    area_generadora_id: 1, // Área de Aguascalientes
+    id: 1,
+    numero: 1,
+    delegacion_id: 5, // CHIAPAS
+    area_generadora_id: 13,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario Civil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "123456/2025",
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: "Daños y Perjuicios",
     numero_juicio: "123456",
-    año: "2025",
+    año: "2024",
+    numero_expediente: "123456/2024",
     acumulado_a: null,
-    tribunal_id: 2, // Juzgado Primero de Distrito
-    fecha_inicio: "2025-01-15",
-    fecha_creacion: "2025-01-15T10:00:00.000Z",
-    fecha_actualizacion: "2025-01-15T10:00:00.000Z",
+    juicios_acumulados: [2, 3], // TIENE HIJOS
+    tribunal_id: 1,
+    fecha_inicio: "2024-01-15",
     imss_es: "DEMANDADO",
     actor: {
       tipo_persona: "FISICA",
       nombres: "Juan Carlos",
       apellido_paterno: "Pérez",
-      apellido_materno: "González"
+      apellido_materno: "García"
     },
-    demandados: [],
-    codemandados: [],
-    prestacion_reclamada: 1,
-    prestaciones_notas: "Pensión por invalidez",
-    importe_demandado: 150000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 102,
-    numero: 102,
-    delegacion_id: 2, // Baja California
-    area_generadora_id: 16, // Área de Baja California
-    jurisdiccion: "LOCAL",
-    tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Ejecutivo Mercantil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "MERC-2025-001",
-    numero_juicio_local: "MERC-2025-001",
-    acumulado_a: null,
-    tribunal_id: 1, // Juzgado Civil
-    fecha_inicio: "2025-01-20",
-    fecha_creacion: "2025-01-20T09:30:00.000Z",
-    fecha_actualizacion: "2025-01-20T09:30:00.000Z",
-    imss_es: "ACTOR",
-    actor: null,
-    demandados: [
-      {
-        tipo_persona: "MORAL",
-        empresa: "Constructora del Norte SA de CV"
-      }
-    ],
-    codemandados: [],
-    prestacion_reclamada: 3,
-    prestaciones_notas: "Cobro de adeudo",
-    importe_demandado: 500000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 103,
-    numero: 103,
-    delegacion_id: 5, // Campeche
-    area_generadora_id: 61, // Área de Campeche
-    jurisdiccion: "FEDERAL",
-    tipo_juicio: "CIVIL",
-    subtipo_juicio: "Juicio de Amparo",
-    sub_subtipo_juicio: "Amparo Indirecto",
-    numero_expediente: "654321/2025",
-    numero_juicio: "654321",
-    año: "2025",
-    acumulado_a: null,
-    tribunal_id: 3, // Juzgado Segundo de Distrito
-    fecha_inicio: "2025-02-05",
-    fecha_creacion: "2025-02-05T11:15:00.000Z",
-    fecha_actualizacion: "2025-02-05T11:15:00.000Z",
-    imss_es: "TERCERO",
-    actor: {
-      tipo_persona: "FISICA",
-      nombres: "María Luisa",
-      apellido_paterno: "Rodríguez",
-      apellido_materno: "Martínez"
-    },
-    demandados: [
-      {
-        tipo_persona: "MORAL",
-        empresa: "Empresa Fantasma SA"
-      }
-    ],
+    demandados: [], 
     codemandados: [
-      {
-        tipo_persona: "FISICA",
-        nombres: "Pedro",
-        apellido_paterno: "Sánchez",
-        apellido_materno: "López"
-      }
+      { tipo_persona: "MORAL", empresa: "Constructora ABC S.A. de C.V." }
     ],
-    prestacion_reclamada: 2,
-    prestaciones_notas: "Amparo contra negativa de servicio",
-    importe_demandado: 0,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 104,
-    numero: 104,
-    delegacion_id: 7, // Chihuahua
-    area_generadora_id: 91, // Área de Chihuahua
-    jurisdiccion: "LOCAL",
-    tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario Civil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "CIV-2025-045",
-    numero_juicio_local: "CIV-2025-045",
-    acumulado_a: null,
-    tribunal_id: 1,
-    fecha_inicio: "2025-02-10",
-    fecha_creacion: "2025-02-10T14:20:00.000Z",
-    fecha_actualizacion: "2025-02-10T14:20:00.000Z",
-    imss_es: "DEMANDADO",
-    actor: {
-      tipo_persona: "MORAL",
-      empresa: "Industrias del Norte SA de CV"
-    },
-    demandados: [],
-    codemandados: [],
-    prestacion_reclamada: 4,
-    prestaciones_notas: "Daños y perjuicios",
-    importe_demandado: 250000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 105,
-    numero: 105,
-    delegacion_id: 9, // Ciudad de México Norte
-    area_generadora_id: 121, // Área CDMX Norte
-    jurisdiccion: "FEDERAL",
-    tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Ordinario Mercantil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "789012/2025",
-    numero_juicio: "789012",
-    año: "2025",
-    acumulado_a: null,
-    tribunal_id: 4,
-    fecha_inicio: "2025-02-15",
-    fecha_creacion: "2025-02-15T08:45:00.000Z",
-    fecha_actualizacion: "2025-02-15T08:45:00.000Z",
-    imss_es: "ACTOR",
-    actor: null,
-    demandados: [
-      {
-        tipo_persona: "FISICA",
-        nombres: "Roberto",
-        apellido_paterno: "Hernández",
-        apellido_materno: "Vargas"
-      },
-      {
-        tipo_persona: "FISICA",
-        nombres: "Ana",
-        apellido_paterno: "Jiménez",
-        apellido_materno: "Cruz"
-      }
-    ],
-    codemandados: [],
-    prestacion_reclamada: 5,
-    prestaciones_notas: "Incumplimiento de contrato",
-    importe_demandado: 800000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 106,
-    numero: 106,
-    delegacion_id: 12, // Guerrero
-    area_generadora_id: 166, // Área de Guerrero
-    jurisdiccion: "LOCAL",
-    tipo_juicio: "CIVIL",
-    subtipo_juicio: "Especial Hipotecario",
-    sub_subtipo_juicio: null,
-    numero_expediente: "HIP-2025-012",
-    numero_juicio_local: "HIP-2025-012",
-    acumulado_a: null,
-    tribunal_id: 1,
-    fecha_inicio: "2025-03-01",
-    fecha_creacion: "2025-03-01T10:00:00.000Z",
-    fecha_actualizacion: "2025-03-01T10:00:00.000Z",
-    imss_es: "ACTOR",
-    actor: null,
-    demandados: [
-      {
-        tipo_persona: "FISICA",
-        nombres: "Luis",
-        apellido_paterno: "Gómez",
-        apellido_materno: "Ramírez"
-      }
-    ],
-    codemandados: [],
     prestacion_reclamada: 1,
-    prestaciones_notas: "Ejecución hipotecaria",
-    importe_demandado: 1200000,
+    prestaciones_notas: "Daños por negligencia en obra colindante a UMF",
+    importe_demandado: 500000.00,
     estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
+    fecha_creacion: "2024-01-15T10:30:00",
+    seguimiento: []
   },
+
+  // CASO 2: HIJO (Acumulado al 1)
   {
-    id: 107,
-    numero: 107,
-    delegacion_id: 12, // Guerrero
-    area_generadora_id: 167, // Otra área de Guerrero
+    id: 2,
+    numero: 2,
+    delegacion_id: 5, 
+    area_generadora_id: 14,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario Civil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "345678/2025",
-    numero_juicio: "345678",
-    año: "2025",
-    acumulado_a: null,
-    tribunal_id: 2,
-    fecha_inicio: "2025-03-10",
-    fecha_creacion: "2025-03-10T12:30:00.000Z",
-    fecha_actualizacion: "2025-03-10T12:30:00.000Z",
-    imss_es: "DEMANDADO",
-    actor: {
-      tipo_persona: "FISICA",
-      nombres: "Carlos",
-      apellido_paterno: "Mendoza",
-      apellido_materno: "Torres"
-    },
-    demandados: [],
-    codemandados: [],
-    prestacion_reclamada: 2,
-    prestaciones_notas: "Pensión vitalicia",
-    importe_demandado: 300000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 108,
-    numero: 108,
-    delegacion_id: 14, // Jalisco
-    area_generadora_id: 196, // Área de Jalisco
-    jurisdiccion: "LOCAL",
-    tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Ejecutivo Mercantil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "EJEC-2025-089",
-    numero_juicio_local: "EJEC-2025-089",
-    acumulado_a: null,
-    tribunal_id: 1,
-    fecha_inicio: "2025-03-15",
-    fecha_creacion: "2025-03-15T09:00:00.000Z",
-    fecha_actualizacion: "2025-03-15T09:00:00.000Z",
-    imss_es: "TERCERO",
-    actor: {
-      tipo_persona: "MORAL",
-      empresa: "Proveedores Asociados SA"
-    },
-    demandados: [
-      {
-        tipo_persona: "MORAL",
-        empresa: "Distribuidora del Pacífico SA de CV"
-      }
-    ],
-    codemandados: [],
-    prestacion_reclamada: 3,
-    prestaciones_notas: "Cobro de pagaré",
-    importe_demandado: 450000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 109,
-    numero: 109,
-    delegacion_id: 15, // Estado de México Oriente
-    area_generadora_id: 211, // Área EDOMEX Oriente
-    jurisdiccion: "FEDERAL",
-    tipo_juicio: "CIVIL",
-    subtipo_juicio: "Juicio de Amparo",
-    sub_subtipo_juicio: "Amparo Directo",
-    numero_expediente: "901234/2025",
-    numero_juicio: "901234",
-    año: "2025",
-    acumulado_a: null,
-    tribunal_id: 3,
-    fecha_inicio: "2025-03-20",
-    fecha_creacion: "2025-03-20T15:45:00.000Z",
-    fecha_actualizacion: "2025-03-20T15:45:00.000Z",
-    imss_es: "ACTOR",
-    actor: null,
-    demandados: [
-      {
-        tipo_persona: "FISICA",
-        nombres: "Sofía",
-        apellido_paterno: "Morales",
-        apellido_materno: "Reyes"
-      }
-    ],
-    codemandados: [
-      {
-        tipo_persona: "MORAL",
-        empresa: "Clínica San Rafael SA"
-      }
-    ],
-    prestacion_reclamada: 4,
-    prestaciones_notas: "Amparo contra resolución administrativa",
-    importe_demandado: 0,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 110,
-    numero: 110,
-    delegacion_id: 16, // Estado de México Poniente
-    area_generadora_id: 226, // Área EDOMEX Poniente
-    jurisdiccion: "LOCAL",
-    tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario Civil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "ORD-2025-156",
-    numero_juicio_local: "ORD-2025-156",
-    acumulado_a: null,
-    tribunal_id: 1,
-    fecha_inicio: "2025-04-01",
-    fecha_creacion: "2025-04-01T11:20:00.000Z",
-    fecha_actualizacion: "2025-04-01T11:20:00.000Z",
-    imss_es: "DEMANDADO",
-    actor: {
-      tipo_persona: "FISICA",
-      nombres: "Diego",
-      apellido_paterno: "Castro",
-      apellido_materno: "Flores"
-    },
-    demandados: [],
-    codemandados: [],
-    prestacion_reclamada: 1,
-    prestaciones_notas: "Indemnización por accidente",
-    importe_demandado: 600000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 111,
-    numero: 111,
-    delegacion_id: 10, // Ciudad de México Sur
-    area_generadora_id: 136, // Área CDMX Sur
-    jurisdiccion: "FEDERAL",
-    tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Ordinario Mercantil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "567890/2025",
-    numero_juicio: "567890",
-    año: "2025",
-    acumulado_a: null,
-    tribunal_id: 4,
-    fecha_inicio: "2025-04-10",
-    fecha_creacion: "2025-04-10T10:15:00.000Z",
-    fecha_actualizacion: "2025-04-10T10:15:00.000Z",
-    imss_es: "ACTOR",
-    actor: null,
-    demandados: [
-      {
-        tipo_persona: "MORAL",
-        empresa: "Transportes Rápidos del Sur SA de CV"
-      }
-    ],
-    codemandados: [],
-    prestacion_reclamada: 5,
-    prestaciones_notas: "Incumplimiento contractual",
-    importe_demandado: 950000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 112,
-    numero: 112,
-    delegacion_id: 6, // Coahuila
-    area_generadora_id: 76, // Área de Coahuila
-    jurisdiccion: "LOCAL",
-    tipo_juicio: "CIVIL",
-    subtipo_juicio: "Especial Hipotecario",
-    sub_subtipo_juicio: null,
-    numero_expediente: "HIP-2025-033",
-    numero_juicio_local: "HIP-2025-033",
-    acumulado_a: null,
-    tribunal_id: 1,
-    fecha_inicio: "2025-04-15",
-    fecha_creacion: "2025-04-15T13:30:00.000Z",
-    fecha_actualizacion: "2025-04-15T13:30:00.000Z",
-    imss_es: "ACTOR",
-    actor: null,
-    demandados: [
-      {
-        tipo_persona: "FISICA",
-        nombres: "Fernando",
-        apellido_paterno: "Ruiz",
-        apellido_materno: "Ortega"
-      }
-    ],
-    codemandados: [],
-    prestacion_reclamada: 1,
-    prestaciones_notas: "Ejecución de garantía hipotecaria",
-    importe_demandado: 1500000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 113,
-    numero: 113,
-    delegacion_id: 13, // Hidalgo
-    area_generadora_id: 181, // Área de Hidalgo
-    jurisdiccion: "FEDERAL",
-    tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario Civil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "234567/2025",
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: "Daños y Perjuicios",
     numero_juicio: "234567",
-    año: "2025",
-    acumulado_a: null,
-    tribunal_id: 2,
-    fecha_inicio: "2025-04-20",
-    fecha_creacion: "2025-04-20T09:45:00.000Z",
-    fecha_actualizacion: "2025-04-20T09:45:00.000Z",
+    año: "2024",
+    numero_expediente: "234567/2024",
+    acumulado_a: 1, // ES HIJO
+    juicios_acumulados: [],
+    tribunal_id: 1,
+    fecha_inicio: "2024-02-20",
     imss_es: "DEMANDADO",
     actor: {
-      tipo_persona: "MORAL",
-      empresa: "Servicios Médicos Especializados SA"
+      tipo_persona: "FISICA",
+      nombres: "María Fernanda",
+      apellido_paterno: "López",
+      apellido_materno: "Sánchez"
     },
     demandados: [],
     codemandados: [],
-    prestacion_reclamada: 2,
-    prestaciones_notas: "Reclamación de servicios médicos",
-    importe_demandado: 200000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
+    prestacion_reclamada: 1,
+    prestaciones_notas: "Demanda conexa por afectaciones estructurales",
+    importe_demandado: 250000.00,
+    estatus: "CONCLUIDO", // Los hijos suelen cerrarse al acumularse
+    fecha_creacion: "2024-02-20T14:15:00",
+    seguimiento: []
   },
+
+  // CASO 3: HIJO (Acumulado al 1)
   {
-    id: 114,
-    numero: 114,
-    delegacion_id: 3, // Baja California Sur
-    area_generadora_id: 31, // Área de BCS
-    jurisdiccion: "LOCAL",
-    tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Ejecutivo Mercantil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "MERC-2025-067",
-    numero_juicio_local: "MERC-2025-067",
-    acumulado_a: null,
-    tribunal_id: 1,
-    fecha_inicio: "2025-05-05",
-    fecha_creacion: "2025-05-05T14:00:00.000Z",
-    fecha_actualizacion: "2025-05-05T14:00:00.000Z",
-    imss_es: "TERCERO",
-    actor: {
-      tipo_persona: "FISICA",
-      nombres: "Patricia",
-      apellido_paterno: "Gutiérrez",
-      apellido_materno: "Silva"
-    },
-    demandados: [
-      {
-        tipo_persona: "MORAL",
-        empresa: "Comercializadora del Pacífico SA"
-      }
-    ],
-    codemandados: [],
-    prestacion_reclamada: 3,
-    prestaciones_notas: "Cobro de letra de cambio",
-    importe_demandado: 320000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 115,
-    numero: 115,
-    delegacion_id: 11, // Durango
-    area_generadora_id: 151, // Área de Durango
+    id: 3,
+    numero: 3,
+    delegacion_id: 5, 
+    area_generadora_id: 15,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Juicio de Amparo",
-    sub_subtipo_juicio: "Amparo Indirecto",
-    numero_expediente: "678901/2025",
-    numero_juicio: "678901",
-    año: "2025",
-    acumulado_a: null,
-    tribunal_id: 3,
-    fecha_inicio: "2025-05-10",
-    fecha_creacion: "2025-05-10T08:30:00.000Z",
-    fecha_actualizacion: "2025-05-10T08:30:00.000Z",
-    imss_es: "ACTOR",
-    actor: null,
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: null,
+    numero_juicio: "345678",
+    año: "2024",
+    numero_expediente: "345678/2024",
+    acumulado_a: 1, // ES HIJO
+    juicios_acumulados: [],
+    tribunal_id: 1,
+    fecha_inicio: "2024-03-10",
+    imss_es: "TERCERO",
+    actor: { tipo_persona: "MORAL", empresa: "Aseguradora del Sur S.A." },
     demandados: [
-      {
-        tipo_persona: "FISICA",
-        nombres: "Ricardo",
-        apellido_paterno: "Vega",
-        apellido_materno: "Núñez"
-      }
+       { tipo_persona: "FISICA", nombres: "Pedro", apellido_paterno: "Ramírez", apellido_materno: "Torres" }
     ],
     codemandados: [],
     prestacion_reclamada: 4,
-    prestaciones_notas: "Amparo contra acto administrativo",
-    importe_demandado: 0,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
+    prestaciones_notas: "Reclamo de póliza de responsabilidad civil",
+    importe_demandado: 100000.00,
+    estatus: "CONCLUIDO",
+    fecha_creacion: "2024-03-10T09:00:00",
+    seguimiento: []
   },
+
+  // CASO 4: PADRE (Tiene acumulado al 5)
   {
-    id: 116,
-    numero: 116,
-    delegacion_id: 4, // Campeche
-    area_generadora_id: 46, // Área de Campeche
-    jurisdiccion: "LOCAL",
-    tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario Civil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "CIV-2025-078",
-    numero_juicio_local: "CIV-2025-078",
-    acumulado_a: null,
-    tribunal_id: 1,
-    fecha_inicio: "2025-05-15",
-    fecha_creacion: "2025-05-15T10:45:00.000Z",
-    fecha_actualizacion: "2025-05-15T10:45:00.000Z",
-    imss_es: "DEMANDADO",
-    actor: {
-      tipo_persona: "FISICA",
-      nombres: "Alejandra",
-      apellido_paterno: "Medina",
-      apellido_materno: "Campos"
-    },
-    demandados: [],
-    codemandados: [],
-    prestacion_reclamada: 1,
-    prestaciones_notas: "Responsabilidad civil",
-    importe_demandado: 350000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 117,
-    numero: 117,
-    delegacion_id: 8, // Chiapas
-    area_generadora_id: 106, // Área de Chiapas
-    jurisdiccion: "FEDERAL",
-    tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Ordinario Mercantil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "890123/2025",
-    numero_juicio: "890123",
-    año: "2025",
-    acumulado_a: null,
-    tribunal_id: 4,
-    fecha_inicio: "2025-05-20",
-    fecha_creacion: "2025-05-20T11:30:00.000Z",
-    fecha_actualizacion: "2025-05-20T11:30:00.000Z",
-    imss_es: "ACTOR",
-    actor: null,
-    demandados: [
-      {
-        tipo_persona: "MORAL",
-        empresa: "Agroindustrias del Sureste SA de CV"
-      },
-      {
-        tipo_persona: "FISICA",
-        nombres: "Jorge",
-        apellido_paterno: "Ramírez",
-        apellido_materno: "Paz"
-      }
-    ],
-    codemandados: [],
-    prestacion_reclamada: 5,
-    prestaciones_notas: "Incumplimiento de contrato de suministro",
-    importe_demandado: 700000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 118,
-    numero: 118,
-    delegacion_id: 12, // Guerrero
-    area_generadora_id: 168, // Área de Guerrero
-    jurisdiccion: "LOCAL",
-    tipo_juicio: "CIVIL",
-    subtipo_juicio: "Especial Hipotecario",
-    sub_subtipo_juicio: null,
-    numero_expediente: "HIP-2025-024",
-    numero_juicio_local: "HIP-2025-024",
-    acumulado_a: null,
-    tribunal_id: 1,
-    fecha_inicio: "2025-06-01",
-    fecha_creacion: "2025-06-01T09:15:00.000Z",
-    fecha_actualizacion: "2025-06-01T09:15:00.000Z",
-    imss_es: "ACTOR",
-    actor: null,
-    demandados: [
-      {
-        tipo_persona: "FISICA",
-        nombres: "Gabriela",
-        apellido_paterno: "López",
-        apellido_materno: "Cervantes"
-      }
-    ],
-    codemandados: [
-      {
-        tipo_persona: "FISICA",
-        nombres: "Miguel",
-        apellido_paterno: "Cervantes",
-        apellido_materno: "Rojas"
-      }
-    ],
-    prestacion_reclamada: 1,
-    prestaciones_notas: "Ejecución hipotecaria por incumplimiento",
-    importe_demandado: 1800000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 119,
-    numero: 119,
-    delegacion_id: 12, // Guerrero
-    area_generadora_id: 169, // Área de Guerrero
-    jurisdiccion: "FEDERAL",
-    tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario Civil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "456789/2025",
-    numero_juicio: "456789",
-    año: "2025",
-    acumulado_a: null,
-    tribunal_id: 2,
-    fecha_inicio: "2025-06-10",
-    fecha_creacion: "2025-06-10T12:00:00.000Z",
-    fecha_actualizacion: "2025-06-10T12:00:00.000Z",
-    imss_es: "DEMANDADO",
-    actor: {
-      tipo_persona: "FISICA",
-      nombres: "Elena",
-      apellido_paterno: "Fuentes",
-      apellido_materno: "Márquez"
-    },
-    demandados: [],
-    codemandados: [],
-    prestacion_reclamada: 2,
-    prestaciones_notas: "Pensión por viudez",
-    importe_demandado: 280000,
-    estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
-  },
-  {
-    id: 120,
-    numero: 120,
-    delegacion_id: 12, // Guerrero
-    area_generadora_id: 170, // Área de Guerrero
+    id: 4,
+    numero: 4,
+    delegacion_id: 2, // BAJA CALIFORNIA
+    area_generadora_id: 4,
     jurisdiccion: "LOCAL",
     tipo_juicio: "MERCANTIL",
     subtipo_juicio: "Ejecutivo Mercantil",
-    sub_subtipo_juicio: null,
-    numero_expediente: "EJEC-2025-055",
-    numero_juicio_local: "EJEC-2025-055",
+    sub_subtipo_juicio: "Pagaré",
+    numero_juicio_local: "MERC-2024-EJ-001",
+    numero_expediente: "MERC-2024-EJ-001",
     acumulado_a: null,
-    tribunal_id: 1,
-    fecha_inicio: "2025-06-15",
-    fecha_creacion: "2025-06-15T14:30:00.000Z",
-    fecha_actualizacion: "2025-06-15T14:30:00.000Z",
-    imss_es: "TERCERO",
-    actor: {
-      tipo_persona: "MORAL",
-      empresa: "Financiera del Pacífico SA de CV"
-    },
+    juicios_acumulados: [5], // TIENE UN HIJO
+    tribunal_id: 2,
+    fecha_inicio: "2024-04-05",
+    imss_es: "ACTOR",
+    actor: {}, 
     demandados: [
-      {
-        tipo_persona: "MORAL",
-        empresa: "Comercial Acapulco SA"
-      }
+      { tipo_persona: "MORAL", empresa: "Tecnología Médica Jalisco S.A." }
+    ],
+    codemandados: [
+      { tipo_persona: "FISICA", nombres: "Roberto", apellido_paterno: "Hernández", apellido_materno: "Flores" }
+    ],
+    prestacion_reclamada: 3,
+    prestaciones_notas: "Cobro de pagaré por insumos médicos no pagados",
+    importe_demandado: 1200000.00,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-04-05T11:20:00",
+    seguimiento: []
+  },
+
+  // CASO 5: HIJO (Acumulado al 4)
+  {
+    id: 5,
+    numero: 5,
+    delegacion_id: 2, 
+    area_generadora_id: 5,
+    jurisdiccion: "LOCAL",
+    tipo_juicio: "MERCANTIL",
+    subtipo_juicio: "Ordinario Mercantil",
+    sub_subtipo_juicio: null,
+    numero_juicio_local: "MERC-2024-ORD-099",
+    numero_expediente: "MERC-2024-ORD-099",
+    acumulado_a: 4, // ES HIJO
+    juicios_acumulados: [],
+    tribunal_id: 2,
+    fecha_inicio: "2024-04-10",
+    imss_es: "ACTOR",
+    actor: {},
+    demandados: [
+      { tipo_persona: "MORAL", empresa: "Tecnología Médica Jalisco S.A." }
     ],
     codemandados: [],
     prestacion_reclamada: 3,
-    prestaciones_notas: "Cobro de cheque sin fondos",
-    importe_demandado: 180000,
+    prestaciones_notas: "Incumplimiento de contrato marco de suministro",
+    importe_demandado: 800000.00,
+    estatus: "CONCLUIDO",
+    fecha_creacion: "2024-04-10T10:00:00",
+    seguimiento: []
+  },
+
+  // CASO 6
+  {
+    id: 6,
+    numero: 6,
+    delegacion_id: 1, // AGUASCALIENTES
+    area_generadora_id: 1,
+    jurisdiccion: "FEDERAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: "Daño Moral",
+    numero_juicio: "998877",
+    año: "2024",
+    numero_expediente: "998877/2024",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 5,
+    fecha_inicio: "2024-05-12",
+    imss_es: "DEMANDADO",
+    actor: { tipo_persona: "FISICA", nombres: "Laura", apellido_paterno: "Méndez", apellido_materno: "Ruiz" },
+    demandados: [],
+    codemandados: [],
+    prestacion_reclamada: 5,
+    prestaciones_notas: "Demanda por supuesta difamación institucional",
+    importe_demandado: 300000.00,
     estatus: "TRAMITE",
-    seguimiento: {
-      pronostico: null,
-      sentencia: null,
-      importe_sentencia: null,
-      observaciones: null,
-      fecha_estado_procesal: null,
-      ultimo_estado_procesal: null,
-      abogado_responsable: null
-    },
-    juicios_acumulados: []
+    fecha_creacion: "2024-05-12T09:30:00",
+    seguimiento: []
+  },
+
+  // CASO 7
+  {
+    id: 7,
+    numero: 7,
+    delegacion_id: 9, // DF NORTE
+    area_generadora_id: 25,
+    jurisdiccion: "LOCAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Arrendamiento",
+    sub_subtipo_juicio: null,
+    numero_juicio_local: "CIV-ARR-2024-001",
+    numero_expediente: "CIV-ARR-2024-001",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 3,
+    fecha_inicio: "2024-06-01",
+    imss_es: "ACTOR",
+    actor: {},
+    demandados: [ { tipo_persona: "FISICA", nombres: "Oscar", apellido_paterno: "López", apellido_materno: "V." } ],
+    codemandados: [],
+    prestacion_reclamada: 9,
+    prestaciones_notas: "Rescisión de contrato de arrendamiento de oficinas administrativas",
+    importe_demandado: 0,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-06-01T11:00:00",
+    seguimiento: []
+  },
+
+  // CASO 8
+  {
+    id: 8,
+    numero: 8,
+    delegacion_id: 15, // GUERRERO
+    area_generadora_id: 50,
+    jurisdiccion: "FEDERAL",
+    tipo_juicio: "MERCANTIL",
+    subtipo_juicio: "Concursos Mercantiles",
+    sub_subtipo_juicio: null,
+    numero_juicio: "112233",
+    año: "2024",
+    numero_expediente: "112233/2024",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 5,
+    fecha_inicio: "2024-06-15",
+    imss_es: "TERCERO",
+    actor: { tipo_persona: "MORAL", empresa: "Proveedora del Pacífico S.A." },
+    demandados: [ { tipo_persona: "MORAL", empresa: "Hospitales Privados de Acapulco" } ],
+    codemandados: [],
+    prestacion_reclamada: 10,
+    prestaciones_notas: "Reconocimiento de créditos fiscales en concurso mercantil",
+    importe_demandado: 4500000.00,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-06-15T12:00:00",
+    seguimiento: []
+  },
+
+  // CASO 9
+  {
+    id: 9,
+    numero: 9,
+    delegacion_id: 3, // BAJA CALIFORNIA SUR
+    area_generadora_id: 7,
+    jurisdiccion: "LOCAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Usucapión",
+    sub_subtipo_juicio: null,
+    numero_juicio_local: "CIV-USU-2024-088",
+    numero_expediente: "CIV-USU-2024-088",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 2,
+    fecha_inicio: "2024-07-01",
+    imss_es: "DEMANDADO",
+    actor: { tipo_persona: "FISICA", nombres: "Ejido Los Cabos", apellido_paterno: "", apellido_materno: "" },
+    demandados: [],
+    codemandados: [],
+    prestacion_reclamada: 4,
+    prestaciones_notas: "Prescripción positiva de terreno colindante a HGZ 1",
+    importe_demandado: 0,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-07-01T09:00:00",
+    seguimiento: []
+  },
+
+  // CASO 10
+  {
+    id: 10,
+    numero: 10,
+    delegacion_id: 12, // EDOMEX ORIENTE
+    area_generadora_id: 40,
+    jurisdiccion: "FEDERAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: "Otros",
+    numero_juicio: "667788",
+    año: "2024",
+    numero_expediente: "667788/2024",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 3,
+    fecha_inicio: "2024-07-20",
+    imss_es: "ACTOR",
+    actor: {},
+    demandados: [ { tipo_persona: "MORAL", empresa: "Seguridad Privada Elite" } ],
+    codemandados: [],
+    prestacion_reclamada: 2,
+    prestaciones_notas: "Recuperación de pagos en exceso por servicios de vigilancia",
+    importe_demandado: 150000.00,
+    estatus: "CONCLUIDO",
+    fecha_creacion: "2024-07-20T10:00:00",
+    seguimiento: []
+  },
+
+  // CASO 11
+  {
+    id: 11,
+    numero: 11,
+    delegacion_id: 10, // DF SUR
+    area_generadora_id: 31,
+    jurisdiccion: "FEDERAL",
+    tipo_juicio: "MERCANTIL",
+    subtipo_juicio: "Especial de Fianza",
+    sub_subtipo_juicio: null,
+    numero_juicio: "445566",
+    año: "2024",
+    numero_expediente: "445566/2024",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 4,
+    fecha_inicio: "2024-08-05",
+    imss_es: "ACTOR",
+    actor: {},
+    demandados: [ { tipo_persona: "MORAL", empresa: "Afianzadora Aserta S.A." } ],
+    codemandados: [],
+    prestacion_reclamada: 3,
+    prestaciones_notas: "Reclamación de fianza por vicios ocultos en obra hospitalaria",
+    importe_demandado: 2000000.00,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-08-05T13:00:00",
+    seguimiento: []
+  },
+
+  // CASO 12
+  {
+    id: 12,
+    numero: 12,
+    delegacion_id: 8, // COLIMA
+    area_generadora_id: 22,
+    jurisdiccion: "LOCAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Hipotecario",
+    sub_subtipo_juicio: null,
+    numero_juicio_local: "HIP-2024-77",
+    numero_expediente: "HIP-2024-77",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 2,
+    fecha_inicio: "2024-08-15",
+    imss_es: "TERCERO",
+    actor: { tipo_persona: "FISICA", nombres: "Banco Santander", apellido_paterno: "", apellido_materno: "" },
+    demandados: [ { tipo_persona: "FISICA", nombres: "Empleado", apellido_paterno: "Desconocido", apellido_materno: "" } ],
+    codemandados: [],
+    prestacion_reclamada: 10,
+    prestaciones_notas: "Informe sobre descuentos vía nómina",
+    importe_demandado: 0,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-08-15T09:00:00",
+    seguimiento: []
+  },
+
+  // CASO 13
+  {
+    id: 13,
+    numero: 13,
+    delegacion_id: 6, // CHIHUAHUA
+    area_generadora_id: 16,
+    jurisdiccion: "FEDERAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Agrario",
+    sub_subtipo_juicio: null,
+    numero_juicio: "101010",
+    año: "2024",
+    numero_expediente: "101010/2024",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 1,
+    fecha_inicio: "2024-09-01",
+    imss_es: "DEMANDADO",
+    actor: { tipo_persona: "FISICA", nombres: "Comisariado Ejidal", apellido_paterno: "Villa Ahumada", apellido_materno: "" },
+    demandados: [],
+    codemandados: [],
+    prestacion_reclamada: 4,
+    prestaciones_notas: "Restitución de tierras ejidales ocupadas por UMF",
+    importe_demandado: 0,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-09-01T10:00:00",
+    seguimiento: []
+  },
+
+  // CASO 14
+  {
+    id: 14,
+    numero: 14,
+    delegacion_id: 14, // GUANAJUATO
+    area_generadora_id: 48,
+    jurisdiccion: "LOCAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: "Escrito",
+    numero_juicio_local: "CIV-2024-999",
+    numero_expediente: "CIV-2024-999",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 2,
+    fecha_inicio: "2024-09-10",
+    imss_es: "ACTOR",
+    actor: {},
+    demandados: [ { tipo_persona: "MORAL", empresa: "Limpieza Industrial del Bajío" } ],
+    codemandados: [],
+    prestacion_reclamada: 3,
+    prestaciones_notas: "Cumplimiento forzoso de contrato de limpieza",
+    importe_demandado: 50000.00,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-09-10T14:00:00",
+    seguimiento: []
+  },
+
+  // CASO 15
+  {
+    id: 15,
+    numero: 15,
+    delegacion_id: 4, // CAMPECHE
+    area_generadora_id: 10,
+    jurisdiccion: "FEDERAL",
+    tipo_juicio: "MERCANTIL",
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: "Oral",
+    numero_juicio: "202020",
+    año: "2024",
+    numero_expediente: "202020/2024",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 1,
+    fecha_inicio: "2024-10-01",
+    imss_es: "DEMANDADO",
+    actor: { tipo_persona: "MORAL", empresa: "Insumos Hospitalarios del Sureste" },
+    demandados: [],
+    codemandados: [],
+    prestacion_reclamada: 2,
+    prestaciones_notas: "Pago de facturas retenidas por auditoría",
+    importe_demandado: 670000.00,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-10-01T11:00:00",
+    seguimiento: []
+  },
+
+  // CASO 16
+  {
+    id: 16,
+    numero: 16,
+    delegacion_id: 7, // COAHUILA
+    area_generadora_id: 19,
+    jurisdiccion: "LOCAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: "Responsabilidad Civil",
+    numero_juicio_local: "CIV-RESP-002",
+    numero_expediente: "CIV-RESP-002",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 2,
+    fecha_inicio: "2024-10-15",
+    imss_es: "DEMANDADO",
+    actor: { tipo_persona: "FISICA", nombres: "Familia", apellido_paterno: "Reyes", apellido_materno: "" },
+    demandados: [],
+    codemandados: [ { tipo_persona: "FISICA", nombres: "Dr. Jorge", apellido_paterno: "Salas", apellido_materno: "" } ],
+    prestacion_reclamada: 1,
+    prestaciones_notas: "Responsabilidad civil objetiva por caída en instalaciones",
+    importe_demandado: 120000.00,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-10-15T09:00:00",
+    seguimiento: []
+  },
+
+  // CASO 17
+  {
+    id: 17,
+    numero: 17,
+    delegacion_id: 13, // EDOMEX PONIENTE
+    area_generadora_id: 43,
+    jurisdiccion: "FEDERAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: "Otros",
+    numero_juicio: "303030",
+    año: "2024",
+    numero_expediente: "303030/2024",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 3,
+    fecha_inicio: "2024-11-01",
+    imss_es: "ACTOR",
+    actor: {},
+    demandados: [ { tipo_persona: "MORAL", empresa: "Comedor Industrial Toluca" } ],
+    codemandados: [],
+    prestacion_reclamada: 9,
+    prestaciones_notas: "Rescisión administrativa de contrato de comedores",
+    importe_demandado: 0,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-11-01T12:00:00",
+    seguimiento: []
+  },
+
+  // CASO 18
+  {
+    id: 18,
+    numero: 18,
+    delegacion_id: 11, // DURANGO
+    area_generadora_id: 37,
+    jurisdiccion: "LOCAL",
+    tipo_juicio: "MERCANTIL",
+    subtipo_juicio: "Ejecutivo Mercantil",
+    sub_subtipo_juicio: "Otros",
+    numero_juicio_local: "MERC-DGO-55",
+    numero_expediente: "MERC-DGO-55",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 2,
+    fecha_inicio: "2024-11-10",
+    imss_es: "TERCERO",
+    actor: { tipo_persona: "MORAL", empresa: "Financiera Independencia" },
+    demandados: [ { tipo_persona: "FISICA", nombres: "Trabajador", apellido_paterno: "IMSS", apellido_materno: "" } ],
+    codemandados: [],
+    prestacion_reclamada: 10,
+    prestaciones_notas: "Retención de salario por deuda mercantil",
+    importe_demandado: 45000.00,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-11-10T11:30:00",
+    seguimiento: []
+  },
+
+  // CASO 19
+  {
+    id: 19,
+    numero: 19,
+    delegacion_id: 1, // AGUASCALIENTES
+    area_generadora_id: 2,
+    jurisdiccion: "FEDERAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: "Daño Moral",
+    numero_juicio: "404040",
+    año: "2024",
+    numero_expediente: "404040/2024",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 5,
+    fecha_inicio: "2024-12-01",
+    imss_es: "DEMANDADO",
+    actor: { tipo_persona: "FISICA", nombres: "Paciente", apellido_paterno: "Molesto", apellido_materno: "" },
+    demandados: [],
+    codemandados: [],
+    prestacion_reclamada: 5,
+    prestaciones_notas: "Daño moral por negativa de servicio en urgencias",
+    importe_demandado: 200000.00,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-12-01T10:00:00",
+    seguimiento: []
+  },
+
+  // CASO 20
+  {
+    id: 20,
+    numero: 20,
+    delegacion_id: 9, // DF NORTE
+    area_generadora_id: 27,
+    jurisdiccion: "LOCAL",
+    tipo_juicio: "CIVIL",
+    subtipo_juicio: "Ordinario",
+    sub_subtipo_juicio: "Responsabilidad Civil",
+    numero_juicio_local: "CIV-2024-FIN",
+    numero_expediente: "CIV-2024-FIN",
+    acumulado_a: null,
+    juicios_acumulados: [],
+    tribunal_id: 3,
+    fecha_inicio: "2024-12-15",
+    imss_es: "ACTOR",
+    actor: {},
+    demandados: [ { tipo_persona: "MORAL", empresa: "Mantenimiento Hospitalario S.A." } ],
+    codemandados: [],
+    prestacion_reclamada: 1,
+    prestaciones_notas: "Daños a equipos de tomografía por mal mantenimiento",
+    importe_demandado: 3500000.00,
+    estatus: "TRAMITE",
+    fecha_creacion: "2024-12-15T09:00:00",
+    seguimiento: []
   }
 ];
 
