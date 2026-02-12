@@ -232,6 +232,7 @@ const casosFake = [
     importe_demandado: 500000.00,
     estatus: "TRAMITE",
     fecha_creacion: "2024-01-10T09:00:00",
+    fecha_actualizacion: "2025-02-10T14:30:00",
     seguimiento: []
   },
   {
@@ -330,6 +331,7 @@ const casosFake = [
     importe_demandado: 2500000.00,
     estatus: "TRAMITE",
     fecha_creacion: "2024-04-05T12:00:00",
+    fecha_actualizacion: "2025-02-11T16:45:00",
     seguimiento: []
   },
   {
@@ -555,6 +557,7 @@ const casosFake = [
     importe_demandado: 100000.00,
     estatus: "TRAMITE",
     fecha_creacion: "2024-08-01T09:00:00",
+    fecha_actualizacion: "2025-02-12T10:15:00",
     seguimiento: []
   },
   {
@@ -720,6 +723,7 @@ const casosFake = [
     importe_demandado: 0,
     estatus: "TRAMITE",
     fecha_creacion: "2024-11-01T11:00:00",
+    fecha_actualizacion: "2025-02-08T17:00:00",
     seguimiento: []
   },
   {
@@ -777,6 +781,7 @@ const casosFake = [
     importe_demandado: 85000.00,
     estatus: "TRAMITE",
     fecha_creacion: "2024-12-01T09:00:00",
+    fecha_actualizacion: "2025-02-09T08:30:00",
     seguimiento: []
   }
 ];

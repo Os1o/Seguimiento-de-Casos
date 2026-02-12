@@ -62,20 +62,30 @@ function limpiarFiltros() {
 
 function cargarCasos() {
     const casosGuardados = localStorage.getItem('casos');
-    
+
     if (casosGuardados) {
         todosLosCasos = JSON.parse(casosGuardados);
-        
-        todosLosCasos.sort((a, b) => b.id - a.id); 
     } else {
-        // Si no hay localStorage, usamos los fake y también los ordenamos
-        todosLosCasos = (typeof casosFake !== 'undefined' ? casosFake : []);
-        todosLosCasos.sort((a, b) => b.id - a.id);
-        // Guardamos esta carga inicial ordenada
-        localStorage.setItem('casos', JSON.stringify(todosLosCasos));
+        // Si no hay localStorage, usamos los fake
+        todosLosCasos = (typeof casosFake !== 'undefined' ? [...casosFake] : []);
     }
 
-    // Inicializar la tabla
+    // Asegurar que todos los casos tengan fecha_actualizacion
+    // Si no la tienen, se les asigna su fecha_creacion como fallback
+    todosLosCasos.forEach(caso => {
+        if (!caso.fecha_actualizacion) {
+            caso.fecha_actualizacion = caso.fecha_creacion || new Date().toISOString();
+        }
+    });
+
+    // Ordenar por fecha_actualizacion descendente (más reciente primero)
+    todosLosCasos.sort((a, b) => new Date(b.fecha_actualizacion) - new Date(a.fecha_actualizacion));
+
+    // Guardar en localStorage con las fechas asignadas
+    localStorage.setItem('casos', JSON.stringify(todosLosCasos));
+
+    // Renderizar actividad reciente y tabla
+    renderizarActividadReciente();
     renderizarTabla(todosLosCasos);
     actualizarContadores();
 }
@@ -225,7 +235,11 @@ function filtrarCasos() {
     });
 
     // Ordenar por fecha_actualizacion descendente (más reciente primero)
-    casosFiltrados.sort((a, b) => new Date(b.fecha_actualizacion) - new Date(a.fecha_actualizacion));
+    casosFiltrados.sort((a, b) => {
+        const fechaA = a.fecha_actualizacion || a.fecha_creacion || '';
+        const fechaB = b.fecha_actualizacion || b.fecha_creacion || '';
+        return new Date(fechaB) - new Date(fechaA);
+    });
 
     paginaActual = 1;
     actualizarEstadisticas();
@@ -309,6 +323,7 @@ function renderizarTabla() {
                 : '-'
             }
                 </td>
+                <td><small>${formatearFechaRelativa(caso.fecha_actualizacion || caso.fecha_creacion)}</small></td>
                 <td>
                     <div class="menu-container">
                         <button class="menu-trigger" onclick="toggleMenu(${caso.id})" id="menu-trigger-${caso.id}">
@@ -601,4 +616,98 @@ function actualizarContadores() {
     if (elTotal) elTotal.textContent = total;
     if (elActivos) elActivos.textContent = activos;
     if (elConcluidos) elConcluidos.textContent = concluidos;
+}
+
+// =====================================================
+// ACTIVIDAD RECIENTE
+// =====================================================
+
+/**
+ * Formatea una fecha como tiempo relativo ("hace 2 horas", "hace 3 días", etc.)
+ */
+function formatearFechaRelativa(fechaStr) {
+    if (!fechaStr) return '-';
+
+    const fecha = new Date(fechaStr);
+    const ahora = new Date();
+    const diffMs = ahora - fecha;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHoras = Math.floor(diffMs / 3600000);
+    const diffDias = Math.floor(diffMs / 86400000);
+    const diffSemanas = Math.floor(diffDias / 7);
+    const diffMeses = Math.floor(diffDias / 30);
+
+    if (diffMin < 1) return 'Justo ahora';
+    if (diffMin < 60) return `Hace ${diffMin} min`;
+    if (diffHoras < 24) return `Hace ${diffHoras}h`;
+    if (diffDias === 1) return 'Ayer';
+    if (diffDias < 7) return `Hace ${diffDias} días`;
+    if (diffSemanas < 4) return `Hace ${diffSemanas} sem`;
+    if (diffMeses < 12) return `Hace ${diffMeses} mes${diffMeses > 1 ? 'es' : ''}`;
+    return formatearFecha(fechaStr);
+}
+
+/**
+ * Determina si un caso fue editado (su fecha_actualizacion difiere de fecha_creacion)
+ */
+function fueEditado(caso) {
+    if (!caso.fecha_actualizacion || !caso.fecha_creacion) return false;
+    // Considerar "editado" si hay más de 1 minuto de diferencia
+    const diff = Math.abs(new Date(caso.fecha_actualizacion) - new Date(caso.fecha_creacion));
+    return diff > 60000;
+}
+
+/**
+ * Renderiza la sección de "Actividad Reciente" con los 5 últimos casos nuevos/editados
+ */
+function renderizarActividadReciente() {
+    const contenedor = document.getElementById('actividadReciente');
+    if (!contenedor) return;
+
+    // Ordenar todos los casos por fecha_actualizacion descendente
+    const casosOrdenados = [...todosLosCasos].sort((a, b) => {
+        const fechaA = a.fecha_actualizacion || a.fecha_creacion || '';
+        const fechaB = b.fecha_actualizacion || b.fecha_creacion || '';
+        return new Date(fechaB) - new Date(fechaA);
+    });
+
+    // Tomar los últimos 5
+    const recientes = casosOrdenados.slice(0, 5);
+
+    if (recientes.length === 0) {
+        contenedor.innerHTML = '<p style="color: var(--color-text-light); text-align: center;">Sin actividad reciente</p>';
+        return;
+    }
+
+    contenedor.innerHTML = recientes.map(caso => {
+        const editado = fueEditado(caso);
+        const tipoActividad = editado ? 'Editado' : 'Nuevo';
+        const iconoActividad = editado ? '✏️' : '🆕';
+        const claseActividad = editado ? 'actividad-editado' : 'actividad-nuevo';
+        const fechaRelativa = formatearFechaRelativa(caso.fecha_actualizacion || caso.fecha_creacion);
+        const actorNombre = getActorNombre(caso.actor) || 'IMSS';
+
+        const badgeEstatus = caso.estatus === 'TRAMITE'
+            ? '<span class="badge-mini badge-mini-tramite" title="En Trámite">T</span>'
+            : '<span class="badge-mini badge-mini-concluido" title="Concluido">C</span>';
+
+        return `
+            <div class="actividad-item ${claseActividad}" onclick="verDetalle(${caso.id})" style="cursor: pointer;">
+                <div class="actividad-icono">${iconoActividad}</div>
+                <div class="actividad-contenido">
+                    <div class="actividad-header">
+                        <strong>${caso.numero_expediente}</strong>
+                        ${badgeEstatus}
+                    </div>
+                    <div class="actividad-detalle">
+                        <span>${caso.tipo_juicio} · ${actorNombre}</span>
+                    </div>
+                </div>
+                <div class="actividad-meta">
+                    <span class="actividad-tipo-badge ${claseActividad}-badge">${tipoActividad}</span>
+                    <span class="actividad-tiempo">${fechaRelativa}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
