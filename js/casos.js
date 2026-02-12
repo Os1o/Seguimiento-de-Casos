@@ -278,7 +278,7 @@ function renderizarTabla() {
 
     tbody.innerHTML = casosPagina.map(caso => {
         const delegacion = obtenerDelegacion(caso.delegacion_id);
-        const actorNombre = getActorNombreConTipo(caso.actor);
+        const actorNombre = getActorNombreConTipo(caso);
         const demandadosNombres = getDemandadosNombresConTipo(caso);
         const codemandadosNombres = getCodemandadosNombresConTipo(caso);
 
