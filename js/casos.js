@@ -333,9 +333,6 @@ function renderizarTabla() {
                             <div class="menu-item" onclick="editarCaso(${caso.id})">
                                 Editar datos
                             </div>
-                            <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
-                                Actualizar seguimiento
-                            </div>
                             <div class="menu-item danger" onclick="confirmarEliminar(${caso.id})">
                                 Eliminar
                             </div>
