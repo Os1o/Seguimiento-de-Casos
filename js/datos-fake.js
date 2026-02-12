@@ -1113,8 +1113,20 @@ function formatearMoneda(cantidad) {
   }).format(cantidad);
 }
 
-// Formatear fecha
+// Formatear fecha (evita desfase de zona horaria)
 function formatearFecha(fecha) {
+  // Si la fecha es solo "YYYY-MM-DD", parsear manualmente para evitar que
+  // JavaScript la interprete como UTC y muestre el día anterior en zonas horarias negativas
+  const soloFecha = typeof fecha === 'string' ? fecha.split('T')[0] : null;
+  if (soloFecha && /^\d{4}-\d{2}-\d{2}$/.test(soloFecha)) {
+    const [año, mes, dia] = soloFecha.split('-').map(Number);
+    const fechaLocal = new Date(año, mes - 1, dia);
+    return fechaLocal.toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
   return new Date(fecha).toLocaleDateString('es-MX', {
     year: 'numeric',
     month: 'long',

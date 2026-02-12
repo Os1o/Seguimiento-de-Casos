@@ -99,7 +99,7 @@ function renderizarCaso() {
   const tribunal = catalogos.tribunales.find(t => t.id === casoActual.tribunal_id);
   document.getElementById('tribunal').textContent = tribunal ? tribunal.nombre : '---';
   
-  document.getElementById('fechaInicio').textContent = new Date(casoActual.fecha_inicio).toLocaleDateString('es-MX');
+  document.getElementById('fechaInicio').textContent = formatearFecha(casoActual.fecha_inicio);
   
   document.getElementById('imssEs').textContent = casoActual.imss_es;
   
@@ -230,7 +230,7 @@ function renderizarSeguimiento() {
   
   // Fecha estado procesal
   if (seg.fecha_estado_procesal) {
-    document.getElementById('fechaEstadoProcesal').textContent = new Date(seg.fecha_estado_procesal).toLocaleDateString('es-MX');
+    document.getElementById('fechaEstadoProcesal').textContent = formatearFecha(seg.fecha_estado_procesal);
   }
   
   // Observaciones
