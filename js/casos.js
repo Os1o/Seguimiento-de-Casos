@@ -329,7 +329,7 @@ function renderizarTabla() {
                 </td>
                 <td><small>${formatearFechaRelativa(caso.fecha_actualizacion || caso.fecha_creacion)}</small></td>
                 <td class="td-sticky-right">
-                    <div class="menu-container">
+                    <div class="menu-container" id="menu-container-${caso.id}">
                         <button class="menu-trigger" onclick="toggleMenu(${caso.id})" id="menu-trigger-${caso.id}">
                             ⋮
                         </button>
@@ -544,48 +544,55 @@ function verDetalle(casoId) {
 }
 
 function toggleMenu(casoId) {
-    // Cerrar todos los demás menús
-    document.querySelectorAll('.menu-dropdown').forEach(menu => {
-        if (menu.id !== `menu-${casoId}`) {
-            menu.classList.remove('show');
+    // Cerrar todos los demás menús y regresarlos a su contenedor
+    document.querySelectorAll('.menu-dropdown.show').forEach(m => {
+        if (m.id !== `menu-${casoId}`) {
+            m.classList.remove('show');
+            const origContainer = document.getElementById(`menu-container-${m.id.replace('menu-', '')}`);
+            if (origContainer && m.parentElement === document.body) {
+                origContainer.appendChild(m);
+            }
         }
     });
-    
+
     const menu = document.getElementById(`menu-${casoId}`);
     const boton = document.getElementById(`menu-trigger-${casoId}`);
-    menu.classList.toggle('show');
-    
-    if (menu.classList.contains('show')) {
-        // Obtener posición del botón relativa al viewport
-        const rectBtn = boton.getBoundingClientRect();
-        
-        // Obtener el contenedor de la tabla para calcular scroll
-        const tableContainer = document.querySelector('.table-container');
-        const scrollLeft = tableContainer ? tableContainer.scrollLeft : 0;
-        
-        // Posicionar el menú con fixed (escapa del overflow)
-        menu.style.position = 'fixed';
-        menu.style.zIndex = '9999'; // Asegurar que esté por encima de todo
-        
-        // Calcular posición: derecha del botón menos ancho del menú
-        const menuWidth = menu.offsetWidth;
-        const menuLeft = rectBtn.right - menuWidth - 10; // 10px de margen
-        
-        menu.style.left = `${menuLeft}px`;
-        menu.style.top = `${rectBtn.bottom + 4}px`;
-        menu.style.bottom = '';
-        
-        // Esperar render para medir y ajustar si se sale por abajo
-        requestAnimationFrame(() => {
-            const rectMenu = menu.getBoundingClientRect();
-            const espacioAbajo = window.innerHeight - rectBtn.bottom;
-            
-            if (espacioAbajo < rectMenu.height + 8) {
-                // Abrir hacia arriba
-                menu.style.top = `${rectBtn.top - rectMenu.height - 4}px`;
-            }
-        });
+    const isOpen = menu.classList.contains('show');
+
+    if (isOpen) {
+        // Cerrar y regresar al contenedor original
+        menu.classList.remove('show');
+        const origContainer = document.getElementById(`menu-container-${casoId}`);
+        if (origContainer && menu.parentElement === document.body) {
+            origContainer.appendChild(menu);
+        }
+        return;
     }
+
+    // Mover el menú al body para escapar del stacking context del sticky
+    document.body.appendChild(menu);
+    menu.classList.add('show');
+
+    // Obtener posición del botón relativa al viewport
+    const rectBtn = boton.getBoundingClientRect();
+
+    menu.style.position = 'fixed';
+    menu.style.zIndex = '9999';
+
+    const menuLeft = rectBtn.right - 150 - 10;
+    menu.style.left = `${menuLeft}px`;
+    menu.style.top = `${rectBtn.bottom + 4}px`;
+    menu.style.bottom = '';
+
+    // Esperar render para medir y ajustar si se sale por abajo
+    requestAnimationFrame(() => {
+        const rectMenu = menu.getBoundingClientRect();
+        const espacioAbajo = window.innerHeight - rectBtn.bottom;
+
+        if (espacioAbajo < rectMenu.height + 8) {
+            menu.style.top = `${rectBtn.top - rectMenu.height - 4}px`;
+        }
+    });
 }
 
 function editarCaso(casoId) {
@@ -643,25 +650,31 @@ function confirmarEliminar(casoId) {
 }
 
 
+// Función para cerrar todos los menús y regresarlos a su contenedor
+function cerrarTodosLosMenus() {
+    document.querySelectorAll('.menu-dropdown.show').forEach(m => {
+        m.classList.remove('show');
+        const id = m.id.replace('menu-', '');
+        const origContainer = document.getElementById(`menu-container-${id}`);
+        if (origContainer && m.parentElement === document.body) {
+            origContainer.appendChild(m);
+        }
+    });
+}
+
 // Cerrar menús al hacer clic fuera
 document.addEventListener('click', function (e) {
-    if (!e.target.closest('.menu-container')) {
-        document.querySelectorAll('.menu-dropdown').forEach(menu => {
-            menu.classList.remove('show');
-        });
+    if (!e.target.closest('.menu-container') && !e.target.closest('.menu-dropdown')) {
+        cerrarTodosLosMenus();
     }
 });
 
 // Cerrar menús al hacer scroll (porque son position: fixed)
 document.querySelector('.table-container')?.addEventListener('scroll', function () {
-    document.querySelectorAll('.menu-dropdown').forEach(menu => {
-        menu.classList.remove('show');
-    });
+    cerrarTodosLosMenus();
 });
 window.addEventListener('scroll', function () {
-    document.querySelectorAll('.menu-dropdown').forEach(menu => {
-        menu.classList.remove('show');
-    });
+    cerrarTodosLosMenus();
 });
 
 // =====================================================

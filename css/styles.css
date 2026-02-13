@@ -1456,14 +1456,14 @@ body {
 .td-sticky-right {
     position: sticky;
     right: 0;
-    z-index: 10; /* Cambiado de 2 a 10 */
+    z-index: 2;
     background: var(--color-white);
     box-shadow: -2px 0 4px rgba(0,0,0,0.06);
 }
 
 .th-sticky-right {
     background: var(--color-primary);
-    z-index: 11; /* Un nivel más alto que las celdas */
+    z-index: 3;
 }
 
 .table tbody tr:hover .td-sticky-right {
