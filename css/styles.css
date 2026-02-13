@@ -467,8 +467,9 @@ body {
 }
 
 .table {
-  width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+  width: 1600px;
 }
 
 .table thead {
@@ -1432,14 +1433,8 @@ body {
 }
 
 /* =====================================================
-   TABLA CON SCROLL HORIZONTAL CONTROLADO
+   ANCHOS DE COLUMNA (15 columnas, total ~1600px)
    ===================================================== */
-.table {
-  table-layout: fixed;
-  width: 1600px;
-}
-
-/* Anchos por columna (15 columnas, total ~1600px) */
 .table .col-delegacion   { width: 120px; }
 .table .col-estatus      { width: 70px; }
 .table .col-expediente   { width: 130px; }
