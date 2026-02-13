@@ -647,8 +647,8 @@ function renderizarGraficaPronostico() {
     const ctx = canvas.getContext('2d');
     const size = canvas.width;
     const center = size / 2;
-    const radius = size / 2 - 10;
-    const innerRadius = radius * 0.55;
+    const radius = size / 2 - 4;
+    const innerRadius = radius * 0.58;
 
     // Contar pronosticos solo de casos en TRAMITE
     const tramites = todosLosCasos.filter(c => c.estatus === 'TRAMITE');
@@ -682,9 +682,9 @@ function renderizarGraficaPronostico() {
         ctx.fill();
 
         ctx.fillStyle = '#999';
-        ctx.font = '13px Montserrat, sans-serif';
+        ctx.font = '11px Montserrat, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Sin datos', center, center + 5);
+        ctx.fillText('Sin datos', center, center + 4);
     } else {
         let startAngle = -Math.PI / 2;
 
@@ -710,14 +710,14 @@ function renderizarGraficaPronostico() {
 
         // Numero total en el centro
         ctx.fillStyle = '#333';
-        ctx.font = 'bold 24px Montserrat, sans-serif';
+        ctx.font = 'bold 18px Montserrat, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(totalDatos, center, center - 6);
+        ctx.fillText(totalDatos, center, center - 3);
 
         ctx.fillStyle = '#888';
-        ctx.font = '11px Montserrat, sans-serif';
-        ctx.fillText('trámites', center, center + 12);
+        ctx.font = '8px Montserrat, sans-serif';
+        ctx.fillText('trámites', center, center + 10);
     }
 
     // Leyenda
