@@ -480,9 +480,8 @@ body {
   padding: 16px;
   text-align: left;
   font-weight: 600;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 13px;
+  letter-spacing: 0.3px;
 }
 
 .table td {
@@ -1468,7 +1467,7 @@ body {
   border: none;
   color: white;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   padding: 0;
   text-align: left;
