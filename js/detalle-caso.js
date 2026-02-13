@@ -5,7 +5,7 @@
 let casoActual = null;
 
 // Verificar sesion
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const usuarioStr = sessionStorage.getItem('usuario');
 
     if (!usuarioStr) {
@@ -65,6 +65,19 @@ function renderizarCaso() {
         hour: '2-digit',
         minute: '2-digit'
     });
+
+    // Fecha de actualización (si es diferente a la de creación)
+    if (casoActual.fecha_actualizacion && casoActual.fecha_actualizacion !== casoActual.fecha_creacion) {
+        const fechaAct = new Date(casoActual.fecha_actualizacion);
+        document.getElementById('fechaActualizacion').textContent = fechaAct.toLocaleDateString('es-MX', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        document.getElementById('fechaActualizacionInfo').style.display = 'inline';
+    }
 
     // Datos del Registro
     const delegacion = catalogos.delegaciones.find(d => d.id === casoActual.delegacion_id);

@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle del Caso - Sistema de Gestion de Juicios</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
     <!-- Header -->
     <header class="header-gob">
@@ -38,10 +40,13 @@
                 </h1>
                 <p class="page-subtitle">
                     Registrado el <span id="fechaCreacion">---</span>
+                    <span id="fechaActualizacionInfo"
+                        style="display: none; margin-left: 12px; color: var(--color-text-light);">
+                        • Última actualización: <span id="fechaActualizacion">---</span>
+                    </span>
                 </p>
             </div>
         </div>
-
         <!-- Seccion 1: Datos del Registro -->
         <div class="seccion">
             <h3>Datos del Registro</h3>
@@ -200,10 +205,10 @@
                 &larr; Volver a la lista
             </button>
             <button class="btn-editar" onclick="editarDatos()">
-                 Editar Datos
+                Editar Datos
             </button>
             <button class="btn-actualizar" id="btnActualizar" onclick="abrirActualizacion()">
-                 Actualizar Seguimiento
+                Actualizar Seguimiento
             </button>
         </div>
     </div>
@@ -211,4 +216,5 @@
     <script src="js/datos-fake.js"></script>
     <script src="js/detalle-caso.js"></script>
 </body>
+
 </html>
