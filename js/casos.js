@@ -544,34 +544,45 @@ function verDetalle(casoId) {
 }
 
 function toggleMenu(casoId) {
+    // Cerrar todos los demás menús
     document.querySelectorAll('.menu-dropdown').forEach(menu => {
         if (menu.id !== `menu-${casoId}`) {
             menu.classList.remove('show');
         }
     });
-
+    
     const menu = document.getElementById(`menu-${casoId}`);
     const boton = document.getElementById(`menu-trigger-${casoId}`);
-
     menu.classList.toggle('show');
-
+    
     if (menu.classList.contains('show')) {
-        // Posicionar con fixed para escapar del overflow del table-container
+        // Obtener posición del botón relativa al viewport
         const rectBtn = boton.getBoundingClientRect();
-
+        
+        // Obtener el contenedor de la tabla para calcular scroll
+        const tableContainer = document.querySelector('.table-container');
+        const scrollLeft = tableContainer ? tableContainer.scrollLeft : 0;
+        
+        // Posicionar el menú con fixed (escapa del overflow)
         menu.style.position = 'fixed';
-        menu.style.left = (rectBtn.right - 150) + 'px'; // 150 = min-width del menu
-        menu.style.top = (rectBtn.bottom + 4) + 'px';
+        menu.style.zIndex = '9999'; // Asegurar que esté por encima de todo
+        
+        // Calcular posición: derecha del botón menos ancho del menú
+        const menuWidth = menu.offsetWidth;
+        const menuLeft = rectBtn.right - menuWidth - 10; // 10px de margen
+        
+        menu.style.left = `${menuLeft}px`;
+        menu.style.top = `${rectBtn.bottom + 4}px`;
         menu.style.bottom = '';
-
+        
         // Esperar render para medir y ajustar si se sale por abajo
         requestAnimationFrame(() => {
             const rectMenu = menu.getBoundingClientRect();
             const espacioAbajo = window.innerHeight - rectBtn.bottom;
-
+            
             if (espacioAbajo < rectMenu.height + 8) {
                 // Abrir hacia arriba
-                menu.style.top = (rectBtn.top - rectMenu.height - 4) + 'px';
+                menu.style.top = `${rectBtn.top - rectMenu.height - 4}px`;
             }
         });
     }
