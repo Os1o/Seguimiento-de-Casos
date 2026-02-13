@@ -468,8 +468,8 @@ body {
 
 .table {
   border-collapse: collapse;
-  table-layout: fixed;
-  width: 1600px;
+  width: 100%;
+  min-width: 1600px;
 }
 
 .table thead {
