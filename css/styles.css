@@ -463,6 +463,7 @@ body {
   background: var(--color-white);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+  position: relative;
 }
 
 .table {
@@ -758,15 +759,13 @@ body {
 }
 
 .menu-dropdown {
-  position: absolute;
-  right: 0;
-  top: 100%;
+  position: fixed;
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-md);
   min-width: 150px;
-  z-index: 1000;
+  z-index: 9000;
   display: none;
 }
 
@@ -889,15 +888,13 @@ body {
 }
 
 .menu-dropdown {
-  position: absolute;
-  right: 0;
-  top: 100%;
+  position: fixed;
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-md);
   min-width: 150px;
-  z-index: 1000;
+  z-index: 9000;
   display: none;
 }
 
@@ -1257,6 +1254,13 @@ body {
   font-size: 13px;
   font-weight: 700;
   color: var(--color-primary);
+  margin-bottom: 2px;
+}
+
+.grafica-sublabel {
+  font-size: 11px;
+  color: var(--color-text-light);
+  font-style: italic;
   margin-bottom: 8px;
 }
 
@@ -1425,11 +1429,30 @@ body {
 }
 
 /* =====================================================
-   TABLA CON LAYOUT FIJO (evita movimiento al hover)
+   TABLA CON SCROLL HORIZONTAL
    ===================================================== */
 .table {
-  table-layout: fixed;
+  table-layout: auto;
   width: 100%;
+  min-width: 1200px;
+}
+
+/* Columna fija (3 puntos) a la derecha */
+.th-sticky-right,
+.td-sticky-right {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: var(--color-white);
+  box-shadow: -2px 0 4px rgba(0,0,0,0.06);
+}
+
+.th-sticky-right {
+  background: var(--color-primary);
+}
+
+.table tbody tr:hover .td-sticky-right {
+  background: #f9f9f9;
 }
 
 /* =====================================================

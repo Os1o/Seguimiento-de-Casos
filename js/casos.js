@@ -283,6 +283,7 @@ function renderizarTabla() {
         const delegacion = obtenerDelegacion(caso.delegacion_id);
         const actorNombre = getActorNombreConTipo(caso);
         const demandadosNombres = getDemandadosNombresConTipo(caso);
+        const codemandadosNombres = getCodemandadosNombresConTipo(caso);
 
         // Tribunal con prefijo de jurisdicción (sin color)
         const tribunal = catalogos.tribunales.find(t => t.id === caso.tribunal_id);
@@ -312,6 +313,7 @@ function renderizarTabla() {
                 <td>${formatearFecha(caso.fecha_inicio)}</td>
                 <td>${actorNombre}</td>
                 <td>${demandadosNombres}</td>
+                <td>${codemandadosNombres}</td>
                 <td><small>${getPrestacionesTexto(caso)}</small></td>
                 <td><strong>${caso.importe_demandado > 0 ? formatearMoneda(caso.importe_demandado) : 'Sin cuantía'}</strong></td>
                 <td>
@@ -326,7 +328,7 @@ function renderizarTabla() {
             }
                 </td>
                 <td><small>${formatearFechaRelativa(caso.fecha_actualizacion || caso.fecha_creacion)}</small></td>
-                <td>
+                <td class="td-sticky-right">
                     <div class="menu-container">
                         <button class="menu-trigger" onclick="toggleMenu(${caso.id})" id="menu-trigger-${caso.id}">
                             ⋮
@@ -545,31 +547,33 @@ function toggleMenu(casoId) {
     document.querySelectorAll('.menu-dropdown').forEach(menu => {
         if (menu.id !== `menu-${casoId}`) {
             menu.classList.remove('show');
-            menu.style.top = '';
-            menu.style.bottom = '';
         }
     });
-    
+
     const menu = document.getElementById(`menu-${casoId}`);
     const boton = document.getElementById(`menu-trigger-${casoId}`);
-    
-    menu.classList.toggle('show');
-    
-    if (menu.classList.contains('show')) {
-        const rect = boton.getBoundingClientRect();
-        const espacioAbajo = window.innerHeight - rect.bottom;
-        
-        const alturaMenuEstimada = 300; 
 
-        if (espacioAbajo < alturaMenuEstimada) {
-            menu.style.top = 'auto';
-            menu.style.bottom = '100%'; 
-            menu.style.marginBottom = '4px'; 
-        } else {
-            menu.style.top = ''; 
-            menu.style.bottom = '';
-            menu.style.marginBottom = '';
-        }
+    menu.classList.toggle('show');
+
+    if (menu.classList.contains('show')) {
+        // Posicionar con fixed para escapar del overflow del table-container
+        const rectBtn = boton.getBoundingClientRect();
+
+        menu.style.position = 'fixed';
+        menu.style.left = (rectBtn.right - 150) + 'px'; // 150 = min-width del menu
+        menu.style.top = (rectBtn.bottom + 4) + 'px';
+        menu.style.bottom = '';
+
+        // Esperar render para medir y ajustar si se sale por abajo
+        requestAnimationFrame(() => {
+            const rectMenu = menu.getBoundingClientRect();
+            const espacioAbajo = window.innerHeight - rectBtn.bottom;
+
+            if (espacioAbajo < rectMenu.height + 8) {
+                // Abrir hacia arriba
+                menu.style.top = (rectBtn.top - rectMenu.height - 4) + 'px';
+            }
+        });
     }
 }
 
@@ -635,6 +639,18 @@ document.addEventListener('click', function (e) {
             menu.classList.remove('show');
         });
     }
+});
+
+// Cerrar menús al hacer scroll (porque son position: fixed)
+document.querySelector('.table-container')?.addEventListener('scroll', function () {
+    document.querySelectorAll('.menu-dropdown').forEach(menu => {
+        menu.classList.remove('show');
+    });
+});
+window.addEventListener('scroll', function () {
+    document.querySelectorAll('.menu-dropdown').forEach(menu => {
+        menu.classList.remove('show');
+    });
 });
 
 // =====================================================
