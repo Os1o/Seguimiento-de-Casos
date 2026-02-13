@@ -254,6 +254,9 @@ function actualizarEstadisticas() {
     document.getElementById('totalCasos').textContent = total;
     document.getElementById('casosTramite').textContent = tramite;
     document.getElementById('casosConcluidos').textContent = concluidos;
+
+    // Renderizar grafica de pronostico (solo tramites)
+    renderizarGraficaPronostico();
 }
 
 function renderizarTabla() {
@@ -280,7 +283,6 @@ function renderizarTabla() {
         const delegacion = obtenerDelegacion(caso.delegacion_id);
         const actorNombre = getActorNombreConTipo(caso);
         const demandadosNombres = getDemandadosNombresConTipo(caso);
-        const codemandadosNombres = getCodemandadosNombresConTipo(caso);
 
         // Tribunal con prefijo de jurisdicción (sin color)
         const tribunal = catalogos.tribunales.find(t => t.id === caso.tribunal_id);
@@ -310,7 +312,7 @@ function renderizarTabla() {
                 <td>${formatearFecha(caso.fecha_inicio)}</td>
                 <td>${actorNombre}</td>
                 <td>${demandadosNombres}</td>
-                <td>${codemandadosNombres}</td>
+                <td><small>${getPrestacionesTexto(caso)}</small></td>
                 <td><strong>${caso.importe_demandado > 0 ? formatearMoneda(caso.importe_demandado) : 'Sin cuantía'}</strong></td>
                 <td>
                     <span class="badge ${getBadgeClass(caso.imss_es)}">
@@ -466,6 +468,28 @@ function getCodemandadosNombres(caso) {
     }).join(', ');
 }
 
+function getPrestacionesTexto(caso) {
+    // Compatibilidad: nuevo formato (array de IDs) y viejo (un solo ID)
+    let ids = [];
+    if (caso.prestaciones_reclamadas && Array.isArray(caso.prestaciones_reclamadas)) {
+        ids = caso.prestaciones_reclamadas;
+    } else if (caso.prestacion_reclamada) {
+        ids = [caso.prestacion_reclamada];
+    }
+
+    if (ids.length === 0) return '-';
+
+    const nombres = ids.map(id => {
+        const p = catalogos.prestaciones.find(pr => pr.id === id);
+        return p ? p.nombre : '';
+    }).filter(Boolean);
+
+    if (nombres.length === 0) return '-';
+    if (nombres.length === 1) return nombres[0];
+    // Mostrar la primera y cuantas mas hay
+    return `${nombres[0]} <span style="color: var(--color-text-light);">+${nombres.length - 1} más</span>`;
+}
+
 function obtenerNumeroExpediente(casoId) {
     const caso = todosLosCasos.find(c => c.id === casoId);
     return caso ? caso.numero_expediente : casoId;
@@ -613,7 +637,101 @@ document.addEventListener('click', function (e) {
     }
 });
 
-// Agrega esto al final de js/casos.js
+// =====================================================
+// GRAFICA DE PRONOSTICO (DONA - Canvas puro)
+// =====================================================
+function renderizarGraficaPronostico() {
+    const canvas = document.getElementById('chartPronostico');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const size = canvas.width;
+    const center = size / 2;
+    const radius = size / 2 - 10;
+    const innerRadius = radius * 0.55;
+
+    // Contar pronosticos solo de casos en TRAMITE
+    const tramites = todosLosCasos.filter(c => c.estatus === 'TRAMITE');
+    let favorable = 0;
+    let desfavorable = 0;
+    let sinPronostico = 0;
+
+    tramites.forEach(c => {
+        const pron = c.pronostico || (c.seguimiento && c.seguimiento.pronostico) || null;
+        if (pron === 'FAVORABLE') favorable++;
+        else if (pron === 'DESFAVORABLE') desfavorable++;
+        else sinPronostico++;
+    });
+
+    const datos = [
+        { label: 'Favorable', valor: favorable, color: '#2e7d32' },
+        { label: 'Desfavorable', valor: desfavorable, color: '#d32f2f' },
+        { label: 'Sin Pronóstico', valor: sinPronostico, color: '#9e9e9e' }
+    ];
+
+    const totalDatos = favorable + desfavorable + sinPronostico;
+
+    // Limpiar canvas
+    ctx.clearRect(0, 0, size, size);
+
+    if (totalDatos === 0) {
+        ctx.fillStyle = '#e0e0e0';
+        ctx.beginPath();
+        ctx.arc(center, center, radius, 0, Math.PI * 2);
+        ctx.arc(center, center, innerRadius, 0, Math.PI * 2, true);
+        ctx.fill();
+
+        ctx.fillStyle = '#999';
+        ctx.font = '13px Montserrat, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Sin datos', center, center + 5);
+    } else {
+        let startAngle = -Math.PI / 2;
+
+        datos.forEach(d => {
+            if (d.valor === 0) return;
+            const sliceAngle = (d.valor / totalDatos) * Math.PI * 2;
+
+            ctx.fillStyle = d.color;
+            ctx.beginPath();
+            ctx.moveTo(center, center);
+            ctx.arc(center, center, radius, startAngle, startAngle + sliceAngle);
+            ctx.closePath();
+            ctx.fill();
+
+            startAngle += sliceAngle;
+        });
+
+        // Recortar centro (dona)
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(center, center, innerRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Numero total en el centro
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 24px Montserrat, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(totalDatos, center, center - 6);
+
+        ctx.fillStyle = '#888';
+        ctx.font = '11px Montserrat, sans-serif';
+        ctx.fillText('trámites', center, center + 12);
+    }
+
+    // Leyenda
+    const leyenda = document.getElementById('leyendaPronostico');
+    if (leyenda) {
+        leyenda.innerHTML = datos.map(d => `
+            <div class="leyenda-item">
+                <span class="leyenda-color" style="background: ${d.color};"></span>
+                <span class="leyenda-texto">${d.label}</span>
+                <span class="leyenda-valor">${d.valor}</span>
+            </div>
+        `).join('');
+    }
+}
 
 function actualizarContadores() {
     const total = todosLosCasos.length;

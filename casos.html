@@ -35,19 +35,30 @@
             </a>
         </div>
 
-        <!-- Contadores -->
-        <div class="contadores-grid">
-            <div class="contador-card">
-                <div class="contador-numero" id="totalCasos" style="color: var(--color-secondary);">0</div>
-                <div class="contador-label">Total</div>
+        <!-- Contadores y Gráfica -->
+        <div class="dashboard-grid">
+            <!-- Contadores -->
+            <div class="contadores-col">
+                <div class="contador-card">
+                    <div class="contador-numero" id="totalCasos" style="color: var(--color-secondary);">0</div>
+                    <div class="contador-label">Total</div>
+                </div>
+                <div class="contador-card">
+                    <div class="contador-numero" id="casosTramite" style="color: var(--color-warning);">0</div>
+                    <div class="contador-label">Total Trámite</div>
+                </div>
+                <div class="contador-card">
+                    <div class="contador-numero" id="casosConcluidos" style="color: var(--color-success);">0</div>
+                    <div class="contador-label">Total Concluido</div>
+                </div>
             </div>
-            <div class="contador-card">
-                <div class="contador-numero" id="casosTramite" style="color: var(--color-warning);">0</div>
-                <div class="contador-label">Total Trámite</div>
-            </div>
-            <div class="contador-card">
-                <div class="contador-numero" id="casosConcluidos" style="color: var(--color-success);">0</div>
-                <div class="contador-label">Total Concluido</div>
+            <!-- Gráfica de Pronóstico -->
+            <div class="grafica-pronostico-card">
+                <div class="grafica-titulo">Pronóstico de Trámites</div>
+                <div class="grafica-contenido">
+                    <canvas id="chartPronostico" width="180" height="180"></canvas>
+                    <div class="grafica-leyenda" id="leyendaPronostico"></div>
+                </div>
             </div>
         </div>
 
@@ -94,7 +105,7 @@
                         <th>Fecha Inicio</th>
                         <th>Actor</th>
                         <th>Demandado</th>
-                        <th>Codemandado</th>
+                        <th>Prestaciones</th>
                         <th>Importe</th>
                         <th class="th-filtrable">
                             <button id="btn_filtroPosicionIMSS" class="filtro-btn-custom" data-nombre="IMSS es"
