@@ -477,17 +477,21 @@ body {
 }
 
 .table th {
-  padding: 16px;
+  padding: 12px 10px;
   text-align: left;
   font-weight: 600;
   font-size: 13px;
   letter-spacing: 0.3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table td {
-  padding: 16px;
+  padding: 12px 10px;
   border-bottom: 1px solid #e8e8e8;
-  font-size: 14px;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table tbody tr {
@@ -1428,13 +1432,29 @@ body {
 }
 
 /* =====================================================
-   TABLA CON SCROLL HORIZONTAL
+   TABLA CON SCROLL HORIZONTAL CONTROLADO
    ===================================================== */
 .table {
-  table-layout: auto;
-  width: 100%;
-  min-width: 1200px;
+  table-layout: fixed;
+  width: 1600px;
 }
+
+/* Anchos por columna (15 columnas, total ~1600px) */
+.table .col-delegacion   { width: 120px; }
+.table .col-estatus      { width: 70px; }
+.table .col-expediente   { width: 130px; }
+.table .col-tipo         { width: 110px; }
+.table .col-tribunal     { width: 160px; }
+.table .col-fecha        { width: 100px; }
+.table .col-actor        { width: 130px; }
+.table .col-demandado    { width: 130px; }
+.table .col-codemandado  { width: 120px; }
+.table .col-prestaciones { width: 140px; }
+.table .col-importe      { width: 100px; }
+.table .col-imss         { width: 75px; }
+.table .col-acumulados   { width: 80px; }
+.table .col-actualizacion{ width: 90px; }
+.table .col-acciones     { width: 45px; }
 
 /* Columna fija (3 puntos) a la derecha */
 .th-sticky-right,
