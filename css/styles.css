@@ -497,6 +497,7 @@ body {
 
 .table tbody tr {
   transition: background-color 0.2s;
+  border-left: 3px solid transparent;
 }
 
 .table tbody tr:hover {
