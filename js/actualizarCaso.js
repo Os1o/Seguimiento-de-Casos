@@ -47,8 +47,8 @@ function cargarCaso(casoId) {
     }
 
     // Actualizar links de navegacion
-    document.getElementById('linkDetalle').href = `detalle-caso.html?id=${casoActual.id}`;
-    document.getElementById('btnCancelar').href = `detalle-caso.html?id=${casoActual.id}`;
+    document.getElementById('linkDetalle').href = `detalleCaso.html?id=${casoActual.id}`;
+    document.getElementById('btnCancelar').href = `detalleCaso.html?id=${casoActual.id}`;
     document.getElementById('numExpediente').textContent = casoActual.numero_expediente;
 
     // Cargar casos acumulables
@@ -250,7 +250,7 @@ function guardarActualizacion(e) {
 
         localStorage.setItem('casos', JSON.stringify(casos));
         alert('Seguimiento actualizado correctamente');
-        window.location.href = `detalle-caso.html?id=${casoActual.id}`;
+        window.location.href = `detalleCaso.html?id=${casoActual.id}`;
     } else {
         alert('Error: No se encontro el caso');
     }

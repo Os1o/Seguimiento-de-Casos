@@ -568,7 +568,7 @@ function verAcumulados(casoId) {
     const html = casosAcumulados.map(c => `
         <div style="padding: 12px; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <a href="detalle-caso.html?id=${c.id}" class="expediente-link" style="font-weight: 700;">
+                <a href="detalleCaso.html?id=${c.id}" class="expediente-link" style="font-weight: 700;">
                     ${c.numero_expediente}
                 </a>
                 <span class="badge-mini badge-mini-concluido" title="Concluido">C</span>
@@ -591,7 +591,7 @@ function cerrarModalAcumulados() {
 
 function verDetalle(casoId) {
     // Redirigir a página de detalle
-    window.location.href = `detalle-caso.html?id=${casoId}`;
+    window.location.href = `detalleCaso.html?id=${casoId}`;
 }
 
 function toggleMenu(casoId) {
@@ -651,14 +651,14 @@ function editarCaso(casoId) {
     if (menu) menu.classList.remove('show');
     
     // CAMBIO: Usar '?id=' en lugar de '?editar='
-    window.location.href = `editar-caso.html?id=${casoId}`;
+    window.location.href = `editarCaso.html?id=${casoId}`;
 }
 
 function actualizarSeguimiento(casoId) {
     const menu = document.getElementById(`menu-${casoId}`);
     if (menu) menu.classList.remove('show');
 
-    window.location.href = `actualizar-caso.html?id=${casoId}`;
+    window.location.href = `actualizarCaso.html?id=${casoId}`;
 }
 
 function confirmarEliminar(casoId) {

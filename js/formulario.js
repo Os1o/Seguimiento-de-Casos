@@ -487,7 +487,7 @@ function guardarCaso(e) {
     caso.fecha_creacion = new Date().toISOString();
     caso.fecha_actualizacion = new Date().toISOString();
 
-    // Campos de seguimiento vacios (se llenan en actualizar-caso)
+    // Campos de seguimiento vacios (se llenan en actualizarCaso)
     caso.seguimiento = {
         sentencia: null,
         importe_sentencia: null,

@@ -173,7 +173,7 @@ function renderizarCaso() {
 
         document.getElementById('seccionAcumulado').style.display = 'block';
         document.getElementById('acumuladoA').innerHTML = casoPadre
-            ? `<a href="detalle-caso.html?id=${casoPadre.id}" style="color: #621132; text-decoration: underline;">${casoPadre.numero_expediente}</a>`
+            ? `<a href="detalleCaso.html?id=${casoPadre.id}" style="color: #621132; text-decoration: underline;">${casoPadre.numero_expediente}</a>`
             : '---';
     }
 
@@ -194,7 +194,7 @@ function renderizarCaso() {
                 <ul>
                     ${casosAcumulados.map(c => `
                         <li>
-                            <a href="detalle-caso.html?id=${c.id}" style="color: #621132; text-decoration: underline;">
+                            <a href="detalleCaso.html?id=${c.id}" style="color: #621132; text-decoration: underline;">
                                 ${c.numero_expediente}
                             </a>
                         </li>
@@ -316,11 +316,11 @@ function volver() {
 }
 
 function editarDatos() {
-    window.location.href = `editar-caso.html?id=${casoActual.id}`;
+    window.location.href = `editarCaso.html?id=${casoActual.id}`;
 }
 
 function abrirActualizacion() {
-    window.location.href = `actualizar-caso.html?id=${casoActual.id}`;
+    window.location.href = `actualizarCaso.html?id=${casoActual.id}`;
 }
 
 function formatearFecha(fecha) {
