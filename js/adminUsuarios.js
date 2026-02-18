@@ -92,9 +92,9 @@ function renderizarTabla() {
                 <td><code>${u.usuario}</code></td>
                 <td><span class="badge-rol ${rolesBadge[u.rol] || ''}">${rolesTexto[u.rol] || u.rol}</span></td>
                 <td><small>${delegNombre}</small></td>
-                <td>${u.permiso_civil_mercantil ? '<span style="color:var(--color-success);">&#10003;</span>' : '<span style="color:var(--color-text-light);">&#10007;</span>'}</td>
-                <td>${u.permiso_penal ? '<span style="color:var(--color-success);">&#10003;</span>' : '<span style="color:var(--color-text-light);">&#10007;</span>'}</td>
-                <td>${u.activo
+                <td style="text-align:center;">${u.permiso_civil_mercantil ? '<span style="color:var(--color-success);">&#10003;</span>' : '<span style="color:var(--color-text-light);">&#10007;</span>'}</td>
+                <td style="text-align:center;">${u.permiso_penal ? '<span style="color:var(--color-success);">&#10003;</span>' : '<span style="color:var(--color-text-light);">&#10007;</span>'}</td>
+                <td style="text-align:center;">${u.activo
                     ? '<span class="badge badge-tramite">Activo</span>'
                     : '<span class="badge badge-concluido" style="background:#f5f5f5;color:#999;">Inactivo</span>'
                 }</td>
