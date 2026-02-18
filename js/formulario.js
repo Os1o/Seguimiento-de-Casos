@@ -32,8 +32,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
 
-    inicializarFormulario(usuario);
     configurarEventListeners(usuario);
+    inicializarFormulario(usuario);
 });
 
 function inicializarFormulario(usuario) {
