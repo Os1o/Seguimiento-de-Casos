@@ -16,6 +16,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const usuario = JSON.parse(usuarioStr);
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
 
+    // Ocultar botones de acción para rol consulta
+    if (usuario.rol === 'consulta') {
+        const btnEditar = document.getElementById('btnEditar');
+        const btnActualizar = document.getElementById('btnActualizar');
+        if (btnEditar) btnEditar.style.display = 'none';
+        if (btnActualizar) btnActualizar.style.display = 'none';
+    }
+
     cargarDetalleCaso();
 });
 

@@ -24,19 +24,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const usuario = verificarSesion();
     if (!usuario) return;
 
+    // Proteger ruta: consulta no puede crear
+    if (usuario.rol === 'consulta') {
+        window.location.href = 'casos.html';
+        return;
+    }
+
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
 
-    inicializarFormulario();
-    configurarEventListeners();
+    inicializarFormulario(usuario);
+    configurarEventListeners(usuario);
 });
 
-function inicializarFormulario() {
-    llenarDelegaciones();
-    llenarTribunales();
+function inicializarFormulario(usuario) {
+    llenarDelegaciones(usuario);
+    llenarTribunales(usuario);
     llenarPrestaciones();
 }
 
-function llenarDelegaciones() {
+function llenarDelegaciones(usuario) {
     const select = document.getElementById('delegacion');
     catalogos.delegaciones.forEach(d => {
         const option = document.createElement('option');
@@ -44,11 +50,31 @@ function llenarDelegaciones() {
         option.textContent = d.nombre;
         select.appendChild(option);
     });
+
+    // Si no es admin, pre-seleccionar y bloquear OOAD
+    if (usuario && usuario.rol !== 'admin' && usuario.delegacion_id) {
+        select.value = usuario.delegacion_id;
+        select.disabled = true;
+        // Disparar change para cargar áreas
+        select.dispatchEvent(new Event('change'));
+    }
 }
 
-function llenarTribunales() {
+function llenarTribunales(usuario, delegacionId) {
     const select = document.getElementById('tribunal');
-    catalogos.tribunales.forEach(t => {
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    // Determinar por cuál delegación filtrar
+    let filtroDeleg = delegacionId || null;
+    if (!filtroDeleg && usuario && usuario.rol !== 'admin' && usuario.delegacion_id) {
+        filtroDeleg = usuario.delegacion_id;
+    }
+
+    const tribunalesFiltrados = filtroDeleg
+        ? catalogos.tribunales.filter(t => t.delegacion_id === parseInt(filtroDeleg))
+        : catalogos.tribunales;
+
+    tribunalesFiltrados.forEach(t => {
         const option = document.createElement('option');
         option.value = t.id;
         option.textContent = t.nombre;
@@ -70,8 +96,8 @@ function llenarPrestaciones() {
     });
 }
 
-function configurarEventListeners() {
-    // Cambio de delegacion actualiza areas
+function configurarEventListeners(usuario) {
+    // Cambio de delegacion actualiza areas y tribunales
     document.getElementById('delegacion').addEventListener('change', function() {
         const delegacionId = this.value;
         const selectArea = document.getElementById('area');
@@ -88,6 +114,9 @@ function configurarEventListeners() {
         } else {
             selectArea.disabled = true;
         }
+
+        // Actualizar tribunales según la delegación seleccionada
+        llenarTribunales(usuario, delegacionId);
     });
 
     // Cambio de jurisdiccion muestra campos correspondientes

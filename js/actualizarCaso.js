@@ -12,6 +12,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const usuario = JSON.parse(usuarioStr);
+
+    // Proteger ruta: consulta no puede actualizar
+    if (usuario.rol === 'consulta') {
+        window.location.href = 'casos.html';
+        return;
+    }
+
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
 
     const urlParams = new URLSearchParams(window.location.search);

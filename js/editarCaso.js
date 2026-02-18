@@ -10,6 +10,8 @@ let contadorCodemandados = 0;
 // =====================================================
 // INICIALIZACION
 // =====================================================
+let usuarioActualEdit = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const usuarioStr = sessionStorage.getItem('usuario');
     if (!usuarioStr) {
@@ -18,6 +20,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const usuario = JSON.parse(usuarioStr);
+    usuarioActualEdit = usuario;
+
+    // Proteger ruta: consulta no puede editar
+    if (usuario.rol === 'consulta') {
+        window.location.href = 'casos.html';
+        return;
+    }
+
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -30,8 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     cargarCaso(casoId);
-    inicializarFormulario();
-    configurarEventListeners();
+    inicializarFormulario(usuario);
+    configurarEventListeners(usuario);
 });
 
 // =====================================================
@@ -57,13 +67,13 @@ function cargarCaso(casoId) {
 // =====================================================
 // INICIALIZAR FORMULARIO
 // =====================================================
-function inicializarFormulario() {
-    llenarDelegaciones();
-    llenarTribunales();
+function inicializarFormulario(usuario) {
+    llenarDelegaciones(usuario);
+    llenarTribunales(usuario);
     llenarPrestaciones();
 }
 
-function llenarDelegaciones() {
+function llenarDelegaciones(usuario) {
     const select = document.getElementById('delegacion');
     select.innerHTML = '<option value="">Seleccione...</option>';
     catalogos.delegaciones.forEach(d => {
@@ -72,12 +82,28 @@ function llenarDelegaciones() {
         option.textContent = d.nombre;
         select.appendChild(option);
     });
+
+    // Si no es admin, bloquear OOAD
+    if (usuario && usuario.rol !== 'admin' && usuario.delegacion_id) {
+        select.value = usuario.delegacion_id;
+        select.disabled = true;
+    }
 }
 
-function llenarTribunales() {
+function llenarTribunales(usuario, delegacionId) {
     const select = document.getElementById('tribunal');
     select.innerHTML = '<option value="">Seleccione...</option>';
-    catalogos.tribunales.forEach(t => {
+
+    let filtroDeleg = delegacionId || null;
+    if (!filtroDeleg && usuario && usuario.rol !== 'admin' && usuario.delegacion_id) {
+        filtroDeleg = usuario.delegacion_id;
+    }
+
+    const tribunalesFiltrados = filtroDeleg
+        ? catalogos.tribunales.filter(t => t.delegacion_id === parseInt(filtroDeleg))
+        : catalogos.tribunales;
+
+    tribunalesFiltrados.forEach(t => {
         const option = document.createElement('option');
         option.value = t.id;
         option.textContent = t.nombre;
@@ -381,9 +407,11 @@ function mostrarCamposPersona(id, tipo) {
 // =====================================================
 // EVENT LISTENERS
 // =====================================================
-function configurarEventListeners() {
+function configurarEventListeners(usuario) {
     document.getElementById('delegacion').addEventListener('change', function() {
         cargarAreas(this.value);
+        // Actualizar tribunales según la delegación seleccionada
+        llenarTribunales(usuario, this.value);
     });
 
     document.querySelectorAll('input[name="jurisdiccion"]').forEach(radio => {

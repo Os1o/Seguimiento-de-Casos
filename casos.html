@@ -15,8 +15,11 @@
             <span class="logo-text">Gobierno de México</span>
         </div>
         <nav class="header-nav">
+            <a href="admin-usuarios.html" id="linkAdmin" class="btn-header-link" style="display:none;">Administrar Usuarios</a>
             <div class="header-user">
                 <span id="nombreUsuario">Usuario</span>
+                <span id="badgeRol" class="badge-rol"></span>
+                <small id="infoOOAD" class="info-ooad"></small>
             </div>
             <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
         </nav>
@@ -30,7 +33,7 @@
                 <h1 class="page-title">Casos Civiles, Mercantiles y Procedimientos Especiales</h1>
                 <p class="page-subtitle">Gestión y seguimiento de expedientes</p>
             </div>
-            <a href="nuevo-caso.html" class="btn btn-primary">
+            <a href="nuevo-caso.html" class="btn btn-primary" id="btnNuevoRegistro">
                 + Nuevo Registro
             </a>
         </div>

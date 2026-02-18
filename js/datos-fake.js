@@ -174,11 +174,24 @@ const catalogos = {
   },
   
   tribunales: [
-    { id: 1, nombre: "Juzgado Primero Civil - Tuxtla Gutiérrez" },
-    { id: 2, nombre: "Juzgado Segundo Mercantil - Guadalajara" },
-    { id: 3, nombre: "Juzgado Tercero Civil - Ecatepec" },
-    { id: 4, nombre: "Juzgado Cuarto Mercantil - CDMX" },
-    { id: 5, nombre: "Juzgado de Distrito Federal - CDMX" }
+    { id: 1, nombre: "Juzgado Primero Civil - Tuxtla Gutiérrez", delegacion_id: 5 },
+    { id: 2, nombre: "Juzgado Segundo Mercantil - Guadalajara", delegacion_id: 8 },
+    { id: 3, nombre: "Juzgado Tercero Civil - Ecatepec", delegacion_id: 12 },
+    { id: 4, nombre: "Juzgado Cuarto Mercantil - CDMX", delegacion_id: 9 },
+    { id: 5, nombre: "Juzgado de Distrito Federal - CDMX", delegacion_id: 9 },
+    { id: 6, nombre: "Juzgado Primero Civil - Aguascalientes", delegacion_id: 1 },
+    { id: 7, nombre: "Juzgado Primero Civil - Mexicali", delegacion_id: 2 },
+    { id: 8, nombre: "Juzgado Primero Civil - La Paz", delegacion_id: 3 },
+    { id: 9, nombre: "Juzgado Primero Civil - Campeche", delegacion_id: 4 },
+    { id: 10, nombre: "Juzgado Primero Civil - Chihuahua", delegacion_id: 6 },
+    { id: 11, nombre: "Juzgado Primero Civil - Saltillo", delegacion_id: 7 },
+    { id: 12, nombre: "Juzgado Primero Civil - Colima", delegacion_id: 8 },
+    { id: 13, nombre: "Juzgado Segundo Civil - CDMX Sur", delegacion_id: 10 },
+    { id: 14, nombre: "Juzgado Primero Civil - Durango", delegacion_id: 11 },
+    { id: 15, nombre: "Juzgado Segundo Civil - Ecatepec", delegacion_id: 12 },
+    { id: 16, nombre: "Juzgado Primero Civil - Toluca", delegacion_id: 13 },
+    { id: 17, nombre: "Juzgado Primero Civil - León", delegacion_id: 14 },
+    { id: 18, nombre: "Juzgado Primero Civil - Chilpancingo", delegacion_id: 15 }
   ],
   
   prestaciones: [
@@ -379,7 +392,7 @@ const casosFake = [
     numero_expediente: "HIP-001/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 3,
+    tribunal_id: 6,
     fecha_inicio: "2024-05-01",
     imss_es: "TERCERO",
     actor: { tipo_persona: "MORAL", empresa: "Banco del Bajío S.A." },
@@ -434,7 +447,7 @@ const casosFake = [
     numero_expediente: "ARR-555/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 2,
+    tribunal_id: 17,
     fecha_inicio: "2024-06-01",
     imss_es: "ACTOR",
     actor: {},
@@ -462,7 +475,7 @@ const casosFake = [
     numero_expediente: "USU-123/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 1,
+    tribunal_id: 8,
     fecha_inicio: "2024-06-10",
     imss_es: "DEMANDADO",
     actor: { tipo_persona: "FISICA", nombres: "Juana", apellido_paterno: "Inés", apellido_materno: "De la Cruz" },
@@ -489,7 +502,7 @@ const casosFake = [
     numero_expediente: "CM-777/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 4,
+    tribunal_id: 13,
     fecha_inicio: "2024-07-01",
     imss_es: "TERCERO",
     actor: { tipo_persona: "MORAL", empresa: "Empresas en Quiebra S.A." },
@@ -518,7 +531,7 @@ const casosFake = [
     numero_expediente: "FIA-888/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 5,
+    tribunal_id: 3,
     fecha_inicio: "2024-07-15",
     imss_es: "ACTOR",
     actor: {},
@@ -546,7 +559,7 @@ const casosFake = [
     numero_expediente: "CIV-852/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 1,
+    tribunal_id: 11,
     fecha_inicio: "2024-08-01",
     imss_es: "DEMANDADO",
     actor: { tipo_persona: "FISICA", nombres: "Pedro", apellido_paterno: "Infante", apellido_materno: "Cruz" },
@@ -573,7 +586,7 @@ const casosFake = [
     numero_expediente: "MER-ESC-005/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 2,
+    tribunal_id: 12,
     fecha_inicio: "2024-08-10",
     imss_es: "ACTOR",
     actor: {},
@@ -602,7 +615,7 @@ const casosFake = [
     numero_expediente: "OTRO-111/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 5,
+    tribunal_id: 16,
     fecha_inicio: "2024-09-01",
     imss_es: "DEMANDADO",
     actor: { tipo_persona: "MORAL", empresa: "Sindicato Nacional" },
@@ -628,7 +641,7 @@ const casosFake = [
     numero_expediente: "CIV-1010/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 1,
+    tribunal_id: 10,
     fecha_inicio: "2024-09-15",
     imss_es: "ACTOR",
     actor: {},
@@ -657,7 +670,7 @@ const casosFake = [
     numero_expediente: "MER-OTR-222/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 5,
+    tribunal_id: 14,
     fecha_inicio: "2024-10-01",
     imss_es: "DEMANDADO",
     actor: { tipo_persona: "MORAL", empresa: "Proveedor de Limpieza S.A." },
@@ -683,7 +696,7 @@ const casosFake = [
     numero_expediente: "CIV-CAMP-09/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 3,
+    tribunal_id: 9,
     fecha_inicio: "2024-10-20",
     imss_es: "ACTOR",
     actor: {},
@@ -712,7 +725,7 @@ const casosFake = [
     numero_expediente: "AGR-GRO-001/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 5,
+    tribunal_id: 18,
     fecha_inicio: "2024-11-01",
     imss_es: "DEMANDADO",
     actor: { tipo_persona: "FISICA", nombres: "Comunidad", apellido_paterno: "Indígena", apellido_materno: "Tlapa" },
@@ -739,7 +752,7 @@ const casosFake = [
     numero_expediente: "MER-AGS-900/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 2,
+    tribunal_id: 6,
     fecha_inicio: "2024-11-15",
     imss_es: "DEMANDADO",
     actor: { tipo_persona: "MORAL", empresa: "Papelería del Centro" },
@@ -766,7 +779,7 @@ const casosFake = [
     numero_expediente: "CIV-BCS-777/2024",
     acumulado_a: null,
     juicios_acumulados: [],
-    tribunal_id: 1,
+    tribunal_id: 8,
     fecha_inicio: "2024-12-01",
     imss_es: "ACTOR",
     actor: {},
@@ -786,16 +799,72 @@ const casosFake = [
   }
 ];
 
-// USUARIO FAKE (para simular login)
-const usuarioFake = {
-  id: 1,
-  usuario: "oscar.lopez",
-  nombre_completo: "Oscar López",
-  rol: "usuario",
-  delegacion_id: 1,
-  permiso_civil_mercantil: true,
-  permiso_penal: true
-};
+// USUARIOS FAKE (catálogo de usuarios del sistema)
+const usuariosFake = [
+  {
+    id: 1,
+    usuario: "admin",
+    password: "admin123",
+    nombre_completo: "Administrador General",
+    rol: "admin",
+    delegacion_id: null,
+    permiso_civil_mercantil: true,
+    permiso_penal: true,
+    activo: true
+  },
+  {
+    id: 2,
+    usuario: "oscar.lopez",
+    password: "1234",
+    nombre_completo: "Oscar López",
+    rol: "editor",
+    delegacion_id: 5,
+    permiso_civil_mercantil: true,
+    permiso_penal: false,
+    activo: true
+  },
+  {
+    id: 3,
+    usuario: "maria.garcia",
+    password: "1234",
+    nombre_completo: "María García",
+    rol: "consulta",
+    delegacion_id: 5,
+    permiso_civil_mercantil: true,
+    permiso_penal: false,
+    activo: true
+  },
+  {
+    id: 4,
+    usuario: "carlos.ramirez",
+    password: "1234",
+    nombre_completo: "Carlos Ramírez",
+    rol: "editor",
+    delegacion_id: 2,
+    permiso_civil_mercantil: true,
+    permiso_penal: false,
+    activo: true
+  },
+  {
+    id: 5,
+    usuario: "ana.martinez",
+    password: "1234",
+    nombre_completo: "Ana Martínez",
+    rol: "editor",
+    delegacion_id: 1,
+    permiso_civil_mercantil: true,
+    permiso_penal: false,
+    activo: true
+  }
+];
+
+// Inicializar usuarios en localStorage si no existen
+function inicializarUsuarios() {
+  if (!localStorage.getItem('usuarios')) {
+    localStorage.setItem('usuarios', JSON.stringify(usuariosFake));
+  }
+}
+inicializarUsuarios();
 
 // Funciones helper
 function obtenerDelegacion(id) {

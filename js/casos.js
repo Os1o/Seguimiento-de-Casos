@@ -6,6 +6,7 @@ let casosFiltrados = [];
 let todosLosCasos = [];
 let paginaActual = 1;
 const REGISTROS_POR_PAGINA = 10;
+let usuarioActual = null;
 
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -25,9 +26,47 @@ document.addEventListener('DOMContentLoaded', function () {
     // Verificar sesión
     const usuario = verificarSesion();
     if (!usuario) return;
+    usuarioActual = usuario;
 
     // Mostrar nombre de usuario
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
+
+    // Mostrar badge de rol
+    const badgeRol = document.getElementById('badgeRol');
+    if (badgeRol) {
+        const rolesTexto = { admin: 'Admin', editor: 'Editor', consulta: 'Consulta' };
+        badgeRol.textContent = rolesTexto[usuario.rol] || usuario.rol;
+        badgeRol.className = 'badge-rol badge-rol-' + usuario.rol;
+    }
+
+    // Mostrar OOAD del usuario
+    const infoOOAD = document.getElementById('infoOOAD');
+    if (infoOOAD && usuario.delegacion_id) {
+        const deleg = obtenerDelegacion(usuario.delegacion_id);
+        if (deleg) infoOOAD.textContent = deleg.nombre;
+    } else if (infoOOAD && usuario.rol === 'admin') {
+        infoOOAD.textContent = 'Todas las delegaciones';
+    }
+
+    // Mostrar/ocultar enlace de admin
+    const linkAdmin = document.getElementById('linkAdmin');
+    if (linkAdmin && usuario.rol === 'admin') {
+        linkAdmin.style.display = '';
+    }
+
+    // Ocultar botón "Nuevo Registro" para rol consulta
+    if (usuario.rol === 'consulta') {
+        const btnNuevo = document.getElementById('btnNuevoRegistro');
+        if (btnNuevo) btnNuevo.style.display = 'none';
+    }
+
+    // Ocultar filtro de delegación para no-admin (ya está filtrado por su OOAD)
+    if (usuario.rol !== 'admin') {
+        const btnFiltroDelegacion = document.getElementById('btn_filtroDelegacion');
+        if (btnFiltroDelegacion) {
+            btnFiltroDelegacion.closest('th').innerHTML = '<span style="padding:0 10px;font-size:13px;">OOAD/UMAE</span>';
+        }
+    }
 
     // Cargar casos (fake o localStorage)
     cargarCasos();
@@ -37,7 +76,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Event listeners para búsqueda
     document.getElementById('searchInput').addEventListener('input', filtrarCasos);
-    // Los filtros de columna usan seleccionarFiltro() directamente (dropdown personalizado)
 
     // Mostrar casos
     filtrarCasos();
@@ -62,27 +100,33 @@ function limpiarFiltros() {
 
 function cargarCasos() {
     const casosGuardados = localStorage.getItem('casos');
+    let todosLosCasosSinFiltro;
 
     if (casosGuardados) {
-        todosLosCasos = JSON.parse(casosGuardados);
+        todosLosCasosSinFiltro = JSON.parse(casosGuardados);
     } else {
-        // Si no hay localStorage, usamos los fake
-        todosLosCasos = (typeof casosFake !== 'undefined' ? [...casosFake] : []);
+        todosLosCasosSinFiltro = (typeof casosFake !== 'undefined' ? [...casosFake] : []);
     }
 
     // Asegurar que todos los casos tengan fecha_actualizacion
-    // Si no la tienen, se les asigna su fecha_creacion como fallback
-    todosLosCasos.forEach(caso => {
+    todosLosCasosSinFiltro.forEach(caso => {
         if (!caso.fecha_actualizacion) {
             caso.fecha_actualizacion = caso.fecha_creacion || new Date().toISOString();
         }
     });
 
+    // Guardar en localStorage con las fechas asignadas
+    localStorage.setItem('casos', JSON.stringify(todosLosCasosSinFiltro));
+
+    // Filtrar por OOAD del usuario (si no es admin)
+    if (usuarioActual && usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
+        todosLosCasos = todosLosCasosSinFiltro.filter(c => c.delegacion_id === usuarioActual.delegacion_id);
+    } else {
+        todosLosCasos = todosLosCasosSinFiltro;
+    }
+
     // Ordenar por fecha_actualizacion descendente (más reciente primero)
     todosLosCasos.sort((a, b) => new Date(b.fecha_actualizacion) - new Date(a.fecha_actualizacion));
-
-    // Guardar en localStorage con las fechas asignadas
-    localStorage.setItem('casos', JSON.stringify(todosLosCasos));
 
     // Renderizar actividad reciente y tabla
     renderizarActividadReciente();
@@ -334,12 +378,19 @@ function renderizarTabla() {
                             ⋮
                         </button>
                         <div class="menu-dropdown" id="menu-${caso.id}">
+                            <div class="menu-item" onclick="verDetalle(${caso.id})">
+                                Ver detalle
+                            </div>
+                            ${usuarioActual && usuarioActual.rol !== 'consulta' ? `
                             <div class="menu-item" onclick="editarCaso(${caso.id})">
                                 Editar datos
                             </div>
+                            <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
+                                Actualizar seguimiento
+                            </div>
                             <div class="menu-item danger" onclick="confirmarEliminar(${caso.id})">
                                 Eliminar
-                            </div>
+                            </div>` : ''}
                         </div>
                     </div>
                 </td>
@@ -629,24 +680,30 @@ function confirmarEliminar(casoId) {
         return;
     }
 
+    // Trabajar con TODOS los casos del localStorage (no solo los filtrados por OOAD)
+    const casosStr = localStorage.getItem('casos');
+    let todosCasosGlobal = casosStr ? JSON.parse(casosStr) : [];
+
     // Si el caso está acumulado a otro, quitarlo del array del padre
     if (caso.acumulado_a) {
-        const casoPadre = todosLosCasos.find(c => c.id === caso.acumulado_a);
+        const casoPadre = todosCasosGlobal.find(c => c.id === caso.acumulado_a);
         if (casoPadre && casoPadre.juicios_acumulados) {
             casoPadre.juicios_acumulados = casoPadre.juicios_acumulados.filter(id => id !== casoId);
         }
     }
 
-    // Eliminar del array
-    todosLosCasos = todosLosCasos.filter(c => c.id !== casoId);
+    // Eliminar del array global
+    todosCasosGlobal = todosCasosGlobal.filter(c => c.id !== casoId);
+    localStorage.setItem('casos', JSON.stringify(todosCasosGlobal));
 
-    // Actualizar localStorage
-    localStorage.setItem('casos', JSON.stringify(todosLosCasos));
+    // También eliminar del array local filtrado
+    todosLosCasos = todosLosCasos.filter(c => c.id !== casoId);
 
     // Refrescar tabla
     filtrarCasos();
+    actualizarContadores();
 
-    alert('✓ Caso eliminado exitosamente');
+    alert('Caso eliminado exitosamente');
 }
 
 
