@@ -154,7 +154,7 @@ function llenarFormulario() {
 
     // 4. TIPO Y SUBTIPO DE JUICIO
     document.getElementById('tipoJuicio').value = casoActual.tipo_juicio;
-    cargarSubtipos(casoActual.tipo_juicio);
+    cargarSubtipos(casoActual.tipo_juicio, casoActual.jurisdiccion);
 
     // Ocultar subtipo si es Amparo Indirecto
     if (casoActual.tipo_juicio === 'AMPARO INDIRECTO') {
@@ -339,19 +339,36 @@ function cargarAreas(delegacionId, callback) {
     }
 }
 
-function cargarSubtipos(tipoJuicio) {
+// Determina si un subtipo es visible según la jurisdicción seleccionada
+function subtipoVisibleParaJurisdiccion(st, jurisdiccion) {
+    if (!jurisdiccion) return true;
+
+    if (st.jurisdiccion) {
+        return st.jurisdiccion === 'AMBAS' || st.jurisdiccion === jurisdiccion;
+    }
+
+    if (st.subtipos && st.subtipos.length > 0) {
+        return st.subtipos.some(ss => ss.jurisdiccion === 'AMBAS' || ss.jurisdiccion === jurisdiccion);
+    }
+
+    return true;
+}
+
+function cargarSubtipos(tipoJuicio, jurisdiccion) {
     const selectSub = document.getElementById('subtipoJuicio');
     selectSub.innerHTML = '<option value="">Seleccione...</option>';
 
     if (tipoJuicio && catalogos.tiposJuicio[tipoJuicio]) {
         selectSub.disabled = false;
-        catalogos.tiposJuicio[tipoJuicio].forEach(st => {
-            const option = document.createElement('option');
-            option.value = st.id;
-            option.textContent = st.nombre;
-            option.dataset.subtipos = JSON.stringify(st.subtipos || []);
-            selectSub.appendChild(option);
-        });
+        catalogos.tiposJuicio[tipoJuicio]
+            .filter(st => subtipoVisibleParaJurisdiccion(st, jurisdiccion))
+            .forEach(st => {
+                const option = document.createElement('option');
+                option.value = st.id;
+                option.textContent = st.nombre;
+                option.dataset.subtipos = JSON.stringify(st.subtipos || []);
+                selectSub.appendChild(option);
+            });
     } else {
         selectSub.disabled = true;
     }
@@ -424,17 +441,21 @@ function configurarEventListeners(usuario) {
         radio.addEventListener('change', function() {
             mostrarCamposJurisdiccion(this.value);
 
-            // Re-disparar carga de sub-subtipos para filtrar segun jurisdiccion
-            const subtipoSelect = document.getElementById('subtipoJuicio');
-            if (subtipoSelect.value) {
-                cargarSubsubtipos(subtipoSelect.value);
+            // Re-filtrar subtipos según la nueva jurisdicción
+            const tipoSelect = document.getElementById('tipoJuicio');
+            if (tipoSelect.value) {
+                cargarSubtipos(tipoSelect.value, this.value);
+                document.getElementById('grupSubsubtipo').style.display = 'none';
             }
         });
     });
 
     document.getElementById('tipoJuicio').addEventListener('change', function() {
         const tipo = this.value;
-        cargarSubtipos(tipo);
+        const jurisdiccionRadio = document.querySelector('input[name="jurisdiccion"]:checked');
+        const jurisdiccion = jurisdiccionRadio ? jurisdiccionRadio.value : '';
+
+        cargarSubtipos(tipo, jurisdiccion);
         document.getElementById('grupSubsubtipo').style.display = 'none';
 
         // AMPARO INDIRECTO: siempre Federal, auto-seleccionar único subtipo
@@ -444,6 +465,8 @@ function configurarEventListeners(usuario) {
                 radioFederal.checked = true;
                 mostrarCamposJurisdiccion('FEDERAL');
             }
+            // Re-cargar con jurisdicción FEDERAL
+            cargarSubtipos(tipo, 'FEDERAL');
             const selectSubtipo = document.getElementById('subtipoJuicio');
             if (selectSubtipo.options.length === 2) {
                 selectSubtipo.value = selectSubtipo.options[1].value;
