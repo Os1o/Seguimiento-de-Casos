@@ -386,10 +386,10 @@ function cargarSubsubtipos(subtipoId) {
     const jurisdiccionRadio = document.querySelector('input[name="jurisdiccion"]:checked');
     const jurisdiccion = jurisdiccionRadio ? jurisdiccionRadio.value : '';
 
-    // Filtrar: si es FEDERAL, no mostrar sub-subtipos que son solo LOCAL (como "Oral")
+    // Filtrar sub-subtipos según jurisdicción seleccionada
     const subtiposFiltrados = subtipos.filter(ss => {
-        if (jurisdiccion === 'FEDERAL' && ss.jurisdiccion === 'LOCAL') return false;
-        return true;
+        if (!jurisdiccion || !ss.jurisdiccion) return true;
+        return ss.jurisdiccion === 'AMBAS' || ss.jurisdiccion === jurisdiccion;
     });
 
     const grupoSubsub = document.getElementById('grupSubsubtipo');
