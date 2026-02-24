@@ -71,8 +71,8 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label required">Tipo de Juicio</label>
-                        <select id="tipoJuicio" class="form-select" required>
-                            <option value="">Seleccione...</option>
+                        <select id="tipoJuicio" class="form-select" required disabled>
+                            <option value="">Primero seleccione jurisdicción</option>
                             <option value="CIVIL">Civil</option>
                             <option value="MERCANTIL">Mercantil</option>
                             <option value="AMPARO INDIRECTO">Amparo Indirecto</option>
@@ -103,7 +103,7 @@
                     <div class="form-group">
                         <label class="form-label required">Numero de Juicio (Local)</label>
                         <input type="text" id="numeroLocal" class="form-input" maxlength="30" placeholder="Alfanumerico, maximo 30 caracteres">
-                        <small style="color: var(--color-text-light);">Ejemplo: CIV-2024-ORD-123</small>
+                        <small style="color: var(--color-text-light);">Ejemplo: 50/2024-VI-2</small>
                     </div>
                 </div>
 
@@ -128,7 +128,7 @@
                                 id="anoFederal"
                                 class="form-input"
                                 maxlength="4"
-                                placeholder="2024"
+                                placeholder="2026"
                                 pattern="[0-9]{4}"
                                 title="Solo numeros, exactamente 4 digitos"
                             >

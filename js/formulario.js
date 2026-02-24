@@ -150,8 +150,10 @@ function configurarEventListeners(usuario) {
             document.getElementById('anoFederal').value = '';
             document.getElementById('anoFederal').required = !esLocal;
 
-            // Re-filtrar subtipos según la nueva jurisdicción
+            // Habilitar tipo de juicio y re-filtrar subtipos
             const tipoSelect = document.getElementById('tipoJuicio');
+            tipoSelect.disabled = false;
+            tipoSelect.options[0].textContent = 'Seleccione...';
             if (tipoSelect.value) {
                 tipoSelect.dispatchEvent(new Event('change'));
             }

@@ -152,8 +152,11 @@ function llenarFormulario() {
         document.getElementById('anoFederal').value = casoActual.ano || casoActual['año'] || '';
     }
 
-    // 4. TIPO Y SUBTIPO DE JUICIO
-    document.getElementById('tipoJuicio').value = casoActual.tipo_juicio;
+    // 4. TIPO Y SUBTIPO DE JUICIO (habilitar porque ya tiene jurisdicción)
+    const tipoSelect = document.getElementById('tipoJuicio');
+    tipoSelect.disabled = false;
+    tipoSelect.options[0].textContent = 'Seleccione...';
+    tipoSelect.value = casoActual.tipo_juicio;
     cargarSubtipos(casoActual.tipo_juicio, casoActual.jurisdiccion);
 
     // Ocultar subtipo si es Amparo Indirecto
@@ -441,8 +444,10 @@ function configurarEventListeners(usuario) {
         radio.addEventListener('change', function() {
             mostrarCamposJurisdiccion(this.value);
 
-            // Re-filtrar subtipos según la nueva jurisdicción
+            // Habilitar tipo de juicio y re-filtrar subtipos
             const tipoSelect = document.getElementById('tipoJuicio');
+            tipoSelect.disabled = false;
+            tipoSelect.options[0].textContent = 'Seleccione...';
             if (tipoSelect.value) {
                 cargarSubtipos(tipoSelect.value, this.value);
                 document.getElementById('grupSubsubtipo').style.display = 'none';
