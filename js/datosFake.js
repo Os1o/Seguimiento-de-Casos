@@ -102,74 +102,51 @@ const catalogos = {
   
   tiposJuicio: {
     CIVIL: [
-      { 
-        id: 1, 
-        nombre: "Ordinario",
+      {
+        id: 1,
+        nombre: "Ordinario Civil",
         subtipos: [
           { id: 11, nombre: "Oral", jurisdiccion: "LOCAL" },
           { id: 12, nombre: "Escrito", jurisdiccion: "AMBAS" }
         ]
       },
-      { 
-        id: 2, 
-        nombre: "Hipotecario",
-        jurisdiccion: "LOCAL",
-        subtipos: []
-      },
-      { 
-        id: 3, 
-        nombre: "Arrendamiento",
-        jurisdiccion: "LOCAL",
-        subtipos: []
-      },
-      { 
-        id: 4, 
-        nombre: "Usucapión",
-        jurisdiccion: "LOCAL",
-        subtipos: []
-      },
-      { 
-        id: 5, 
-        nombre: "Agrario",
-        jurisdiccion: "FEDERAL",
-        subtipos: []
-      },
-      { 
-        id: 6, 
-        nombre: "Otros",
-        jurisdiccion: "AMBAS",
-        subtipos: [],
-        requiere_descripcion: true
-      }
+      { id: 2, nombre: "Ejecutivo", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 3, nombre: "Sumario", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 4, nombre: "Especial", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 5, nombre: "Especial Hipotecario", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 6, nombre: "Agrario", jurisdiccion: "FEDERAL", subtipos: [] },
+      { id: 7, nombre: "Arrendamiento", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 8, nombre: "Reivindicatorio", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 9, nombre: "Usucapión", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 10, nombre: "Medios Preparatorios a Juicio", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 11, nombre: "Jurisdicción Voluntaria", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 12, nombre: "Ordinario Familiar", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 13, nombre: "Oral Familiar", jurisdiccion: "LOCAL", subtipos: [] },
+      { id: 14, nombre: "Otro, caso sui generis", jurisdiccion: "AMBAS", subtipos: [], requiere_descripcion: true }
     ],
     MERCANTIL: [
-      { 
-        id: 7, 
-        nombre: "Ordinario",
+      {
+        id: 20,
+        nombre: "Ordinario Mercantil",
         subtipos: [
-          { id: 71, nombre: "Oral", jurisdiccion: "LOCAL" },
-          { id: 72, nombre: "Escrito", jurisdiccion: "AMBAS" }
+          { id: 201, nombre: "Oral", jurisdiccion: "FEDERAL" },
+          { id: 202, nombre: "Escrito", jurisdiccion: "AMBAS" }
         ]
       },
-      { 
-        id: 8, 
-        nombre: "Concursos Mercantiles",
+      { id: 21, nombre: "Ejecutivo", jurisdiccion: "AMBAS", subtipos: [] },
+      {
+        id: 22,
+        nombre: "Especiales",
         jurisdiccion: "FEDERAL",
-        subtipos: []
+        subtipos: [
+          { id: 221, nombre: "Concursos Mercantiles", jurisdiccion: "FEDERAL" },
+          { id: 222, nombre: "Especial de Fianzas", jurisdiccion: "FEDERAL" }
+        ]
       },
-      { 
-        id: 9, 
-        nombre: "Especial de Fianza",
-        jurisdiccion: "FEDERAL",
-        subtipos: []
-      },
-      { 
-        id: 10, 
-        nombre: "Otros",
-        jurisdiccion: "AMBAS",
-        subtipos: [],
-        requiere_descripcion: true
-      }
+      { id: 23, nombre: "Otro, caso sui generis", jurisdiccion: "AMBAS", subtipos: [], requiere_descripcion: true }
+    ],
+    "AMPARO INDIRECTO": [
+      { id: 30, nombre: "Amparo Indirecto", jurisdiccion: "FEDERAL", subtipos: [] }
     ]
   },
   
@@ -196,15 +173,45 @@ const catalogos = {
   
   prestaciones: [
     { id: 1, nombre: "Indemnización por daños y perjuicios" },
-    { id: 2, nombre: "Pago de prestaciones laborales" },
-    { id: 3, nombre: "Cumplimiento de contrato" },
-    { id: 4, nombre: "Responsabilidad civil" },
-    { id: 5, nombre: "Daño moral" },
-    { id: 6, nombre: "Pago de salarios caídos" },
-    { id: 7, nombre: "Reinstalación laboral" },
-    { id: 8, nombre: "Pago de finiquito" },
-    { id: 9, nombre: "Rescisión de contrato" },
-    { id: 10, nombre: "Nulidad de acto administrativo" }
+    { id: 2, nombre: "Indemnización por reparación del daño moral" },
+    { id: 3, nombre: "Indemnización por reparación del daño moral indirecto" },
+    { id: 4, nombre: "Indemnización por daño material" },
+    { id: 5, nombre: "Recuperación de créditos hipotecarios" },
+    { id: 6, nombre: "Recuperación de préstamos para financiamiento de automóvil" },
+    { id: 7, nombre: "Recuperación por préstamos a mediano plazo" },
+    { id: 8, nombre: "Reconocimiento y pago de adeudo de cuotas obrero patronales (concurso mercantil)" },
+    { id: 9, nombre: "Arrendamientos de inmuebles, desocupación y entrega de inmueble" },
+    { id: 10, nombre: "Arrendamientos de inmuebles, pago de rentas vencidas" },
+    { id: 11, nombre: "Arrendamientos de inmuebles, formalización de contrato" },
+    { id: 12, nombre: "Reivindicación de bien inmueble" },
+    { id: 13, nombre: "Declaración judicial de la prescripción de la acción hipotecaria" },
+    { id: 14, nombre: "Declaración judicial de incumplimiento contrato de obra pública" },
+    { id: 15, nombre: "Declaración judicial de la nulidad absoluta de escritura pública" },
+    { id: 16, nombre: "Declaración judicial de terminación del contrato de arrendamiento" },
+    { id: 17, nombre: "Declaración judicial de nulidad de contrato" },
+    { id: 18, nombre: "Rescisión del mutuo con interés y garantía hipotecaria" },
+    { id: 19, nombre: "Vencimiento anticipado del contrato de mutuo con interés y garantía hipotecaria" },
+    { id: 20, nombre: "Cumplimiento forzoso de contrato" },
+    { id: 21, nombre: "Pago de intereses moratorios" },
+    { id: 22, nombre: "Pago de gastos financieros" },
+    { id: 23, nombre: "Pago de actualizaciones" },
+    { id: 24, nombre: "Pago de recargos" },
+    { id: 25, nombre: "Pago de devolución de anticipo" },
+    { id: 26, nombre: "Pago de gastos" },
+    { id: 27, nombre: "Pago de costas" },
+    { id: 28, nombre: "Pago de cuotas de recuperación" },
+    { id: 29, nombre: "Pago de honorarios profesionales" },
+    { id: 30, nombre: "Pago de facturas por adquisición de servicios profesionales" },
+    { id: 31, nombre: "Pago de facturas por adquisición de bienes" },
+    { id: 32, nombre: "Pago de cantidad garantizada en póliza de fianza por incumplimiento de contrato" },
+    { id: 33, nombre: "Pago de saldos insolutos" },
+    { id: 34, nombre: "Pago de cantidad en dinero por concepto de suerte principal consignado en el título de crédito" },
+    { id: 35, nombre: "Pago de la cantidad del cobro indebido" },
+    { id: 36, nombre: "Publicación de extractos de la sentencia" },
+    { id: 37, nombre: "Pago por reembolso de gastos médicos" },
+    { id: 38, nombre: "Nulidad de contrato de crédito y mandato irrevocable para descuento vía nómina y pago de indemnización por daño moral y daños punitivos" },
+    { id: 39, nombre: "Consignación de rentas" },
+    { id: 40, nombre: "Pago derivado de título de crédito en su modalidad de pagaré" }
   ]
 };
 
@@ -220,8 +227,8 @@ const casosFake = [
     area_generadora_id: 13, // Validación: Área 13 pertenece a Del 5
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario",
-    sub_subtipo_juicio: "Escrito", // Catálogo real
+    subtipo_juicio: "Ordinario Civil",
+    sub_subtipo_juicio: "Escrito",
     numero_juicio: "100100",
     año: "2024",
     numero_expediente: "100100/2024",
@@ -255,7 +262,7 @@ const casosFake = [
     area_generadora_id: 14,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario",
+    subtipo_juicio: "Ordinario Civil",
     sub_subtipo_juicio: "Escrito",
     numero_juicio: "100101",
     año: "2024",
@@ -287,7 +294,7 @@ const casosFake = [
     area_generadora_id: 15,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario",
+    subtipo_juicio: "Ordinario Civil",
     sub_subtipo_juicio: "Escrito",
     numero_juicio: "100102",
     año: "2024",
@@ -323,8 +330,8 @@ const casosFake = [
     area_generadora_id: 4, // Área correcta de BC
     jurisdiccion: "LOCAL",
     tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Ordinario",
-    sub_subtipo_juicio: "Oral", // Catálogo real
+    subtipo_juicio: "Ordinario Mercantil",
+    sub_subtipo_juicio: "Escrito",
     numero_juicio_local: "MER-ORAL-200/2024",
     numero_expediente: "MER-ORAL-200/2024",
     acumulado_a: null,
@@ -354,8 +361,8 @@ const casosFake = [
     area_generadora_id: 5,
     jurisdiccion: "LOCAL",
     tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Ordinario",
-    sub_subtipo_juicio: "Oral",
+    subtipo_juicio: "Ordinario Mercantil",
+    sub_subtipo_juicio: "Escrito",
     numero_juicio_local: "MER-ORAL-250/2024",
     numero_expediente: "MER-ORAL-250/2024",
     acumulado_a: 4, // HIJO del 4
@@ -386,8 +393,8 @@ const casosFake = [
     area_generadora_id: 1,
     jurisdiccion: "LOCAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Hipotecario",
-    sub_subtipo_juicio: null, // No tiene subtipos en catálogo
+    subtipo_juicio: "Especial Hipotecario",
+    sub_subtipo_juicio: null,
     numero_juicio_local: "HIP-001/2024",
     numero_expediente: "HIP-001/2024",
     acumulado_a: null,
@@ -495,8 +502,8 @@ const casosFake = [
     area_generadora_id: 31,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Concursos Mercantiles",
-    sub_subtipo_juicio: null,
+    subtipo_juicio: "Especiales",
+    sub_subtipo_juicio: "Concursos Mercantiles",
     numero_juicio: "CM-777",
     año: "2024",
     numero_expediente: "CM-777/2024",
@@ -524,8 +531,8 @@ const casosFake = [
     area_generadora_id: 40,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Especial de Fianza",
-    sub_subtipo_juicio: null,
+    subtipo_juicio: "Especiales",
+    sub_subtipo_juicio: "Especial de Fianzas",
     numero_juicio: "FIA-888",
     año: "2024",
     numero_expediente: "FIA-888/2024",
@@ -553,7 +560,7 @@ const casosFake = [
     area_generadora_id: 19,
     jurisdiccion: "LOCAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario",
+    subtipo_juicio: "Ordinario Civil",
     sub_subtipo_juicio: "Oral",
     numero_juicio_local: "CIV-852/2024",
     numero_expediente: "CIV-852/2024",
@@ -580,7 +587,7 @@ const casosFake = [
     area_generadora_id: 22,
     jurisdiccion: "LOCAL",
     tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Ordinario",
+    subtipo_juicio: "Ordinario Mercantil",
     sub_subtipo_juicio: "Escrito",
     numero_juicio_local: "MER-ESC-005/2024",
     numero_expediente: "MER-ESC-005/2024",
@@ -608,7 +615,7 @@ const casosFake = [
     area_generadora_id: 43,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Otros",
+    subtipo_juicio: "Otro, caso sui generis",
     sub_subtipo_juicio: null,
     numero_juicio: "OTRO-111",
     año: "2024",
@@ -635,7 +642,7 @@ const casosFake = [
     area_generadora_id: 16,
     jurisdiccion: "LOCAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario",
+    subtipo_juicio: "Ordinario Civil",
     sub_subtipo_juicio: "Oral",
     numero_juicio_local: "CIV-1010/2024",
     numero_expediente: "CIV-1010/2024",
@@ -663,7 +670,7 @@ const casosFake = [
     area_generadora_id: 37,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Otros",
+    subtipo_juicio: "Otro, caso sui generis",
     sub_subtipo_juicio: null,
     numero_juicio: "MER-OTR-222",
     año: "2024",
@@ -690,7 +697,7 @@ const casosFake = [
     area_generadora_id: 10,
     jurisdiccion: "LOCAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario",
+    subtipo_juicio: "Ordinario Civil",
     sub_subtipo_juicio: "Escrito",
     numero_juicio_local: "CIV-CAMP-09/2024",
     numero_expediente: "CIV-CAMP-09/2024",
@@ -746,7 +753,7 @@ const casosFake = [
     area_generadora_id: 3,
     jurisdiccion: "LOCAL",
     tipo_juicio: "MERCANTIL",
-    subtipo_juicio: "Ordinario",
+    subtipo_juicio: "Ordinario Mercantil",
     sub_subtipo_juicio: "Escrito",
     numero_juicio_local: "MER-AGS-900/2024",
     numero_expediente: "MER-AGS-900/2024",
@@ -772,8 +779,8 @@ const casosFake = [
     area_generadora_id: 8,
     jurisdiccion: "FEDERAL",
     tipo_juicio: "CIVIL",
-    subtipo_juicio: "Ordinario",
-    sub_subtipo_juicio: "Oral",
+    subtipo_juicio: "Ordinario Civil",
+    sub_subtipo_juicio: "Escrito",
     numero_juicio: "CIV-BCS-777",
     año: "2024",
     numero_expediente: "CIV-BCS-777/2024",

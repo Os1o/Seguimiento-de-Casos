@@ -158,7 +158,8 @@ const opcionesFiltros = {
     ],
     filtroTipo: [
         { valor: 'CIVIL', etiqueta: 'Civil' },
-        { valor: 'MERCANTIL', etiqueta: 'Mercantil' }
+        { valor: 'MERCANTIL', etiqueta: 'Mercantil' },
+        { valor: 'AMPARO INDIRECTO', etiqueta: 'Amparo Indirecto' }
     ],
     filtroJurisdiccion: [
         { valor: 'LOCAL', etiqueta: 'Local' },

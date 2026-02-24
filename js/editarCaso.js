@@ -156,6 +156,12 @@ function llenarFormulario() {
     document.getElementById('tipoJuicio').value = casoActual.tipo_juicio;
     cargarSubtipos(casoActual.tipo_juicio);
 
+    // Ocultar subtipo si es Amparo Indirecto
+    if (casoActual.tipo_juicio === 'AMPARO INDIRECTO') {
+        const grupoSubtipo = document.getElementById('grupoSubtipo');
+        if (grupoSubtipo) grupoSubtipo.style.display = 'none';
+    }
+
     setTimeout(() => {
         const selectSub = document.getElementById('subtipoJuicio');
         for (let i = 0; i < selectSub.options.length; i++) {
@@ -427,8 +433,27 @@ function configurarEventListeners(usuario) {
     });
 
     document.getElementById('tipoJuicio').addEventListener('change', function() {
-        cargarSubtipos(this.value);
+        const tipo = this.value;
+        cargarSubtipos(tipo);
         document.getElementById('grupSubsubtipo').style.display = 'none';
+
+        // AMPARO INDIRECTO: siempre Federal, auto-seleccionar único subtipo
+        if (tipo === 'AMPARO INDIRECTO') {
+            const radioFederal = document.getElementById('federal');
+            if (radioFederal) {
+                radioFederal.checked = true;
+                mostrarCamposJurisdiccion('FEDERAL');
+            }
+            const selectSubtipo = document.getElementById('subtipoJuicio');
+            if (selectSubtipo.options.length === 2) {
+                selectSubtipo.value = selectSubtipo.options[1].value;
+            }
+            const grupoSubtipo = document.getElementById('grupoSubtipo');
+            if (grupoSubtipo) grupoSubtipo.style.display = 'none';
+        } else {
+            const grupoSubtipo = document.getElementById('grupoSubtipo');
+            if (grupoSubtipo) grupoSubtipo.style.display = '';
+        }
     });
 
     document.getElementById('subtipoJuicio').addEventListener('change', function() {

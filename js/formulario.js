@@ -167,8 +167,30 @@ function configurarEventListeners(usuario) {
                 option.dataset.requiereDescripcion = st.requiere_descripcion || false;
                 selectSubtipo.appendChild(option);
             });
+
+            // AMPARO INDIRECTO: siempre Federal, auto-seleccionar único subtipo
+            if (tipo === 'AMPARO INDIRECTO') {
+                // Forzar jurisdicción Federal
+                const radioFederal = document.getElementById('federal');
+                if (radioFederal) {
+                    radioFederal.checked = true;
+                    radioFederal.dispatchEvent(new Event('change'));
+                }
+                // Auto-seleccionar el único subtipo
+                if (selectSubtipo.options.length === 2) {
+                    selectSubtipo.value = selectSubtipo.options[1].value;
+                }
+                // Ocultar subtipo y sub-subtipo (solo hay uno)
+                const grupoSubtipo = document.getElementById('grupoSubtipo');
+                if (grupoSubtipo) grupoSubtipo.style.display = 'none';
+            } else {
+                const grupoSubtipo = document.getElementById('grupoSubtipo');
+                if (grupoSubtipo) grupoSubtipo.style.display = '';
+            }
         } else {
             selectSubtipo.disabled = true;
+            const grupoSubtipo = document.getElementById('grupoSubtipo');
+            if (grupoSubtipo) grupoSubtipo.style.display = '';
         }
 
         document.getElementById('grupSubsubtipo').style.display = 'none';
