@@ -37,7 +37,7 @@ function cargarDetalleCaso() {
     const casoId = parseInt(urlParams.get('id'));
 
     if (!casoId) {
-        alert('No se especifico un caso');
+        alert('No se especificó un asunto');
         window.location.href = 'casos.html';
         return;
     }
@@ -48,7 +48,7 @@ function cargarDetalleCaso() {
     casoActual = casos.find(c => c.id === casoId);
 
     if (!casoActual) {
-        alert('Caso no encontrado');
+        alert('Asunto no encontrado');
         window.location.href = 'casos.html';
         return;
     }
@@ -66,24 +66,22 @@ function renderizarCaso() {
     badgeEstatus.className = 'badge-estatus ' + (casoActual.estatus === 'TRAMITE' ? 'badge-tramite' : 'badge-concluido');
 
     const fecha = new Date(casoActual.fecha_creacion);
-    document.getElementById('fechaCreacion').textContent = fecha.toLocaleDateString('es-MX', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    const ddC = String(fecha.getDate()).padStart(2, '0');
+    const mmC = String(fecha.getMonth() + 1).padStart(2, '0');
+    const yyC = String(fecha.getFullYear()).slice(-2);
+    const hhC = String(fecha.getHours()).padStart(2, '0');
+    const minC = String(fecha.getMinutes()).padStart(2, '0');
+    document.getElementById('fechaCreacion').textContent = `${ddC}/${mmC}/${yyC} ${hhC}:${minC}`;
 
     // Fecha de actualización (si es diferente a la de creación)
     if (casoActual.fecha_actualizacion && casoActual.fecha_actualizacion !== casoActual.fecha_creacion) {
         const fechaAct = new Date(casoActual.fecha_actualizacion);
-        document.getElementById('fechaActualizacion').textContent = fechaAct.toLocaleDateString('es-MX', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        const ddA = String(fechaAct.getDate()).padStart(2, '0');
+        const mmA = String(fechaAct.getMonth() + 1).padStart(2, '0');
+        const yyA = String(fechaAct.getFullYear()).slice(-2);
+        const hhA = String(fechaAct.getHours()).padStart(2, '0');
+        const minA = String(fechaAct.getMinutes()).padStart(2, '0');
+        document.getElementById('fechaActualizacion').textContent = `${ddA}/${mmA}/${yyA} ${hhA}:${minA}`;
         document.getElementById('fechaActualizacionInfo').style.display = 'inline';
     }
 
@@ -325,11 +323,18 @@ function abrirActualizacion() {
 
 function formatearFecha(fecha) {
     if (!fecha) return '---';
-    const d = new Date(fecha);
+    // Parsear manualmente si es solo YYYY-MM-DD para evitar desfase UTC
+    const soloFecha = typeof fecha === 'string' ? fecha.split('T')[0] : null;
+    let d;
+    if (soloFecha && /^\d{4}-\d{2}-\d{2}$/.test(soloFecha)) {
+        const [año, mes, dia] = soloFecha.split('-').map(Number);
+        d = new Date(año, mes - 1, dia);
+    } else {
+        d = new Date(fecha);
+    }
     if (isNaN(d.getTime())) return fecha;
-    return d.toLocaleDateString('es-MX', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${dd}/${mm}/${yy}`;
 }

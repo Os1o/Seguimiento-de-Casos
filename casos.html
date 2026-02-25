@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casos Civiles, Mercantiles y Procedimientos Especiales - Sistema de Gestión</title>
+    <title>Asuntos Civiles, Mercantiles y Procedimientos Especiales - Sistema de Gestión</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
@@ -30,7 +30,7 @@
         <!-- Encabezado de Página -->
         <div class="page-header">
             <div>
-                <h1 class="page-title">Casos Civiles, Mercantiles y Procedimientos Especiales</h1>
+                <h1 class="page-title">Asuntos Civiles, Mercantiles y Procedimientos Especiales</h1>
                 <p class="page-subtitle">Gestión y seguimiento de expedientes</p>
             </div>
             <a href="nuevoCaso.html" class="btn btn-primary" id="btnNuevoRegistro">
@@ -53,8 +53,8 @@
                 <div class="contador-label">Concluidos</div>
             </div>
             <div class="contador-card grafica-card">
-                <div class="grafica-label">Pronóstico de Trámites</div>
-                <div class="grafica-sublabel">Solo casos en trámite</div>
+                <div class="grafica-label">Pronóstico de Asuntos en Trámite</div>
+                <div class="grafica-sublabel">Solo asuntos en trámite</div>
                 <div class="grafica-dona-row">
                     <canvas id="chartPronostico" width="100" height="100"></canvas>
                     <div class="grafica-leyenda" id="leyendaPronostico"></div>
@@ -79,7 +79,7 @@
         <input type="date" id="fechaHasta">
         -->
 
-        <!-- Tabla de Casos -->
+        <!-- Tabla de Asuntos -->
         <div class="table-container">
             <table class="table" id="tablaCasos">
                 <colgroup>
@@ -126,8 +126,8 @@
                         <th>Prestaciones</th>
                         <th>Importe</th>
                         <th class="th-filtrable">
-                            <button id="btn_filtroPosicionIMSS" class="filtro-btn-custom" data-nombre="IMSS es"
-                                onclick="toggleFiltro('filtroPosicionIMSS', this)">IMSS es &#9660;</button>
+                            <button id="btn_filtroPosicionIMSS" class="filtro-btn-custom" data-nombre="Calidad IMSS"
+                                onclick="toggleFiltro('filtroPosicionIMSS', this)">Calidad IMSS &#9660;</button>
                         </th>
                         <th>Acumulados</th>
                         <th>Últ. actualización</th>
@@ -146,10 +146,10 @@
         <!-- Paginación -->
         <div id="paginacion" class="paginacion" style="display:none;"></div>
 
-        <!-- Mensaje si no hay casos -->
+        <!-- Mensaje si no hay asuntos -->
         <div id="mensajeVacio" class="card text-center" style="display: none; padding: 40px;">
             <p style="font-size: 18px; color: var(--color-text-light);">
-                No se encontraron casos con los filtros aplicados
+                No se encontraron asuntos con los filtros aplicados
             </p>
         </div>
 
@@ -169,7 +169,7 @@
         style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
         <div class="card" style="max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="margin: 0; color: var(--color-primary);">Casos Acumulados</h3>
+                <h3 style="margin: 0; color: var(--color-primary);">Asuntos Acumulados</h3>
                 <button onclick="cerrarModalAcumulados()" class="btn-secondary" style="padding: 8px 16px;">✕</button>
             </div>
             <div id="listaAcumulados"></div>

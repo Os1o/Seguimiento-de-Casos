@@ -546,7 +546,7 @@ function guardarCaso(e) {
 
     casos.push(caso);
     localStorage.setItem('casos', JSON.stringify(casos));
-    alert('Caso guardado exitosamente');
+    alert('Asunto guardado exitosamente');
 
     window.location.href = 'casos.html';
 }

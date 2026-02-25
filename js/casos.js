@@ -672,7 +672,7 @@ function confirmarEliminar(casoId) {
 
     // VALIDAR: No se puede eliminar si tiene casos acumulados
     if (caso.juicios_acumulados && caso.juicios_acumulados.length > 0) {
-        alert(`⚠️ No se puede eliminar\n\nEl expediente ${caso.numero_expediente} tiene ${caso.juicios_acumulados.length} caso(s) acumulado(s).\n\nDebe desacumularlos primero.`);
+        alert(`⚠️ No se puede eliminar\n\nEl expediente ${caso.numero_expediente} tiene ${caso.juicios_acumulados.length} asunto(s) acumulado(s).\n\nDebe desacumularlos primero.`);
         return;
     }
 
@@ -704,7 +704,7 @@ function confirmarEliminar(casoId) {
     filtrarCasos();
     actualizarContadores();
 
-    alert('Caso eliminado exitosamente');
+    alert('Asunto eliminado exitosamente');
 }
 
 

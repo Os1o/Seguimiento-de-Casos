@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const casoId = parseInt(urlParams.get('id'));
 
     if (!casoId) {
-        alert('No se especifico un caso para editar');
+        alert('No se especificó un asunto para editar');
         window.location.href = 'casos.html';
         return;
     }
@@ -54,7 +54,7 @@ function cargarCaso(casoId) {
     casoActual = casos.find(c => c.id === casoId);
 
     if (!casoActual) {
-        alert('Caso no encontrado');
+        alert('Asunto no encontrado');
         window.location.href = 'casos.html';
         return;
     }
@@ -735,10 +735,10 @@ function guardarCambios(e) {
     if (index !== -1) {
         casos[index] = casoEditado;
         localStorage.setItem('casos', JSON.stringify(casos));
-        alert('Caso actualizado correctamente');
+        alert('Asunto actualizado correctamente');
         window.location.href = 'casos.html';
     } else {
-        alert('Error: No se encontro el caso');
+        alert('Error: No se encontró el asunto');
     }
 }
 

@@ -911,23 +911,22 @@ function formatearMoneda(cantidad) {
   }).format(cantidad);
 }
 
-// Formatear fecha (evita desfase de zona horaria)
+// Formatear fecha en dd/mm/yy (evita desfase de zona horaria)
 function formatearFecha(fecha) {
+  if (!fecha) return '---';
   // Si la fecha es solo "YYYY-MM-DD", parsear manualmente para evitar que
   // JavaScript la interprete como UTC y muestre el día anterior en zonas horarias negativas
   const soloFecha = typeof fecha === 'string' ? fecha.split('T')[0] : null;
+  let d;
   if (soloFecha && /^\d{4}-\d{2}-\d{2}$/.test(soloFecha)) {
     const [año, mes, dia] = soloFecha.split('-').map(Number);
-    const fechaLocal = new Date(año, mes - 1, dia);
-    return fechaLocal.toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    d = new Date(año, mes - 1, dia);
+  } else {
+    d = new Date(fecha);
   }
-  return new Date(fecha).toLocaleDateString('es-MX', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  if (isNaN(d.getTime())) return fecha;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}/${mm}/${yy}`;
 }
