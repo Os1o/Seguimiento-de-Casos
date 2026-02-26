@@ -36,69 +36,83 @@
         </div>
 
         <form id="formActualizar" class="card">
-            <!-- SECCION: Sentencia -->
+            <!-- Folio (solo lectura) -->
             <div class="form-section">
-                <h3 class="form-section-title">Sentencia</h3>
+                <div class="form-group">
+                    <label class="form-label">Folio</label>
+                    <input type="text" id="folioExpediente" class="form-input" disabled style="background: var(--color-bg); font-weight: 600;">
+                </div>
+            </div>
 
+            <!-- Fecha de actuación y Tipo de actuación -->
+            <div class="form-section">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Sentencia</label>
-                        <input type="text" id="sentencia" class="form-input" placeholder="Descripcion de la sentencia">
+                        <label class="form-label required">Fecha de actuación</label>
+                        <input type="date" id="fechaActuacion" class="form-input" required>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Importe de Sentencia</label>
-                        <div class="importe-container" style="display: flex; flex-direction: row; align-items: center; gap: 12px;">
-                            <input type="text" id="importeSentencia" class="form-input" placeholder="0.00" style="max-width: 180px;">
-                            <div class="form-checkbox" style="white-space: nowrap;">
-                                <input type="checkbox" id="sinCuantiaSentencia">
-                                <label for="sinCuantiaSentencia">Sin cuantia</label>
-                            </div>
-                        </div>
+                        <label class="form-label required">Tipo de actuación</label>
+                        <select id="tipoActuacion" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                            <option value="Acuerdo">Acuerdo</option>
+                            <option value="Alegatos">Alegatos</option>
+                            <option value="Amparo">Amparo</option>
+                            <option value="Archivo">Archivo</option>
+                            <option value="Audiencia">Audiencia</option>
+                            <option value="Caducidad">Caducidad</option>
+                            <option value="Conciliación">Conciliación</option>
+                            <option value="Contestación">Contestación</option>
+                            <option value="Demanda">Demanda</option>
+                            <option value="Desahogo">Desahogo</option>
+                            <option value="Ejecución">Ejecución</option>
+                            <option value="Notificación">Notificación</option>
+                            <option value="Pericial">Pericial</option>
+                            <option value="Promoción">Promoción</option>
+                            <option value="Pruebas">Pruebas</option>
+                            <option value="Recurso">Recurso</option>
+                            <option value="Sentencia">Sentencia</option>
+                            <option value="Sobreseimiento">Sobreseimiento</option>
+                            <option value="Suspensión">Suspensión</option>
+                            <option value="Vista">Vista</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
-            <!-- SECCION: Estado Procesal -->
+            <!-- Próximo vencimiento -->
             <div class="form-section">
-                <h3 class="form-section-title">Estado Procesal</h3>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Ultimo Estado Procesal</label>
-                        <input type="text" id="ultimoEstadoProcesal" class="form-input" placeholder="Descripcion del estado procesal">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Fecha de Ultimo Estado Procesal</label>
-                        <input type="date" id="fechaEstadoProcesal" class="form-input">
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECCION: Observaciones -->
-            <div class="form-section">
-                <h3 class="form-section-title">Observaciones</h3>
-
                 <div class="form-group">
-                    <label class="form-label">Observaciones Generales</label>
-                    <textarea id="observaciones" class="form-textarea" placeholder="Observaciones generales sobre el asunto..." rows="4"></textarea>
-                </div>
-            </div>
-
-            <!-- SECCION: Fecha de Vencimiento -->
-            <div class="form-section">
-                <h3 class="form-section-title">Fecha de Vencimiento</h3>
-
-                <div class="form-group">
-                    <label class="form-label">Fecha de Vencimiento</label>
+                    <label class="form-label">Próximo vencimiento <small style="color: var(--color-text-light);">(opcional)</small></label>
                     <input type="date" id="fechaVencimiento" class="form-input">
                 </div>
             </div>
 
-            <!-- SECCION: Documentos PDF -->
+            <!-- Descripción -->
             <div class="form-section">
-                <h3 class="form-section-title">Documentos</h3>
+                <div class="form-group">
+                    <label class="form-label required">Descripción de lo sucedido en esta actuación</label>
+                    <textarea id="descripcionActuacion" class="form-textarea" placeholder="Describe lo sucedido..." rows="5" required></textarea>
+                </div>
+            </div>
+
+            <!-- Para uso exclusivo - solo admin -->
+            <div class="form-section" id="seccionExclusiva" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Para uso exclusivo CEMCPJ — ¿Actualizado en el SIIJ?</label>
+                    <select id="actualizadoSIIJ" class="form-select">
+                        <option value="">—</option>
+                        <option value="SI">Sí</option>
+                        <option value="NO">No</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Datos adjuntos -->
+            <div class="form-section">
+                <h3 class="form-section-title">Datos adjuntos</h3>
 
                 <div class="form-group">
                     <label class="form-label">Adjuntar PDF</label>
@@ -114,7 +128,7 @@
             <!-- Botones -->
             <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px;">
                 <a href="#" id="btnCancelar" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-success">Guardar Actualizacion</button>
+                <button type="submit" class="btn btn-success">Guardar</button>
             </div>
         </form>
     </div>

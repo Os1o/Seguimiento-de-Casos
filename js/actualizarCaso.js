@@ -3,6 +3,7 @@
 // =====================================================
 
 let casoActual = null;
+let usuarioActualAct = null;
 const MAX_PDF_SIZE = 500 * 1024; // 500 KB por archivo
 const MAX_LOCALSTORAGE_MB = 4.5; // Limite seguro de localStorage en MB
 
@@ -14,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const usuario = JSON.parse(usuarioStr);
+    usuarioActualAct = usuario;
 
     // Proteger ruta: consulta no puede actualizar
     if (usuario.rol === 'consulta') {
@@ -22,6 +24,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
+
+    // Mostrar sección exclusiva solo para admin
+    if (usuario.rol === 'admin') {
+        document.getElementById('seccionExclusiva').style.display = 'block';
+    }
 
     const urlParams = new URLSearchParams(window.location.search);
     const casoId = parseInt(urlParams.get('id'));
@@ -60,44 +67,36 @@ function cargarCaso(casoId) {
 function llenarFormulario() {
     const seg = casoActual.seguimiento || {};
 
-    // Sentencia
-    if (seg.sentencia) {
-        document.getElementById('sentencia').value = seg.sentencia;
-    }
+    // Folio (solo lectura)
+    document.getElementById('folioExpediente').value = casoActual.numero_expediente;
 
-    // Importe de sentencia
-    if (seg.importe_sentencia !== null && seg.importe_sentencia !== undefined) {
-        if (seg.importe_sentencia === 0) {
-            document.getElementById('sinCuantiaSentencia').checked = true;
-            document.getElementById('importeSentencia').disabled = true;
-            document.getElementById('importeSentencia').placeholder = 'Sin cuantia';
-        } else {
-            const formateado = seg.importe_sentencia.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            document.getElementById('importeSentencia').value = formateado;
-        }
-    }
-
-    // Estado procesal
-    if (seg.ultimo_estado_procesal) {
-        document.getElementById('ultimoEstadoProcesal').value = seg.ultimo_estado_procesal;
-    }
-
-    if (seg.fecha_estado_procesal) {
-        let fecha = seg.fecha_estado_procesal;
+    // Fecha de actuación
+    if (seg.fecha_actuacion) {
+        let fecha = seg.fecha_actuacion;
         if (fecha.includes('T')) fecha = fecha.split('T')[0];
-        document.getElementById('fechaEstadoProcesal').value = fecha;
+        document.getElementById('fechaActuacion').value = fecha;
     }
 
-    // Observaciones
-    if (seg.observaciones) {
-        document.getElementById('observaciones').value = seg.observaciones;
+    // Tipo de actuación
+    if (seg.tipo_actuacion) {
+        document.getElementById('tipoActuacion').value = seg.tipo_actuacion;
     }
 
-    // Fecha de vencimiento
+    // Próximo vencimiento
     if (casoActual.fecha_vencimiento) {
         let fecha = casoActual.fecha_vencimiento;
         if (fecha.includes('T')) fecha = fecha.split('T')[0];
         document.getElementById('fechaVencimiento').value = fecha;
+    }
+
+    // Descripción
+    if (seg.descripcion) {
+        document.getElementById('descripcionActuacion').value = seg.descripcion;
+    }
+
+    // ¿Actualizado en el SIIJ? (solo admin)
+    if (seg.actualizado_siij && usuarioActualAct && usuarioActualAct.rol === 'admin') {
+        document.getElementById('actualizadoSIIJ').value = seg.actualizado_siij;
     }
 
     // Documentos existentes
@@ -105,32 +104,6 @@ function llenarFormulario() {
 }
 
 function configurarEventListeners() {
-    // Checkbox sin cuantia sentencia
-    document.getElementById('sinCuantiaSentencia').addEventListener('change', function() {
-        const importeInput = document.getElementById('importeSentencia');
-        if (this.checked) {
-            importeInput.value = '';
-            importeInput.disabled = true;
-            importeInput.placeholder = 'Sin cuantia';
-        } else {
-            importeInput.disabled = false;
-            importeInput.placeholder = '0.00';
-        }
-    });
-
-    // Formato de importe sentencia
-    document.getElementById('importeSentencia').addEventListener('input', function() {
-        let valor = this.value.replace(/[^0-9.]/g, '');
-        const partes = valor.split('.');
-        if (partes.length > 2) {
-            valor = partes[0] + '.' + partes.slice(1).join('');
-        }
-        if (partes[0]) {
-            partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        }
-        this.value = partes.join('.');
-    });
-
     // Validación de PDF al seleccionar archivo
     document.getElementById('inputPDF').addEventListener('change', validarPDF);
 
@@ -179,8 +152,7 @@ function validarPDF() {
     }
 
     // Validar espacio disponible en localStorage
-    // Base64 aumenta el tamaño ~33%
-    const estimatedSize = file.size * 1.37; // base64 overhead + JSON overhead
+    const estimatedSize = file.size * 1.37;
     const usedBytes = obtenerTamañoLocalStorage();
     const maxBytes = MAX_LOCALSTORAGE_MB * 1024 * 1024;
     const availableBytes = maxBytes - usedBytes;
@@ -205,7 +177,7 @@ function renderizarDocumentos() {
 
     container.innerHTML = docs.map((doc, index) => `
         <div style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--color-bg); border-radius: 6px; margin-bottom: 6px;">
-            <span style="color: var(--color-danger); font-size: 18px;">📄</span>
+            <span style="font-size: 18px;">📄</span>
             <div style="flex: 1;">
                 <strong style="font-size: 13px;">${doc.nombre}</strong>
                 <small style="color: var(--color-text-light); display: block;">${Math.round(doc.tamaño / 1024)} KB · ${doc.fecha}</small>
@@ -252,33 +224,28 @@ function eliminarDocumento(index) {
     renderizarDocumentos();
 }
 
+// =====================================================
+// GUARDAR
+// =====================================================
+
 function guardarActualizacion(e) {
     e.preventDefault();
 
-    // Construir objeto de seguimiento
-    const sentencia = document.getElementById('sentencia').value || null;
-
-    const sinCuantiaSentencia = document.getElementById('sinCuantiaSentencia').checked;
-    let importeSentencia = null;
-    if (sinCuantiaSentencia) {
-        importeSentencia = 0;
-    } else {
-        const valorImporte = document.getElementById('importeSentencia').value.replace(/,/g, '');
-        importeSentencia = valorImporte ? parseFloat(valorImporte) : null;
-    }
-
-    const ultimoEstadoProcesal = document.getElementById('ultimoEstadoProcesal').value || null;
-    const fechaEstadoProcesal = document.getElementById('fechaEstadoProcesal').value || null;
-    const observaciones = document.getElementById('observaciones').value || null;
+    const fechaActuacion = document.getElementById('fechaActuacion').value;
+    const tipoActuacion = document.getElementById('tipoActuacion').value;
+    const descripcion = document.getElementById('descripcionActuacion').value || null;
     const fechaVencimiento = document.getElementById('fechaVencimiento').value || null;
 
-    // Actualizar seguimiento
+    // Actualizar seguimiento con nuevos campos
     casoActual.seguimiento = casoActual.seguimiento || {};
-    casoActual.seguimiento.sentencia = sentencia;
-    casoActual.seguimiento.importe_sentencia = importeSentencia;
-    casoActual.seguimiento.ultimo_estado_procesal = ultimoEstadoProcesal;
-    casoActual.seguimiento.fecha_estado_procesal = fechaEstadoProcesal;
-    casoActual.seguimiento.observaciones = observaciones;
+    casoActual.seguimiento.fecha_actuacion = fechaActuacion;
+    casoActual.seguimiento.tipo_actuacion = tipoActuacion;
+    casoActual.seguimiento.descripcion = descripcion;
+
+    // Campo exclusivo admin
+    if (usuarioActualAct && usuarioActualAct.rol === 'admin') {
+        casoActual.seguimiento.actualizado_siij = document.getElementById('actualizadoSIIJ').value || null;
+    }
 
     casoActual.fecha_vencimiento = fechaVencimiento;
     casoActual.fecha_actualizacion = new Date().toISOString();
@@ -288,12 +255,10 @@ function guardarActualizacion(e) {
     const file = inputPDF.files && inputPDF.files[0];
 
     if (file) {
-        // Leer como base64 y guardar
         const reader = new FileReader();
         reader.onload = function(event) {
             const base64 = event.target.result;
 
-            // Verificar espacio antes de guardar
             const usedBytes = obtenerTamañoLocalStorage();
             const maxBytes = MAX_LOCALSTORAGE_MB * 1024 * 1024;
             const newDataSize = base64.length * 2;
@@ -335,7 +300,6 @@ function guardarEnLocalStorage() {
             alert('Seguimiento actualizado correctamente');
             window.location.href = `detalleCaso.html?id=${casoActual.id}`;
         } catch (err) {
-            // QuotaExceededError
             alert('Error: No hay espacio suficiente en el almacenamiento local. Elimine documentos o datos para liberar espacio.');
         }
     } else {

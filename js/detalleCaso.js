@@ -256,38 +256,37 @@ function renderizarPersona(persona) {
 function renderizarSeguimiento() {
     const seg = casoActual.seguimiento || {};
 
-    // Sentencia
-    if (seg.sentencia) {
-        document.getElementById('sentencia').innerHTML = `<strong>${seg.sentencia}</strong>`;
+    // Fecha de actuación
+    if (seg.fecha_actuacion) {
+        document.getElementById('fechaActuacion').textContent = formatearFecha(seg.fecha_actuacion);
     }
 
-    // Importe de sentencia
-    if (seg.importe_sentencia !== null && seg.importe_sentencia !== undefined) {
-        if (seg.importe_sentencia === 0) {
-            document.getElementById('importeSentencia').innerHTML = '<span class="sin-cuantia">Sin cuantia</span>';
-        } else {
-            document.getElementById('importeSentencia').innerHTML = '<span class="importe">$' + seg.importe_sentencia.toLocaleString('es-MX', { minimumFractionDigits: 2 }) + '</span>';
-        }
+    // Tipo de actuación
+    if (seg.tipo_actuacion) {
+        document.getElementById('tipoActuacion').innerHTML = `<strong>${seg.tipo_actuacion}</strong>`;
     }
 
-    // Ultimo estado procesal
-    if (seg.ultimo_estado_procesal) {
-        document.getElementById('ultimoEstadoProcesal').textContent = seg.ultimo_estado_procesal;
+    // Descripción
+    if (seg.descripcion) {
+        document.getElementById('descripcionActuacion').textContent = seg.descripcion;
     }
 
-    // Fecha estado procesal
-    if (seg.fecha_estado_procesal) {
-        document.getElementById('fechaEstadoProcesal').textContent = formatearFecha(seg.fecha_estado_procesal);
-    }
-
-    // Observaciones
-    if (seg.observaciones) {
-        document.getElementById('observaciones').textContent = seg.observaciones;
-    }
-
-    // Fecha de vencimiento
+    // Próximo vencimiento
     if (casoActual.fecha_vencimiento) {
         document.getElementById('fechaVencimiento').textContent = formatearFecha(casoActual.fecha_vencimiento);
+    }
+
+    // ¿Actualizado en el SIIJ? (solo visible si tiene valor o si es admin)
+    const usuarioStr = sessionStorage.getItem('usuario');
+    const usuario = usuarioStr ? JSON.parse(usuarioStr) : null;
+    if (usuario && usuario.rol === 'admin') {
+        const campoSIIJ = document.getElementById('campoSIIJ');
+        if (campoSIIJ) campoSIIJ.style.display = 'block';
+        if (seg.actualizado_siij) {
+            const textos = { SI: 'Sí', NO: 'No', PENDIENTE: 'Pendiente' };
+            const colores = { SI: 'var(--color-success)', NO: 'var(--color-danger)', PENDIENTE: 'var(--color-warning)' };
+            document.getElementById('actualizadoSIIJ').innerHTML = `<strong style="color: ${colores[seg.actualizado_siij] || 'inherit'};">${textos[seg.actualizado_siij] || seg.actualizado_siij}</strong>`;
+        }
     }
 
     // Documentos adjuntos
@@ -305,24 +304,7 @@ function renderizarSeguimiento() {
 
 // Verificar si todos los campos de seguimiento estan llenos para deshabilitar boton
 function verificarBotonActualizar() {
-    const seg = casoActual.seguimiento || {};
-
-    const camposCompletos =
-        seg.sentencia &&
-        seg.importe_sentencia !== null && seg.importe_sentencia !== undefined &&
-        seg.ultimo_estado_procesal &&
-        seg.fecha_estado_procesal &&
-        seg.observaciones &&
-        casoActual.fecha_vencimiento &&
-        (casoActual.acumulado_a !== null && casoActual.acumulado_a !== undefined);
-
-    if (camposCompletos) {
-        const btn = document.getElementById('btnActualizar');
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-        btn.style.cursor = 'not-allowed';
-        btn.title = 'Todos los campos de seguimiento estan completos';
-    }
+    // Ya no se deshabilita: la actualización siempre puede recibir nuevos datos
 }
 
 function volver() {

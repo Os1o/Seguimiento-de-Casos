@@ -171,6 +171,13 @@ const catalogos = {
     { id: 18, nombre: "Juzgado Primero Civil - Chilpancingo", delegacion_id: 15 }
   ],
   
+  tiposActuacion: [
+    "Acuerdo", "Alegatos", "Amparo", "Archivo", "Audiencia",
+    "Caducidad", "Conciliación", "Contestación", "Demanda", "Desahogo",
+    "Ejecución", "Notificación", "Pericial", "Promoción", "Pruebas",
+    "Recurso", "Sentencia", "Sobreseimiento", "Suspensión", "Vista"
+  ],
+
   prestaciones: [
     { id: 1, nombre: "Indemnización por daños y perjuicios" },
     { id: 2, nombre: "Indemnización por reparación del daño moral" },
@@ -250,10 +257,18 @@ const casosFake = [
     prestacion_reclamada: 1, // Indemnización
     prestaciones_notas: "Daño estructural en vivienda colindante",
     importe_demandado: 500000.00,
+    abogado_responsable: "Lic. Fernando Ruiz Díaz",
+    pronostico: "FAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-01-10T09:00:00",
     fecha_actualizacion: "2025-02-10T14:30:00",
-    seguimiento: []
+    fecha_vencimiento: "2025-03-15",
+    seguimiento: {
+      fecha_actuacion: "2025-02-10",
+      tipo_actuacion: "Audiencia",
+      descripcion: "Se llevó a cabo audiencia de pruebas y alegatos. El juzgado admitió las pruebas documentales del IMSS. Se fijó fecha para siguiente audiencia.",
+      actualizado_siij: "SI"
+    }
   },
   {
     id: 2,
@@ -283,9 +298,11 @@ const casosFake = [
     prestacion_reclamada: 1,
     prestaciones_notas: "Afectaciones por humedad en muro compartido",
     importe_demandado: 150000.00,
+    abogado_responsable: "Lic. Fernando Ruiz Díaz",
+    pronostico: "FAVORABLE",
     estatus: "CONCLUIDO",
     fecha_creacion: "2024-02-15T10:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 3,
@@ -315,9 +332,10 @@ const casosFake = [
     prestacion_reclamada: 4, // Resp. Civil
     prestaciones_notas: "Reclamo de póliza de seguro",
     importe_demandado: 0,
+    pronostico: "DESFAVORABLE",
     estatus: "CONCLUIDO",
     fecha_creacion: "2024-03-01T11:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
 
   // =========================================================================
@@ -349,10 +367,18 @@ const casosFake = [
     prestacion_reclamada: 3, // Cumplimiento contrato
     prestaciones_notas: "Incumplimiento en entrega de insumos médicos",
     importe_demandado: 2500000.00,
+    abogado_responsable: "Lic. Adriana Soto Mendoza",
+    pronostico: "DESFAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-04-05T12:00:00",
     fecha_actualizacion: "2025-02-11T16:45:00",
-    seguimiento: []
+    fecha_vencimiento: "2025-03-20",
+    seguimiento: {
+      fecha_actuacion: "2025-02-11",
+      tipo_actuacion: "Promoción",
+      descripcion: "Se presentó promoción solicitando prórroga para desahogo de pruebas periciales. El tribunal acordó favorablemente.",
+      actualizado_siij: "PENDIENTE"
+    }
   },
   {
     id: 5,
@@ -378,9 +404,10 @@ const casosFake = [
     prestacion_reclamada: 3,
     prestaciones_notas: "Cobro de penalizaciones contractuales",
     importe_demandado: 120000.00,
+    pronostico: "FAVORABLE",
     estatus: "CONCLUIDO",
     fecha_creacion: "2024-04-20T13:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
 
   // =========================================================================
@@ -410,9 +437,10 @@ const casosFake = [
     prestacion_reclamada: 10, // Nulidad/Otros
     prestaciones_notas: "Informe de descuentos vía nómina",
     importe_demandado: 0,
+    pronostico: "INCIERTO",
     estatus: "TRAMITE",
     fecha_creacion: "2024-05-01T08:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 7,
@@ -437,9 +465,11 @@ const casosFake = [
     prestacion_reclamada: 4, // Resp Civil / Tierras
     prestaciones_notas: "Restitución de tierras de la UMF 2",
     importe_demandado: 0,
+    abogado_responsable: "Lic. Patricia Vega Noriega",
+    pronostico: "DESFAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-05-15T09:30:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 8,
@@ -465,9 +495,11 @@ const casosFake = [
     prestacion_reclamada: 9, // Rescisión
     prestaciones_notas: "Falta de pago de renta inmueble administrativo",
     importe_demandado: 80000.00,
+    abogado_responsable: "Lic. Miguel Ángel Torres",
+    pronostico: "FAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-06-01T10:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 9,
@@ -491,9 +523,10 @@ const casosFake = [
     prestacion_reclamada: 3, 
     prestaciones_notas: "Prescripción positiva predio almacén",
     importe_demandado: 0,
+    pronostico: "INCIERTO",
     estatus: "TRAMITE",
     fecha_creacion: "2024-06-10T11:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 10,
@@ -520,9 +553,11 @@ const casosFake = [
     prestacion_reclamada: 3,
     prestaciones_notas: "Reconocimiento de créditos fiscales (Cuotas)",
     importe_demandado: 4500000.00,
+    abogado_responsable: "Lic. Ricardo Monreal Ávila",
+    pronostico: "FAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-07-01T12:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 11,
@@ -549,9 +584,11 @@ const casosFake = [
     prestacion_reclamada: 3,
     prestaciones_notas: "Cobro de fianza por vicios ocultos obra HGR 200",
     importe_demandado: 3000000.00,
+    abogado_responsable: "Lic. Laura Esquivel Pérez",
+    pronostico: "FAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-07-15T10:30:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 12,
@@ -575,10 +612,18 @@ const casosFake = [
     prestacion_reclamada: 5, // Daño moral
     prestaciones_notas: "Demanda por supuesta mala praxis administrativa",
     importe_demandado: 100000.00,
+    abogado_responsable: "Lic. Fernando Ruiz Díaz",
+    pronostico: "DESFAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-08-01T09:00:00",
     fecha_actualizacion: "2025-02-12T10:15:00",
-    seguimiento: []
+    fecha_vencimiento: "2025-04-01",
+    seguimiento: {
+      fecha_actuacion: "2025-02-12",
+      tipo_actuacion: "Contestación",
+      descripcion: "Se presentó contestación de demanda por parte del IMSS. Se opusieron excepciones de falta de legitimación activa y prescripción de la acción.",
+      actualizado_siij: "SI"
+    }
   },
   {
     id: 13,
@@ -604,9 +649,10 @@ const casosFake = [
     prestacion_reclamada: 9, // Rescisión
     prestaciones_notas: "Rescisión contrato seguridad por incumplimiento",
     importe_demandado: 0,
+    pronostico: "INCIERTO",
     estatus: "TRAMITE",
     fecha_creacion: "2024-08-10T14:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 14,
@@ -631,9 +677,10 @@ const casosFake = [
     prestacion_reclamada: 10, // Nulidad
     prestaciones_notas: "Nulidad de convenio administrativo",
     importe_demandado: 0,
+    pronostico: "DESFAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-09-01T09:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 15,
@@ -659,9 +706,10 @@ const casosFake = [
     prestacion_reclamada: 1, // Indemnización
     prestaciones_notas: "Daños a vehículo oficial",
     importe_demandado: 45000.00,
+    pronostico: "FAVORABLE",
     estatus: "CONCLUIDO",
     fecha_creacion: "2024-09-15T11:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 16,
@@ -686,9 +734,10 @@ const casosFake = [
     prestacion_reclamada: 2, // Prestaciones
     prestaciones_notas: "Reclamo de intereses moratorios",
     importe_demandado: 50000.00,
+    pronostico: "INCIERTO",
     estatus: "TRAMITE",
     fecha_creacion: "2024-10-01T12:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 17,
@@ -714,9 +763,11 @@ const casosFake = [
     prestacion_reclamada: 8, // Finiquito
     prestaciones_notas: "Devolución de depósito en garantía",
     importe_demandado: 30000.00,
+    abogado_responsable: "Lic. Ana Martínez Solís",
+    pronostico: "FAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-10-20T10:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 18,
@@ -741,10 +792,18 @@ const casosFake = [
     prestacion_reclamada: 4,
     prestaciones_notas: "Deslinde de terrenos Hospital Rural",
     importe_demandado: 0,
+    abogado_responsable: "Lic. Patricia Vega Noriega",
+    pronostico: "DESFAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-11-01T11:00:00",
     fecha_actualizacion: "2025-02-08T17:00:00",
-    seguimiento: []
+    fecha_vencimiento: "2025-03-01",
+    seguimiento: {
+      fecha_actuacion: "2025-02-08",
+      tipo_actuacion: "Acuerdo",
+      descripcion: "El tribunal agrario emitió acuerdo requiriendo al IMSS la presentación de documentos que acrediten la propiedad del terreno en disputa. Plazo de 10 días hábiles.",
+      actualizado_siij: "NO"
+    }
   },
   {
     id: 19,
@@ -768,9 +827,10 @@ const casosFake = [
     prestacion_reclamada: 2,
     prestaciones_notas: "Pago de facturas rezagadas 2023",
     importe_demandado: 15000.00,
+    pronostico: "DESFAVORABLE",
     estatus: "CONCLUIDO",
     fecha_creacion: "2024-11-15T12:00:00",
-    seguimiento: []
+    seguimiento: {}
   },
   {
     id: 20,
@@ -799,10 +859,18 @@ const casosFake = [
     prestacion_reclamada: 1,
     prestaciones_notas: "Recuperación de gastos por subrogación de servicios",
     importe_demandado: 85000.00,
+    abogado_responsable: "Lic. Adriana Soto Mendoza",
+    pronostico: "FAVORABLE",
     estatus: "TRAMITE",
     fecha_creacion: "2024-12-01T09:00:00",
     fecha_actualizacion: "2025-02-09T08:30:00",
-    seguimiento: []
+    fecha_vencimiento: "2025-03-10",
+    seguimiento: {
+      fecha_actuacion: "2025-02-09",
+      tipo_actuacion: "Desahogo",
+      descripcion: "Se desahogó prueba pericial en grafoscopía. El perito ratificó su dictamen favorable al IMSS. La contraparte no presentó objeciones.",
+      actualizado_siij: "SI"
+    }
   }
 ];
 
