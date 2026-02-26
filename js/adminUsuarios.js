@@ -35,19 +35,12 @@ document.addEventListener('DOMContentLoaded', function() {
     llenarDelegacionesModal();
 
     // Listener para cambio de rol (admin no necesita delegación)
+    // Ya no se deshabilita la delegación por rol; cualquier rol puede tener "Todas"
     document.getElementById('inputRol').addEventListener('change', function() {
-        const grupoDelegacion = document.getElementById('grupoDelegacion');
-        const inputDelegacion = document.getElementById('inputDelegacion');
         const helpDelegacion = document.getElementById('helpDelegacion');
-
         if (this.value === 'admin') {
-            inputDelegacion.required = false;
-            inputDelegacion.value = '';
-            inputDelegacion.disabled = true;
             helpDelegacion.style.display = 'block';
         } else {
-            inputDelegacion.required = true;
-            inputDelegacion.disabled = false;
             helpDelegacion.style.display = 'none';
         }
     });
@@ -122,7 +115,6 @@ function abrirModal() {
     document.getElementById('inputPermisoCivil').checked = true;
     document.getElementById('inputActivo').checked = true;
     document.getElementById('inputDelegacion').disabled = false;
-    document.getElementById('inputDelegacion').required = true;
     document.getElementById('helpDelegacion').style.display = 'none';
     document.getElementById('inputUsuario').disabled = false;
     document.getElementById('modalUsuario').style.display = 'flex';
@@ -148,18 +140,10 @@ function editarUsuario(id) {
     document.getElementById('inputPermisoPenal').checked = u.permiso_penal;
     document.getElementById('inputActivo').checked = u.activo;
 
-    // Manejar delegación según rol
-    if (u.rol === 'admin') {
-        document.getElementById('inputDelegacion').value = '';
-        document.getElementById('inputDelegacion').disabled = true;
-        document.getElementById('inputDelegacion').required = false;
-        document.getElementById('helpDelegacion').style.display = 'block';
-    } else {
-        document.getElementById('inputDelegacion').value = u.delegacion_id || '';
-        document.getElementById('inputDelegacion').disabled = false;
-        document.getElementById('inputDelegacion').required = true;
-        document.getElementById('helpDelegacion').style.display = 'none';
-    }
+    // Delegación: "" = Todas, o el ID de la delegación
+    document.getElementById('inputDelegacion').value = u.delegacion_id || '';
+    document.getElementById('inputDelegacion').disabled = false;
+    document.getElementById('helpDelegacion').style.display = u.rol === 'admin' ? 'block' : 'none';
 
     document.getElementById('modalUsuario').style.display = 'flex';
 }
@@ -192,7 +176,7 @@ function guardarUsuario(e) {
             usuarios[idx].nombre_completo = nombre;
             usuarios[idx].password = password;
             usuarios[idx].rol = rol;
-            usuarios[idx].delegacion_id = rol === 'admin' ? null : parseInt(delegacionId);
+            usuarios[idx].delegacion_id = delegacionId ? parseInt(delegacionId) : null;
             usuarios[idx].permiso_civil_mercantil = permisoCivil;
             usuarios[idx].permiso_penal = permisoPenal;
             usuarios[idx].activo = activo;
@@ -206,7 +190,7 @@ function guardarUsuario(e) {
             password: password,
             nombre_completo: nombre,
             rol: rol,
-            delegacion_id: rol === 'admin' ? null : parseInt(delegacionId),
+            delegacion_id: delegacionId ? parseInt(delegacionId) : null,
             permiso_civil_mercantil: permisoCivil,
             permiso_penal: permisoPenal,
             activo: activo

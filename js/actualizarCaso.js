@@ -220,11 +220,18 @@ function verDocumento(index) {
     const docs = casoActual.documentos || [];
     if (!docs[index]) return;
 
-    // Abrir PDF en nueva pestaña
-    const link = document.createElement('a');
-    link.href = docs[index].data;
-    link.target = '_blank';
-    link.click();
+    // Convertir data URL a Blob para que el navegador lo pueda abrir
+    const dataUrl = docs[index].data;
+    const byteString = atob(dataUrl.split(',')[1]);
+    const mimeType = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: mimeType });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
 }
 
 function eliminarDocumento(index) {

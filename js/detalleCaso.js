@@ -296,7 +296,7 @@ function renderizarSeguimiento() {
         docsContainer.innerHTML = casoActual.documentos.map((doc, i) => `
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                 <span>📄</span>
-                <a href="${doc.data}" target="_blank" style="color: var(--color-primary); text-decoration: underline; font-size: 14px;">${doc.nombre}</a>
+                <a href="#" onclick="abrirPDF(${i}); return false;" style="color: var(--color-primary); text-decoration: underline; font-size: 14px;">${doc.nombre}</a>
                 <small style="color: var(--color-text-light);">(${Math.round(doc.tamaño / 1024)} KB)</small>
             </div>
         `).join('');
@@ -335,6 +335,21 @@ function editarDatos() {
 
 function abrirActualizacion() {
     window.location.href = `actualizarCaso.html?id=${casoActual.id}`;
+}
+
+function abrirPDF(index) {
+    if (!casoActual || !casoActual.documentos || !casoActual.documentos[index]) return;
+    const dataUrl = casoActual.documentos[index].data;
+    const byteString = atob(dataUrl.split(',')[1]);
+    const mimeType = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: mimeType });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
 }
 
 function formatearFecha(fecha) {
