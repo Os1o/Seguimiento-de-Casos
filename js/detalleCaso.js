@@ -16,12 +16,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const usuario = JSON.parse(usuarioStr);
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
 
-    // Ocultar botones de acción para rol consulta
+    // Ocultar botones de acción según rol
     if (usuario.rol === 'consulta') {
         const btnEditar = document.getElementById('btnEditar');
         const btnActualizar = document.getElementById('btnActualizar');
         if (btnEditar) btnEditar.style.display = 'none';
         if (btnActualizar) btnActualizar.style.display = 'none';
+    } else if (usuario.rol === 'editor') {
+        // Editor solo puede crear y consultar, no editar datos ni eliminar
+        const btnEditar = document.getElementById('btnEditar');
+        if (btnEditar) btnEditar.style.display = 'none';
     }
 
     cargarDetalleCaso();
@@ -284,6 +288,18 @@ function renderizarSeguimiento() {
     // Fecha de vencimiento
     if (casoActual.fecha_vencimiento) {
         document.getElementById('fechaVencimiento').textContent = formatearFecha(casoActual.fecha_vencimiento);
+    }
+
+    // Documentos adjuntos
+    const docsContainer = document.getElementById('documentosAdjuntos');
+    if (docsContainer && casoActual.documentos && casoActual.documentos.length > 0) {
+        docsContainer.innerHTML = casoActual.documentos.map((doc, i) => `
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span>📄</span>
+                <a href="${doc.data}" target="_blank" style="color: var(--color-primary); text-decoration: underline; font-size: 14px;">${doc.nombre}</a>
+                <small style="color: var(--color-text-light);">(${Math.round(doc.tamaño / 1024)} KB)</small>
+            </div>
+        `).join('');
     }
 }
 

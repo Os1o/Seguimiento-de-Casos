@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const usuario = JSON.parse(usuarioStr);
     usuarioActualEdit = usuario;
 
-    // Proteger ruta: consulta no puede editar
-    if (usuario.rol === 'consulta') {
+    // Proteger ruta: solo admin puede editar
+    if (usuario.rol !== 'admin') {
         window.location.href = 'casos.html';
         return;
     }
@@ -112,18 +112,88 @@ function llenarTribunales(usuario, delegacionId) {
 }
 
 function llenarPrestaciones() {
-    const container = document.getElementById('prestacionesCheckboxes');
+    const container = document.getElementById('prestacionesOpciones');
     container.innerHTML = '';
     catalogos.prestaciones.forEach(p => {
         const div = document.createElement('div');
-        div.className = 'form-checkbox';
+        div.className = 'multiselect-option';
+        div.setAttribute('data-value', p.id);
         div.innerHTML = `
-            <input type="checkbox" id="prestacion_${p.id}" name="prestaciones" value="${p.id}">
+            <input type="checkbox" id="prestacion_${p.id}" value="${p.id}">
             <label for="prestacion_${p.id}">${p.nombre}</label>
         `;
+        div.addEventListener('click', function(e) {
+            if (e.target.tagName === 'INPUT') return;
+            const cb = div.querySelector('input[type="checkbox"]');
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event('change'));
+        });
+        div.querySelector('input').addEventListener('change', function() {
+            div.classList.toggle('selected', this.checked);
+            actualizarPrestacionesTags();
+        });
         container.appendChild(div);
     });
 }
+
+function toggleMultiselectPrestaciones() {
+    const dropdown = document.getElementById('prestacionesDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+function actualizarPrestacionesTags() {
+    const trigger = document.getElementById('prestacionesTrigger');
+    const placeholder = document.getElementById('prestacionesPlaceholder');
+    const seleccionados = document.querySelectorAll('#prestacionesOpciones input[type="checkbox"]:checked');
+
+    if (seleccionados.length === 0) {
+        trigger.querySelectorAll('.multiselect-tags').forEach(t => t.remove());
+        if (!placeholder) {
+            const span = document.createElement('span');
+            span.className = 'multiselect-placeholder';
+            span.id = 'prestacionesPlaceholder';
+            span.textContent = 'Seleccione prestaciones...';
+            trigger.insertBefore(span, trigger.querySelector('.multiselect-arrow'));
+        } else {
+            placeholder.style.display = '';
+        }
+        return;
+    }
+
+    if (placeholder) placeholder.style.display = 'none';
+
+    let tagsContainer = trigger.querySelector('.multiselect-tags');
+    if (!tagsContainer) {
+        tagsContainer = document.createElement('div');
+        tagsContainer.className = 'multiselect-tags';
+        trigger.insertBefore(tagsContainer, trigger.querySelector('.multiselect-arrow'));
+    }
+    tagsContainer.innerHTML = '';
+
+    seleccionados.forEach(cb => {
+        const prest = catalogos.prestaciones.find(p => p.id === parseInt(cb.value));
+        if (!prest) return;
+        const tag = document.createElement('span');
+        tag.className = 'multiselect-tag';
+        tag.innerHTML = `${prest.nombre} <span class="multiselect-tag-remove" onclick="event.stopPropagation(); quitarPrestacion(${prest.id})">✕</span>`;
+        tagsContainer.appendChild(tag);
+    });
+}
+
+function quitarPrestacion(id) {
+    const cb = document.getElementById(`prestacion_${id}`);
+    if (cb) {
+        cb.checked = false;
+        cb.dispatchEvent(new Event('change'));
+    }
+}
+
+document.addEventListener('click', function(e) {
+    const multiselect = document.getElementById('prestacionesMultiselect');
+    if (multiselect && !multiselect.contains(e.target)) {
+        document.getElementById('prestacionesDropdown').style.display = 'none';
+    }
+});
 
 // =====================================================
 // LLENAR FORMULARIO CON DATOS DEL CASO
@@ -275,8 +345,13 @@ function llenarFormulario() {
     const prestaciones = obtenerPrestacionesDelCaso();
     prestaciones.forEach(pId => {
         const cb = document.getElementById(`prestacion_${pId}`);
-        if (cb) cb.checked = true;
+        if (cb) {
+            cb.checked = true;
+            const opcion = cb.closest('.multiselect-option');
+            if (opcion) opcion.classList.add('selected');
+        }
     });
+    actualizarPrestacionesTags();
     document.getElementById('prestacionesNotas').value = casoActual.prestaciones_notas || '';
 
     // 11. IMPORTE
@@ -775,9 +850,9 @@ function construirObjetoCaso() {
     // Codemandados
     const codemandados = obtenerPersonasDinamicas('codemandado_');
 
-    // Prestaciones (array de IDs)
+    // Prestaciones (array de IDs) - desde multiselect dropdown
     const prestacionesSeleccionadas = [];
-    document.querySelectorAll('input[name="prestaciones"]:checked').forEach(cb => {
+    document.querySelectorAll('#prestacionesOpciones input[type="checkbox"]:checked').forEach(cb => {
         prestacionesSeleccionadas.push(parseInt(cb.value));
     });
 

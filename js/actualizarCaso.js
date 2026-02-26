@@ -3,6 +3,8 @@
 // =====================================================
 
 let casoActual = null;
+const MAX_PDF_SIZE = 500 * 1024; // 500 KB por archivo
+const MAX_LOCALSTORAGE_MB = 4.5; // Limite seguro de localStorage en MB
 
 document.addEventListener('DOMContentLoaded', function() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -51,50 +53,8 @@ function cargarCaso(casoId) {
     document.getElementById('btnCancelar').href = `detalleCaso.html?id=${casoActual.id}`;
     document.getElementById('numExpediente').textContent = casoActual.numero_expediente;
 
-    // Cargar casos acumulables
-    cargarCasosAcumulables(casos);
-
     // Llenar con datos existentes
     llenarFormulario();
-}
-
-function cargarCasosAcumulables(casos) {
-    const select = document.getElementById('acumuladoA');
-
-    // Obtener fecha de inicio del caso actual para comparar
-    const fechaActual = casoActual.fecha_inicio ? new Date(casoActual.fecha_inicio) : null;
-    // Obtener materia (tipo_juicio) del caso actual: CIVIL o MERCANTIL
-    const materiaActual = casoActual.tipo_juicio;
-
-    // Filtrar: solo casos en TRAMITE, no acumulados, no el caso actual,
-    // misma materia (Civil/Mercantil) y con fecha de inicio mas vieja
-    const acumulables = casos.filter(c =>
-        c.id !== casoActual.id &&
-        c.estatus === 'TRAMITE' &&
-        !c.acumulado_a &&
-        c.tipo_juicio === materiaActual &&
-        fechaActual && c.fecha_inicio && new Date(c.fecha_inicio) < fechaActual
-    );
-
-    acumulables.forEach(c => {
-        const option = document.createElement('option');
-        option.value = c.id;
-        option.textContent = `${c.numero_expediente} - ${getNombreActor(c)}`;
-        select.appendChild(option);
-    });
-}
-
-function getNombreActor(caso) {
-    // Compatibilidad con nuevo formato (actores array) y viejo (actor objeto)
-    const actores = caso.actores || (caso.actor ? [caso.actor] : []);
-    if (caso.imss_es === 'ACTOR') return 'IMSS';
-    if (actores.length === 0) return 'N/A';
-
-    const actor = actores[0];
-    if (actor.tipo_persona === 'FISICA') {
-        return `${actor.nombres} ${actor.apellido_paterno}`;
-    }
-    return actor.empresa || 'N/A';
 }
 
 function llenarFormulario() {
@@ -133,17 +93,15 @@ function llenarFormulario() {
         document.getElementById('observaciones').value = seg.observaciones;
     }
 
-    // Acumulado a
-    if (casoActual.acumulado_a) {
-        document.getElementById('acumuladoA').value = casoActual.acumulado_a;
-    }
-
     // Fecha de vencimiento
     if (casoActual.fecha_vencimiento) {
         let fecha = casoActual.fecha_vencimiento;
         if (fecha.includes('T')) fecha = fecha.split('T')[0];
         document.getElementById('fechaVencimiento').value = fecha;
     }
+
+    // Documentos existentes
+    renderizarDocumentos();
 }
 
 function configurarEventListeners() {
@@ -173,8 +131,118 @@ function configurarEventListeners() {
         this.value = partes.join('.');
     });
 
+    // Validación de PDF al seleccionar archivo
+    document.getElementById('inputPDF').addEventListener('change', validarPDF);
+
     // Submit
     document.getElementById('formActualizar').addEventListener('submit', guardarActualizacion);
+}
+
+// =====================================================
+// DOCUMENTOS PDF
+// =====================================================
+
+function obtenerTamañoLocalStorage() {
+    let total = 0;
+    for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+            total += localStorage[key].length * 2; // UTF-16 = 2 bytes por caracter
+        }
+    }
+    return total;
+}
+
+function validarPDF() {
+    const input = document.getElementById('inputPDF');
+    const errorDiv = document.getElementById('errorPDF');
+    errorDiv.style.display = 'none';
+
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+
+    // Validar que sea PDF
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        errorDiv.textContent = 'Solo se permiten archivos PDF';
+        errorDiv.style.display = 'block';
+        input.value = '';
+        return;
+    }
+
+    // Validar tamaño del archivo
+    if (file.size > MAX_PDF_SIZE) {
+        const sizeKB = Math.round(file.size / 1024);
+        errorDiv.textContent = `El archivo pesa ${sizeKB} KB. El máximo permitido es 500 KB.`;
+        errorDiv.style.display = 'block';
+        input.value = '';
+        return;
+    }
+
+    // Validar espacio disponible en localStorage
+    // Base64 aumenta el tamaño ~33%
+    const estimatedSize = file.size * 1.37; // base64 overhead + JSON overhead
+    const usedBytes = obtenerTamañoLocalStorage();
+    const maxBytes = MAX_LOCALSTORAGE_MB * 1024 * 1024;
+    const availableBytes = maxBytes - usedBytes;
+
+    if (estimatedSize > availableBytes) {
+        const availableKB = Math.round(availableBytes / 1024);
+        errorDiv.textContent = `No hay espacio suficiente en el almacenamiento local. Disponible: ~${availableKB} KB. Elimine documentos existentes para liberar espacio.`;
+        errorDiv.style.display = 'block';
+        input.value = '';
+        return;
+    }
+}
+
+function renderizarDocumentos() {
+    const container = document.getElementById('listaDocumentos');
+    const docs = casoActual.documentos || [];
+
+    if (docs.length === 0) {
+        container.innerHTML = '<p style="color: var(--color-text-light); font-size: 13px;">No hay documentos adjuntos</p>';
+        return;
+    }
+
+    container.innerHTML = docs.map((doc, index) => `
+        <div style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--color-bg); border-radius: 6px; margin-bottom: 6px;">
+            <span style="color: var(--color-danger); font-size: 18px;">📄</span>
+            <div style="flex: 1;">
+                <strong style="font-size: 13px;">${doc.nombre}</strong>
+                <small style="color: var(--color-text-light); display: block;">${Math.round(doc.tamaño / 1024)} KB · ${doc.fecha}</small>
+            </div>
+            <button type="button" onclick="verDocumento(${index})" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;">Ver</button>
+            <button type="button" onclick="eliminarDocumento(${index})" class="btn" style="padding: 4px 10px; font-size: 12px; background: var(--color-danger); color: white;">✕</button>
+        </div>
+    `).join('');
+}
+
+function verDocumento(index) {
+    const docs = casoActual.documentos || [];
+    if (!docs[index]) return;
+
+    // Abrir PDF en nueva pestaña
+    const link = document.createElement('a');
+    link.href = docs[index].data;
+    link.target = '_blank';
+    link.click();
+}
+
+function eliminarDocumento(index) {
+    if (!confirm('¿Eliminar este documento?')) return;
+
+    if (!casoActual.documentos) return;
+    casoActual.documentos.splice(index, 1);
+
+    // Guardar inmediatamente
+    const casosStr = localStorage.getItem('casos');
+    let casos = casosStr ? JSON.parse(casosStr) : [];
+    const idx = casos.findIndex(c => c.id === casoActual.id);
+    if (idx !== -1) {
+        casos[idx] = casoActual;
+        localStorage.setItem('casos', JSON.stringify(casos));
+    }
+
+    renderizarDocumentos();
 }
 
 function guardarActualizacion(e) {
@@ -195,7 +263,6 @@ function guardarActualizacion(e) {
     const ultimoEstadoProcesal = document.getElementById('ultimoEstadoProcesal').value || null;
     const fechaEstadoProcesal = document.getElementById('fechaEstadoProcesal').value || null;
     const observaciones = document.getElementById('observaciones').value || null;
-    const acumuladoA = document.getElementById('acumuladoA').value ? parseInt(document.getElementById('acumuladoA').value) : null;
     const fechaVencimiento = document.getElementById('fechaVencimiento').value || null;
 
     // Actualizar seguimiento
@@ -206,21 +273,49 @@ function guardarActualizacion(e) {
     casoActual.seguimiento.fecha_estado_procesal = fechaEstadoProcesal;
     casoActual.seguimiento.observaciones = observaciones;
 
-    // Acumulacion
-    const acumuladoAnterior = casoActual.acumulado_a;
-    casoActual.acumulado_a = acumuladoA;
     casoActual.fecha_vencimiento = fechaVencimiento;
     casoActual.fecha_actualizacion = new Date().toISOString();
 
-    // Si se acumulo, cambiar estatus a CONCLUIDO
-    if (acumuladoA) {
-        casoActual.estatus = 'CONCLUIDO';
-    } else if (acumuladoAnterior && !acumuladoA) {
-        // Si se quito la acumulacion, volver a TRAMITE
-        casoActual.estatus = 'TRAMITE';
-    }
+    // Procesar PDF adjunto (si hay)
+    const inputPDF = document.getElementById('inputPDF');
+    const file = inputPDF.files && inputPDF.files[0];
 
-    // Guardar en localStorage
+    if (file) {
+        // Leer como base64 y guardar
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const base64 = event.target.result;
+
+            // Verificar espacio antes de guardar
+            const usedBytes = obtenerTamañoLocalStorage();
+            const maxBytes = MAX_LOCALSTORAGE_MB * 1024 * 1024;
+            const newDataSize = base64.length * 2;
+
+            if (usedBytes + newDataSize > maxBytes) {
+                alert('Error: No hay espacio suficiente en localStorage para guardar este documento. Elimine documentos existentes.');
+                return;
+            }
+
+            if (!casoActual.documentos) casoActual.documentos = [];
+            casoActual.documentos.push({
+                nombre: file.name,
+                tamaño: file.size,
+                fecha: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' }),
+                data: base64
+            });
+
+            guardarEnLocalStorage();
+        };
+        reader.onerror = function() {
+            alert('Error al leer el archivo PDF');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        guardarEnLocalStorage();
+    }
+}
+
+function guardarEnLocalStorage() {
     const casosStr = localStorage.getItem('casos');
     let casos = casosStr ? JSON.parse(casosStr) : [];
 
@@ -228,29 +323,14 @@ function guardarActualizacion(e) {
     if (index !== -1) {
         casos[index] = casoActual;
 
-        // Actualizar juicios_acumulados del caso padre
-        if (acumuladoAnterior && acumuladoAnterior !== acumuladoA) {
-            // Quitar del padre anterior
-            const padreAnterior = casos.find(c => c.id === acumuladoAnterior);
-            if (padreAnterior && padreAnterior.juicios_acumulados) {
-                padreAnterior.juicios_acumulados = padreAnterior.juicios_acumulados.filter(id => id !== casoActual.id);
-            }
+        try {
+            localStorage.setItem('casos', JSON.stringify(casos));
+            alert('Seguimiento actualizado correctamente');
+            window.location.href = `detalleCaso.html?id=${casoActual.id}`;
+        } catch (err) {
+            // QuotaExceededError
+            alert('Error: No hay espacio suficiente en el almacenamiento local. Elimine documentos o datos para liberar espacio.');
         }
-
-        if (acumuladoA) {
-            // Agregar al nuevo padre
-            const padreNuevo = casos.find(c => c.id === acumuladoA);
-            if (padreNuevo) {
-                if (!padreNuevo.juicios_acumulados) padreNuevo.juicios_acumulados = [];
-                if (!padreNuevo.juicios_acumulados.includes(casoActual.id)) {
-                    padreNuevo.juicios_acumulados.push(casoActual.id);
-                }
-            }
-        }
-
-        localStorage.setItem('casos', JSON.stringify(casos));
-        alert('Seguimiento actualizado correctamente');
-        window.location.href = `detalleCaso.html?id=${casoActual.id}`;
     } else {
         alert('Error: No se encontró el asunto');
     }

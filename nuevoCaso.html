@@ -218,8 +218,16 @@
 
                 <div class="form-group">
                     <label class="form-label required">Prestaciones Reclamadas</label>
-                    <div id="prestacionesCheckboxes" class="form-checkbox-group">
-                        <!-- Se llena dinamicamente -->
+                    <div id="prestacionesMultiselect" class="multiselect-container">
+                        <div class="multiselect-trigger" id="prestacionesTrigger" onclick="toggleMultiselectPrestaciones()">
+                            <span class="multiselect-placeholder" id="prestacionesPlaceholder">Seleccione prestaciones...</span>
+                            <span class="multiselect-arrow">▼</span>
+                        </div>
+                        <div class="multiselect-dropdown" id="prestacionesDropdown" style="display:none;">
+                            <div id="prestacionesOpciones">
+                                <!-- Se llena dinámicamente -->
+                            </div>
+                        </div>
                     </div>
                 </div>
 

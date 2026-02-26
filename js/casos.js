@@ -7,6 +7,7 @@ let todosLosCasos = [];
 let paginaActual = 1;
 const REGISTROS_POR_PAGINA = 10;
 let usuarioActual = null;
+let filtroPronosticoDona = ''; // Filtro activo desde click en la dona
 
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -44,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (infoOOAD && usuario.delegacion_id) {
         const deleg = obtenerDelegacion(usuario.delegacion_id);
         if (deleg) infoOOAD.textContent = deleg.nombre;
-    } else if (infoOOAD && usuario.rol === 'admin') {
+    } else if (infoOOAD && (usuario.rol === 'admin' || !usuario.delegacion_id)) {
         infoOOAD.textContent = 'Todas las delegaciones';
     }
 
@@ -60,8 +61,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btnNuevo) btnNuevo.style.display = 'none';
     }
 
-    // Ocultar filtro de delegación para no-admin (ya está filtrado por su OOAD)
-    if (usuario.rol !== 'admin') {
+    // Ocultar filtro de delegación para usuarios con OOAD fijo (ya está filtrado por su OOAD)
+    // Si no tiene delegacion_id (ej. consulta global), dejar el filtro visible
+    if (usuario.rol !== 'admin' && usuario.delegacion_id) {
         const btnFiltroDelegacion = document.getElementById('btn_filtroDelegacion');
         if (btnFiltroDelegacion) {
             btnFiltroDelegacion.closest('th').innerHTML = '<span style="padding:0 10px;font-size:13px;">OOAD/UMAE</span>';
@@ -70,6 +72,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Cargar casos (fake o localStorage)
     cargarCasos();
+
+    // Inicializar click en dona
+    inicializarClickDona();
 
     // Llenar filtros
     llenarFiltros();
@@ -271,12 +276,16 @@ function filtrarCasos() {
         const cumpleJurisdiccion = !jurisdiccion || caso.jurisdiccion === jurisdiccion;
         const cumplePosicionIMSS = !posicionIMSS || caso.imss_es === posicionIMSS;
 
-        /* FILTRO FECHAS - COMENTADO, se usará en otra funcionalidad
-        let cumpleFechaDesde = !fechaDesde || caso.fecha_inicio >= fechaDesde;
-        let cumpleFechaHasta = !fechaHasta || caso.fecha_inicio <= fechaHasta;
-        */
+        // Filtro de pronóstico (desde click en dona)
+        let cumplePronostico = true;
+        if (filtroPronosticoDona) {
+            const pron = caso.pronostico || (caso.seguimiento && caso.seguimiento.pronostico) || null;
+            if (filtroPronosticoDona === 'FAVORABLE') cumplePronostico = pron === 'FAVORABLE';
+            else if (filtroPronosticoDona === 'DESFAVORABLE') cumplePronostico = pron === 'DESFAVORABLE';
+            else if (filtroPronosticoDona === 'SIN_PRONOSTICO') cumplePronostico = !pron;
+        }
 
-        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleJurisdiccion && cumplePosicionIMSS;
+        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleJurisdiccion && cumplePosicionIMSS && cumplePronostico;
     });
 
     // Ordenar por fecha_actualizacion descendente (más reciente primero)
@@ -292,15 +301,17 @@ function filtrarCasos() {
 }
 
 function actualizarEstadisticas() {
-    const total = todosLosCasos.length;
-    const tramite = todosLosCasos.filter(c => c.estatus === 'TRAMITE').length;
-    const concluidos = todosLosCasos.filter(c => c.estatus === 'CONCLUIDO').length;
+    // Usar casosFiltrados para que el dashboard reaccione a los filtros de tabla
+    const datos = casosFiltrados && casosFiltrados.length >= 0 ? casosFiltrados : todosLosCasos;
+    const total = datos.length;
+    const tramite = datos.filter(c => c.estatus === 'TRAMITE').length;
+    const concluidos = datos.filter(c => c.estatus === 'CONCLUIDO').length;
 
     document.getElementById('totalCasos').textContent = total;
     document.getElementById('casosTramite').textContent = tramite;
     document.getElementById('casosConcluidos').textContent = concluidos;
 
-    // Renderizar grafica de pronostico (solo tramites)
+    // Renderizar grafica de pronostico (solo tramites de los filtrados)
     renderizarGraficaPronostico();
 }
 
@@ -382,13 +393,18 @@ function renderizarTabla() {
                             <div class="menu-item" onclick="verDetalle(${caso.id})">
                                 Ver detalle
                             </div>
-                            ${usuarioActual && usuarioActual.rol !== 'consulta' ? `
+                            ${usuarioActual && usuarioActual.rol === 'admin' ? `
                             <div class="menu-item" onclick="editarCaso(${caso.id})">
                                 Editar datos
-                            </div>
+                            </div>` : ''}
+                            ${usuarioActual && usuarioActual.rol !== 'consulta' ? `
                             <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
                                 Actualizar seguimiento
                             </div>
+                            <div class="menu-item" onclick="abrirModalAcumular(${caso.id})">
+                                Acumular
+                            </div>` : ''}
+                            ${usuarioActual && usuarioActual.rol === 'admin' ? `
                             <div class="menu-item danger" onclick="confirmarEliminar(${caso.id})">
                                 Eliminar
                             </div>` : ''}
@@ -590,6 +606,106 @@ function cerrarModalAcumulados() {
     document.getElementById('modalAcumulados').style.display = 'none';
 }
 
+// =====================================================
+// ACUMULACIÓN desde menú de 3 puntos
+// =====================================================
+let casoAcumularId = null;
+
+function abrirModalAcumular(casoId) {
+    cerrarTodosLosMenus();
+    const casosStr = localStorage.getItem('casos');
+    const casos = casosStr ? JSON.parse(casosStr) : [];
+    const caso = casos.find(c => c.id === casoId);
+    if (!caso) return;
+
+    casoAcumularId = casoId;
+    document.getElementById('acumularExpediente').textContent = caso.numero_expediente;
+
+    // Llenar select con casos acumulables
+    const select = document.getElementById('selectAcumularA');
+    select.innerHTML = '<option value="">Sin acumular</option>';
+
+    const fechaActual = caso.fecha_inicio ? new Date(caso.fecha_inicio) : null;
+    const materiaActual = caso.tipo_juicio;
+
+    const acumulables = casos.filter(c =>
+        c.id !== caso.id &&
+        c.estatus === 'TRAMITE' &&
+        !c.acumulado_a &&
+        c.tipo_juicio === materiaActual &&
+        fechaActual && c.fecha_inicio && new Date(c.fecha_inicio) < fechaActual
+    );
+
+    acumulables.forEach(c => {
+        const option = document.createElement('option');
+        option.value = c.id;
+        const actorNombre = getActorNombre(c) || 'N/A';
+        option.textContent = `${c.numero_expediente} - ${actorNombre}`;
+        select.appendChild(option);
+    });
+
+    // Pre-seleccionar si ya está acumulado
+    if (caso.acumulado_a) {
+        select.value = caso.acumulado_a;
+    }
+
+    document.getElementById('modalAcumular').style.display = 'flex';
+}
+
+function cerrarModalAcumular() {
+    document.getElementById('modalAcumular').style.display = 'none';
+    casoAcumularId = null;
+}
+
+function guardarAcumulacion() {
+    if (!casoAcumularId) return;
+
+    const casosStr = localStorage.getItem('casos');
+    let casos = casosStr ? JSON.parse(casosStr) : [];
+    const caso = casos.find(c => c.id === casoAcumularId);
+    if (!caso) return;
+
+    const acumuladoAnterior = caso.acumulado_a;
+    const nuevoAcumuladoA = document.getElementById('selectAcumularA').value
+        ? parseInt(document.getElementById('selectAcumularA').value)
+        : null;
+
+    // Actualizar acumulación
+    caso.acumulado_a = nuevoAcumuladoA;
+    caso.fecha_actualizacion = new Date().toISOString();
+
+    // Cambiar estatus
+    if (nuevoAcumuladoA) {
+        caso.estatus = 'CONCLUIDO';
+    } else if (acumuladoAnterior && !nuevoAcumuladoA) {
+        caso.estatus = 'TRAMITE';
+    }
+
+    // Quitar del padre anterior si cambió
+    if (acumuladoAnterior && acumuladoAnterior !== nuevoAcumuladoA) {
+        const padreAnterior = casos.find(c => c.id === acumuladoAnterior);
+        if (padreAnterior && padreAnterior.juicios_acumulados) {
+            padreAnterior.juicios_acumulados = padreAnterior.juicios_acumulados.filter(id => id !== casoAcumularId);
+        }
+    }
+
+    // Agregar al nuevo padre
+    if (nuevoAcumuladoA) {
+        const padreNuevo = casos.find(c => c.id === nuevoAcumuladoA);
+        if (padreNuevo) {
+            if (!padreNuevo.juicios_acumulados) padreNuevo.juicios_acumulados = [];
+            if (!padreNuevo.juicios_acumulados.includes(casoAcumularId)) {
+                padreNuevo.juicios_acumulados.push(casoAcumularId);
+            }
+        }
+    }
+
+    localStorage.setItem('casos', JSON.stringify(casos));
+    cerrarModalAcumular();
+    cargarCasos();
+    alert('Acumulación actualizada correctamente');
+}
+
 function verDetalle(casoId) {
     // Redirigir a página de detalle
     window.location.href = `detalleCaso.html?id=${casoId}`;
@@ -748,8 +864,9 @@ function renderizarGraficaPronostico() {
     const radius = size / 2 - 4;
     const innerRadius = radius * 0.58;
 
-    // Contar pronosticos solo de casos en TRAMITE
-    const tramites = todosLosCasos.filter(c => c.estatus === 'TRAMITE');
+    // Contar pronosticos solo de casos en TRAMITE (usando filtrados para reaccionar a filtros)
+    const datosFuente = casosFiltrados && casosFiltrados.length >= 0 ? casosFiltrados : todosLosCasos;
+    const tramites = datosFuente.filter(c => c.estatus === 'TRAMITE');
     let favorable = 0;
     let desfavorable = 0;
     let sinPronostico = 0;
@@ -760,6 +877,9 @@ function renderizarGraficaPronostico() {
         else if (pron === 'DESFAVORABLE') desfavorable++;
         else sinPronostico++;
     });
+
+    // Guardar datos de segmentos para hacer la dona clickeable
+    window.datosDonaSegmentos = [];
 
     const datos = [
         { label: 'Favorable', valor: favorable, color: '#2e7d32' },
@@ -797,6 +917,14 @@ function renderizarGraficaPronostico() {
             ctx.closePath();
             ctx.fill();
 
+            // Guardar segmento para click interactivo
+            window.datosDonaSegmentos.push({
+                label: d.label,
+                startAngle: startAngle,
+                endAngle: startAngle + sliceAngle,
+                color: d.color
+            });
+
             startAngle += sliceAngle;
         });
 
@@ -818,24 +946,96 @@ function renderizarGraficaPronostico() {
         ctx.fillText('trámites', center, center + 10);
     }
 
-    // Leyenda
+    // Leyenda (clickeable)
     const leyenda = document.getElementById('leyendaPronostico');
     if (leyenda) {
-        leyenda.innerHTML = datos.map(d => `
-            <div class="leyenda-item">
+        leyenda.innerHTML = datos.map(d => {
+            const filtroValor = d.label === 'Favorable' ? 'FAVORABLE' : d.label === 'Desfavorable' ? 'DESFAVORABLE' : 'SIN_PRONOSTICO';
+            const activo = filtroPronosticoDona === filtroValor;
+            return `
+            <div class="leyenda-item ${activo ? 'leyenda-activa' : ''}" style="cursor: pointer; ${activo ? 'font-weight: bold; text-decoration: underline;' : ''}" onclick="clickDonaFiltro('${filtroValor}')">
                 <span class="leyenda-color" style="background: ${d.color};"></span>
                 <span class="leyenda-texto">${d.label}</span>
                 <span class="leyenda-valor">${d.valor}</span>
             </div>
-        `).join('');
+        `;
+        }).join('');
+    }
+
+    // Indicador de filtro activo
+    if (filtroPronosticoDona) {
+        const labelFiltro = filtroPronosticoDona === 'FAVORABLE' ? 'Favorable' : filtroPronosticoDona === 'DESFAVORABLE' ? 'Desfavorable' : 'Sin Pronóstico';
+        const indicador = document.getElementById('indicadorFiltroDona');
+        if (indicador) {
+            indicador.style.display = 'block';
+            indicador.innerHTML = `Filtrando: <strong>${labelFiltro}</strong> <button onclick="limpiarFiltroDona()" style="border:none;background:none;color:var(--color-danger);cursor:pointer;font-weight:bold;">✕</button>`;
+        }
+    } else {
+        const indicador = document.getElementById('indicadorFiltroDona');
+        if (indicador) indicador.style.display = 'none';
     }
 }
 
+// Click en la dona (canvas)
+function inicializarClickDona() {
+    const canvas = document.getElementById('chartPronostico');
+    if (!canvas) return;
+
+    canvas.style.cursor = 'pointer';
+    canvas.addEventListener('click', function (e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        const center = canvas.width / 2;
+        const dx = x - center;
+        const dy = y - center;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const radius = canvas.width / 2 - 4;
+        const innerRadius = radius * 0.58;
+
+        // Solo aceptar click en el área de la dona (no el centro vacío)
+        if (dist < innerRadius || dist > radius) return;
+
+        // Calcular ángulo del click
+        let angle = Math.atan2(dy, dx);
+        if (angle < -Math.PI / 2) angle += Math.PI * 2;
+
+        // Buscar segmento
+        const segmentos = window.datosDonaSegmentos || [];
+        for (const seg of segmentos) {
+            if (angle >= seg.startAngle && angle < seg.endAngle) {
+                const filtroValor = seg.label === 'Favorable' ? 'FAVORABLE' : seg.label === 'Desfavorable' ? 'DESFAVORABLE' : 'SIN_PRONOSTICO';
+                clickDonaFiltro(filtroValor);
+                break;
+            }
+        }
+    });
+}
+
+function clickDonaFiltro(valor) {
+    // Toggle: si ya está seleccionado, limpiar
+    if (filtroPronosticoDona === valor) {
+        filtroPronosticoDona = '';
+    } else {
+        filtroPronosticoDona = valor;
+    }
+    filtrarCasos();
+}
+
+function limpiarFiltroDona() {
+    filtroPronosticoDona = '';
+    filtrarCasos();
+}
+
 function actualizarContadores() {
-    const total = todosLosCasos.length;
-    const activos = todosLosCasos.filter(c => c.estatus === 'TRAMITE').length;
-    const concluidos = todosLosCasos.filter(c => c.estatus === 'CONCLUIDO').length;
-    
+    const datosFuente = casosFiltrados && casosFiltrados.length >= 0 ? casosFiltrados : todosLosCasos;
+    const total = datosFuente.length;
+    const activos = datosFuente.filter(c => c.estatus === 'TRAMITE').length;
+    const concluidos = datosFuente.filter(c => c.estatus === 'CONCLUIDO').length;
+
     // Validamos que existan los elementos antes de asignarles valor para evitar errores
     const elTotal = document.getElementById('totalCasos');
     const elActivos = document.getElementById('casosActivos');

@@ -62,6 +62,8 @@
             </div>
         </div>
 
+        <!-- Indicador de filtro de dona -->
+        <div id="indicadorFiltroDona" style="display:none; background: #fff3cd; padding: 8px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; color: #856404;"></div>
 
         <!-- Búsqueda -->
         <div class="toolbar">
@@ -173,6 +175,29 @@
                 <button onclick="cerrarModalAcumulados()" class="btn-secondary" style="padding: 8px 16px;">✕</button>
             </div>
             <div id="listaAcumulados"></div>
+        </div>
+    </div>
+
+    <!-- Modal para acumular caso -->
+    <div id="modalAcumular"
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="card" style="max-width: 500px; width: 90%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="margin: 0; color: var(--color-primary);">Acumular Asunto</h3>
+                <button onclick="cerrarModalAcumular()" class="btn-secondary" style="padding: 8px 16px;">✕</button>
+            </div>
+            <p style="margin-bottom: 8px;">Expediente: <strong id="acumularExpediente">-</strong></p>
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Acumular a:</label>
+                <select id="selectAcumularA" class="form-select">
+                    <option value="">Sin acumular</option>
+                </select>
+                <small style="color: var(--color-text-light);">Al acumular, el estatus del asunto cambiará a CONCLUIDO</small>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="cerrarModalAcumular()" class="btn btn-secondary">Cancelar</button>
+                <button onclick="guardarAcumulacion()" class="btn btn-success">Guardar</button>
+            </div>
         </div>
     </div>
 
