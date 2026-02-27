@@ -9,13 +9,14 @@
 <body>
     <header class="header-gob">
         <div class="header-logo">
-            <span class="logo-text">Gobierno de Mexico</span>
+            <span class="logo-text">Gobierno de México</span>
         </div>
         <nav class="header-nav">
+            <a href="casos.html" class="btn-header-link">&larr; Inicio</a>
             <div class="header-user">
                 <span id="nombreUsuario">Usuario</span>
             </div>
-            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesion</button>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
         </nav>
     </header>
 
@@ -81,11 +82,24 @@
                 </div>
             </div>
 
-            <!-- Próximo vencimiento -->
+            <!-- Próximo vencimiento + Para uso exclusivo (en grid) -->
             <div class="form-section">
-                <div class="form-group">
-                    <label class="form-label">Próximo vencimiento <small style="color: var(--color-text-light);">(opcional)</small></label>
-                    <input type="date" id="fechaVencimiento" class="form-input">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Próximo vencimiento <small style="color: var(--color-text-light);">(opcional)</small></label>
+                        <input type="date" id="fechaVencimiento" class="form-input">
+                    </div>
+
+                    <!-- Para uso exclusivo - solo admin -->
+                    <div class="form-group" id="seccionExclusiva" style="display: none;">
+                        <label class="form-label">Para uso exclusivo CEMCPJ — ¿Actualizado en el SIIJ?</label>
+                        <select id="actualizadoSIIJ" class="form-select">
+                            <option value="">—</option>
+                            <option value="SI">Sí</option>
+                            <option value="NO">No</option>
+                            <option value="PENDIENTE">Pendiente</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -94,19 +108,6 @@
                 <div class="form-group">
                     <label class="form-label required">Descripción de lo sucedido en esta actuación</label>
                     <textarea id="descripcionActuacion" class="form-textarea" placeholder="Describe lo sucedido..." rows="5" required></textarea>
-                </div>
-            </div>
-
-            <!-- Para uso exclusivo - solo admin -->
-            <div class="form-section" id="seccionExclusiva" style="display: none;">
-                <div class="form-group">
-                    <label class="form-label">Para uso exclusivo CEMCPJ — ¿Actualizado en el SIIJ?</label>
-                    <select id="actualizadoSIIJ" class="form-select">
-                        <option value="">—</option>
-                        <option value="SI">Sí</option>
-                        <option value="NO">No</option>
-                        <option value="PENDIENTE">Pendiente</option>
-                    </select>
                 </div>
             </div>
 
