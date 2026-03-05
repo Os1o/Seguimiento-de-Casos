@@ -377,9 +377,11 @@ function renderizarCaso() {
 
 // === RENDERIZAR PARTES (SIN FILTRO IMSS) ===
 function renderizarPartesCompactas(tipo, partes) {
-    const seccion = document.getElementById(`seccion${tipo}`);
-    const lista = document.getElementById(`${tipo.toLowerCase()}Info`);
-    const count = document.getElementById(`${tipo.toLowerCase()}Count`);
+    const tipoLower = tipo.toLowerCase();
+    // Buscar elementos por ID singular o plural (compatibilidad con ambos HTML)
+    const seccion = document.getElementById(`seccion${tipo}`) || document.getElementById(`seccion${tipo}s`);
+    const lista = document.getElementById(`${tipoLower}Info`) || document.getElementById(`${tipoLower}sInfo`);
+    const count = document.getElementById(`${tipoLower}Count`) || document.getElementById(`${tipoLower}sCount`);
     
     // Validación básica de elementos
     if (!seccion || !lista) {
