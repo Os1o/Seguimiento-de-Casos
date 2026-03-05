@@ -72,20 +72,20 @@ function renderizarCaso() {
     const fecha = new Date(casoActual.fecha_creacion);
     const ddC = String(fecha.getDate()).padStart(2, '0');
     const mmC = String(fecha.getMonth() + 1).padStart(2, '0');
-    const yyC = String(fecha.getFullYear()).slice(-2);
+    const yyyyC = fecha.getFullYear();
     const hhC = String(fecha.getHours()).padStart(2, '0');
     const minC = String(fecha.getMinutes()).padStart(2, '0');
-    document.getElementById('fechaCreacion').textContent = `${ddC}/${mmC}/${yyC} ${hhC}:${minC}`;
+    document.getElementById('fechaCreacion').textContent = `${ddC}/${mmC}/${yyyyC} ${hhC}:${minC}`;
 
     // Fecha de actualización (si es diferente a la de creación)
     if (casoActual.fecha_actualizacion && casoActual.fecha_actualizacion !== casoActual.fecha_creacion) {
         const fechaAct = new Date(casoActual.fecha_actualizacion);
         const ddA = String(fechaAct.getDate()).padStart(2, '0');
         const mmA = String(fechaAct.getMonth() + 1).padStart(2, '0');
-        const yyA = String(fechaAct.getFullYear()).slice(-2);
+        const yyyyA = fechaAct.getFullYear();
         const hhA = String(fechaAct.getHours()).padStart(2, '0');
         const minA = String(fechaAct.getMinutes()).padStart(2, '0');
-        document.getElementById('fechaActualizacion').textContent = `${ddA}/${mmA}/${yyA} ${hhA}:${minA}`;
+        document.getElementById('fechaActualizacion').textContent = `${ddA}/${mmA}/${yyyyA} ${hhA}:${minA}`;
         document.getElementById('fechaActualizacionInfo').style.display = 'inline';
     }
 
@@ -112,16 +112,36 @@ function renderizarCaso() {
     document.getElementById('fechaInicio').textContent = formatearFecha(casoActual.fecha_inicio);
     document.getElementById('imssEs').textContent = casoActual.imss_es;
 
-    // Prestaciones (compatibilidad: prestacion_reclamada int -> prestaciones_reclamadas array)
-    const prestacionesIds = obtenerPrestacionesDelCaso();
-    if (prestacionesIds.length > 0) {
-        const nombres = prestacionesIds.map(id => {
-            const p = catalogos.prestaciones.find(pr => pr.id === id);
-            return p ? p.nombre : 'Desconocida';
-        });
-        document.getElementById('prestacion').innerHTML = nombres.map(n => `<div style="margin-bottom: 4px;">- ${n}</div>`).join('');
+    // Prestaciones: mostrar principal destacada y secundarias separadas
+    const principalId = casoActual.prestacion_principal || null;
+    const secundariasIds = casoActual.prestaciones_secundarias || [];
+
+    if (principalId) {
+        const principal = catalogos.prestaciones.find(p => p.id === principalId);
+        let htmlPrest = '<div style="margin-bottom: 6px;"><strong>Principal:</strong> ' + (principal ? principal.nombre : 'Desconocida') + '</div>';
+
+        if (secundariasIds.length > 0) {
+            const nombres = secundariasIds.map(id => {
+                const p = catalogos.prestaciones.find(pr => pr.id === id);
+                return p ? p.nombre : 'Desconocida';
+            });
+            htmlPrest += '<div style="color: var(--color-text-light); font-size: 13px;"><strong>Secundarias:</strong></div>';
+            htmlPrest += nombres.map(n => '<div style="margin-bottom: 2px; padding-left: 12px; font-size: 13px; color: var(--color-text-light);">- ' + n + '</div>').join('');
+        }
+
+        document.getElementById('prestacion').innerHTML = htmlPrest;
     } else {
-        document.getElementById('prestacion').textContent = '---';
+        // Fallback formatos anteriores
+        const prestacionesIds = obtenerPrestacionesDelCaso();
+        if (prestacionesIds.length > 0) {
+            const nombres = prestacionesIds.map(id => {
+                const p = catalogos.prestaciones.find(pr => pr.id === id);
+                return p ? p.nombre : 'Desconocida';
+            });
+            document.getElementById('prestacion').innerHTML = nombres.map(n => '<div style="margin-bottom: 4px;">- ' + n + '</div>').join('');
+        } else {
+            document.getElementById('prestacion').textContent = '---';
+        }
     }
 
     // Importe
@@ -231,6 +251,15 @@ function obtenerPrestacionesDelCaso() {
     if (casoActual.prestaciones_reclamadas && Array.isArray(casoActual.prestaciones_reclamadas)) {
         return casoActual.prestaciones_reclamadas;
     }
+    // Nuevo modelo: prestacion_principal + prestaciones_secundarias
+    if (casoActual.prestacion_principal) {
+        const ids = [casoActual.prestacion_principal];
+        if (casoActual.prestaciones_secundarias && Array.isArray(casoActual.prestaciones_secundarias)) {
+            ids.push(...casoActual.prestaciones_secundarias);
+        }
+        return ids;
+    }
+    // Legacy
     if (casoActual.prestacion_reclamada) {
         return [casoActual.prestacion_reclamada];
     }
@@ -348,6 +377,6 @@ function formatearFecha(fecha) {
     if (isNaN(d.getTime())) return fecha;
     const dd = String(d.getDate()).padStart(2, '0');
     const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yy = String(d.getFullYear()).slice(-2);
-    return `${dd}/${mm}/${yy}`;
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
 }

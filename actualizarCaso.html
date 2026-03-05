@@ -37,10 +37,10 @@
         </div>
 
         <form id="formActualizar" class="card">
-            <!-- Folio (solo lectura) -->
+            <!-- Expediente (solo lectura) -->
             <div class="form-section">
                 <div class="form-group">
-                    <label class="form-label">Folio</label>
+                    <label class="form-label">Expediente</label>
                     <input type="text" id="folioExpediente" class="form-input" disabled style="background: var(--color-bg); font-weight: 600;">
                 </div>
             </div>
@@ -82,23 +82,12 @@
                 </div>
             </div>
 
-            <!-- Próximo vencimiento + Para uso exclusivo (en grid) -->
+            <!-- Próximo vencimiento -->
             <div class="form-section">
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Próximo vencimiento <small style="color: var(--color-text-light);">(opcional)</small></label>
                         <input type="date" id="fechaVencimiento" class="form-input">
-                    </div>
-
-                    <!-- Para uso exclusivo - solo admin -->
-                    <div class="form-group" id="seccionExclusiva" style="display: none;">
-                        <label class="form-label">Para uso exclusivo CEMCPJ — ¿Actualizado en el SIIJ?</label>
-                        <select id="actualizadoSIIJ" class="form-select">
-                            <option value="">—</option>
-                            <option value="SI">Sí</option>
-                            <option value="NO">No</option>
-                            <option value="PENDIENTE">Pendiente</option>
-                        </select>
                     </div>
                 </div>
             </div>

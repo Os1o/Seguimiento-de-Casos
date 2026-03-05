@@ -103,8 +103,8 @@
                 <thead>
                     <tr>
                         <th class="th-filtrable">
-                            <button id="btn_filtroDelegacion" class="filtro-btn-custom" data-nombre="OOAD/UMAE"
-                                onclick="toggleFiltro('filtroDelegacion', this)">OOAD/UMAE &#9660;</button>
+                            <button id="btn_filtroDelegacion" class="filtro-btn-custom" data-nombre="JSJ"
+                                onclick="toggleFiltro('filtroDelegacion', this)">JSJ &#9660;</button>
                         </th>
                         <th class="th-filtrable" style="white-space: nowrap;">
                             <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus"
@@ -124,7 +124,7 @@
                         <th>Actor</th>
                         <th>Demandado</th>
                         <th>Codemandado</th>
-                        <th>Prestaciones</th>
+                        <th>Prestación Principal</th>
                         <th>Importe</th>
                         <th class="th-filtrable">
                             <button id="btn_filtroPosicionIMSS" class="filtro-btn-custom" data-nombre="Calidad IMSS"
@@ -186,13 +186,22 @@
                 <button onclick="cerrarModalAcumular()" class="btn-secondary" style="padding: 8px 16px;">✕</button>
             </div>
             <p style="margin-bottom: 8px;">Expediente: <strong id="acumularExpediente">-</strong></p>
-            <div class="form-group" style="margin-bottom: 16px;">
-                <label class="form-label">Acumular a:</label>
-                <select id="selectAcumularA" class="form-select">
-                    <option value="">Sin acumular</option>
+            <p style="margin-bottom: 12px; font-size: 13px; color: var(--color-text-light);">Materia: <strong id="acumularMateria">-</strong> | JSJ: <strong id="acumularJSJ">-</strong></p>
+            <div id="acumularJSJFilterGroup" class="form-group" style="margin-bottom: 12px; display: none;">
+                <label class="form-label">Filtrar por JSJ:</label>
+                <select id="selectAcumularJSJ" class="form-select" onchange="buscarExpedientesAcumular()">
+                    <option value="">Todas las JSJ</option>
                 </select>
-                <small style="color: var(--color-text-light);">Al acumular, el estatus del asunto cambiará a CONCLUIDO</small>
             </div>
+            <div class="form-group" style="margin-bottom: 8px;">
+                <label class="form-label">Buscar expediente:</label>
+                <input type="text" id="inputBuscarAcumular" class="form-input" placeholder="Escriba número de expediente..." oninput="buscarExpedientesAcumular()">
+            </div>
+            <div id="resultadosAcumular" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: 8px;">
+                <div style="padding: 12px; color: var(--color-text-light); text-align: center; font-size: 13px;">Escriba para buscar expedientes</div>
+            </div>
+            <input type="hidden" id="selectAcumularA" value="">
+            <small style="color: var(--color-text-light); display: block; margin-bottom: 12px;">Al acumular, el estatus del asunto cambiará a CONCLUIDO</small>
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button onclick="cerrarModalAcumular()" class="btn btn-secondary">Cancelar</button>
                 <button onclick="guardarAcumulacion()" class="btn btn-success">Guardar</button>

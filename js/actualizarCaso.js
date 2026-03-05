@@ -25,11 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
 
-    // Mostrar sección exclusiva solo para admin
-    if (usuario.rol === 'admin') {
-        document.getElementById('seccionExclusiva').style.display = 'block';
-    }
-
     const urlParams = new URLSearchParams(window.location.search);
     const casoId = parseInt(urlParams.get('id'));
 
@@ -92,11 +87,6 @@ function llenarFormulario() {
     // Descripción
     if (seg.descripcion) {
         document.getElementById('descripcionActuacion').value = seg.descripcion;
-    }
-
-    // ¿Actualizado en el SIIJ? (solo admin)
-    if (seg.actualizado_siij && usuarioActualAct && usuarioActualAct.rol === 'admin') {
-        document.getElementById('actualizadoSIIJ').value = seg.actualizado_siij;
     }
 
     // Documentos existentes
@@ -242,11 +232,6 @@ function guardarActualizacion(e) {
     casoActual.seguimiento.tipo_actuacion = tipoActuacion;
     casoActual.seguimiento.descripcion = descripcion;
 
-    // Campo exclusivo admin
-    if (usuarioActualAct && usuarioActualAct.rol === 'admin') {
-        casoActual.seguimiento.actualizado_siij = document.getElementById('actualizadoSIIJ').value || null;
-    }
-
     casoActual.fecha_vencimiento = fechaVencimiento;
     casoActual.fecha_actualizacion = new Date().toISOString();
 
@@ -272,7 +257,7 @@ function guardarActualizacion(e) {
             casoActual.documentos.push({
                 nombre: file.name,
                 tamaño: file.size,
-                fecha: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' }),
+                fecha: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' }),
                 data: base64
             });
 

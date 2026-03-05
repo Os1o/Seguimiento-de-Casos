@@ -51,7 +51,7 @@ function llenarDelegaciones(usuario) {
         select.appendChild(option);
     });
 
-    // Si no es admin, pre-seleccionar y bloquear OOAD
+    // Si no es admin, pre-seleccionar y bloquear JSJ
     if (usuario && usuario.rol !== 'admin' && usuario.delegacion_id) {
         select.value = usuario.delegacion_id;
         select.disabled = true;
@@ -83,6 +83,19 @@ function llenarTribunales(usuario, delegacionId) {
 }
 
 function llenarPrestaciones() {
+    // Llenar select de prestación principal
+    const selectPrincipal = document.getElementById('prestacionPrincipal');
+    if (selectPrincipal) {
+        selectPrincipal.innerHTML = '<option value="">Seleccione...</option>';
+        catalogos.prestaciones.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = p.nombre;
+            selectPrincipal.appendChild(option);
+        });
+    }
+
+    // Llenar multiselect de prestaciones secundarias
     const container = document.getElementById('prestacionesOpciones');
     container.innerHTML = '';
     catalogos.prestaciones.forEach(p => {
@@ -654,10 +667,16 @@ function construirObjetoCaso() {
     // Codemandados
     const codemandados = obtenerPersonasDinamicas('codemandado_');
 
-    // Prestaciones (array de IDs) - desde multiselect dropdown
-    const prestacionesSeleccionadas = [];
+    // Prestación principal (single select)
+    const prestacionPrincipal = parseInt(document.getElementById('prestacionPrincipal').value) || null;
+
+    // Prestaciones secundarias (multiselect) - excluir la principal si fue seleccionada
+    const prestacionesSecundarias = [];
     document.querySelectorAll('#prestacionesOpciones input[type="checkbox"]:checked').forEach(cb => {
-        prestacionesSeleccionadas.push(parseInt(cb.value));
+        const val = parseInt(cb.value);
+        if (val !== prestacionPrincipal) {
+            prestacionesSecundarias.push(val);
+        }
     });
 
     // Importe
@@ -686,7 +705,8 @@ function construirObjetoCaso() {
         actores: actores,
         demandados: demandados,
         codemandados: codemandados,
-        prestaciones_reclamadas: prestacionesSeleccionadas,
+        prestacion_principal: prestacionPrincipal,
+        prestaciones_secundarias: prestacionesSecundarias,
         prestaciones_notas: document.getElementById('prestacionesNotas').value,
         importe_demandado: importeDemandado,
         abogado_responsable: document.getElementById('abogadoResponsable').value || null,
@@ -740,8 +760,8 @@ function obtenerPersonasDinamicas(prefijo) {
 }
 
 function validarCaso(caso) {
-    if (!caso.prestaciones_reclamadas || caso.prestaciones_reclamadas.length === 0) {
-        alert('Debe seleccionar al menos una prestacion reclamada');
+    if (!caso.prestacion_principal) {
+        alert('Debe seleccionar una prestación principal');
         return false;
     }
 

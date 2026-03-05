@@ -2,7 +2,7 @@
 // DATOS FAKE PARA MAQUETA FUNCIONAL
 // =====================================================
 
-// CATÁLOGOS (Datos reales IMSS - 2-3 áreas por OOAD)
+// CATÁLOGOS (Datos reales IMSS - 2-3 áreas por JSJ)
 const catalogos = {
   delegaciones: [
     { id: 1, nombre: "AGUASCALIENTES", estado: "Aguascalientes" },
@@ -254,7 +254,8 @@ const casosFake = [
     codemandados: [
       { tipo_persona: "MORAL", empresa: "Constructora del Sur S.A." }
     ],
-    prestacion_reclamada: 1, // Indemnización
+    prestacion_principal: 1,
+    prestaciones_secundarias: [4, 21],
     prestaciones_notas: "Daño estructural en vivienda colindante",
     importe_demandado: 500000.00,
     abogado_responsable: "Lic. Fernando Ruiz Díaz",
@@ -295,7 +296,8 @@ const casosFake = [
     },
     demandados: [],
     codemandados: [],
-    prestacion_reclamada: 1,
+    prestacion_principal: 1,
+    prestaciones_secundarias: [],
     prestaciones_notas: "Afectaciones por humedad en muro compartido",
     importe_demandado: 150000.00,
     abogado_responsable: "Lic. Fernando Ruiz Díaz",
@@ -329,7 +331,8 @@ const casosFake = [
       { tipo_persona: "FISICA", nombres: "Juan", apellido_paterno: "Pérez", apellido_materno: "López" }
     ],
     codemandados: [],
-    prestacion_reclamada: 4, // Resp. Civil
+    prestacion_principal: 4,
+    prestaciones_secundarias: [2],
     prestaciones_notas: "Reclamo de póliza de seguro",
     importe_demandado: 0,
     pronostico: "DESFAVORABLE",
@@ -364,7 +367,8 @@ const casosFake = [
     codemandados: [
       { tipo_persona: "FISICA", nombres: "Carlos", apellido_paterno: "Villagrán", apellido_materno: "Eslava" }
     ],
-    prestacion_reclamada: 3, // Cumplimiento contrato
+    prestacion_principal: 3,
+    prestaciones_secundarias: [20, 27],
     prestaciones_notas: "Incumplimiento en entrega de insumos médicos",
     importe_demandado: 2500000.00,
     abogado_responsable: "Lic. Adriana Soto Mendoza",
@@ -401,7 +405,8 @@ const casosFake = [
       { tipo_persona: "MORAL", empresa: "Proveedora Médica del Norte" }
     ],
     codemandados: [],
-    prestacion_reclamada: 3,
+    prestacion_principal: 3,
+    prestaciones_secundarias: [],
     prestaciones_notas: "Cobro de penalizaciones contractuales",
     importe_demandado: 120000.00,
     pronostico: "FAVORABLE",
@@ -434,7 +439,8 @@ const casosFake = [
       { tipo_persona: "FISICA", nombres: "Empleado", apellido_paterno: "Desconocido", apellido_materno: "N." }
     ],
     codemandados: [],
-    prestacion_reclamada: 10, // Nulidad/Otros
+    prestacion_principal: 10,
+    prestaciones_secundarias: [9],
     prestaciones_notas: "Informe de descuentos vía nómina",
     importe_demandado: 0,
     pronostico: "INCIERTO",
@@ -462,7 +468,8 @@ const casosFake = [
     actor: { tipo_persona: "FISICA", nombres: "Comisariado", apellido_paterno: "Ejidal", apellido_materno: "Tláhuac" },
     demandados: [],
     codemandados: [],
-    prestacion_reclamada: 4, // Resp Civil / Tierras
+    prestacion_principal: 4,
+    prestaciones_secundarias: [12],
     prestaciones_notas: "Restitución de tierras de la UMF 2",
     importe_demandado: 0,
     abogado_responsable: "Lic. Patricia Vega Noriega",
@@ -492,7 +499,8 @@ const casosFake = [
       { tipo_persona: "FISICA", nombres: "Luis", apellido_paterno: "Miguel", apellido_materno: "Gallego" }
     ],
     codemandados: [],
-    prestacion_reclamada: 9, // Rescisión
+    prestacion_principal: 9,
+    prestaciones_secundarias: [16],
     prestaciones_notas: "Falta de pago de renta inmueble administrativo",
     importe_demandado: 80000.00,
     abogado_responsable: "Lic. Miguel Ángel Torres",
@@ -520,7 +528,8 @@ const casosFake = [
     actor: { tipo_persona: "FISICA", nombres: "Juana", apellido_paterno: "Inés", apellido_materno: "De la Cruz" },
     demandados: [],
     codemandados: [],
-    prestacion_reclamada: 3, 
+    prestacion_principal: 3,
+    prestaciones_secundarias: [],
     prestaciones_notas: "Prescripción positiva predio almacén",
     importe_demandado: 0,
     pronostico: "INCIERTO",
@@ -550,7 +559,8 @@ const casosFake = [
       { tipo_persona: "MORAL", empresa: "Juez Concursal" }
     ],
     codemandados: [],
-    prestacion_reclamada: 3,
+    prestacion_principal: 3,
+    prestaciones_secundarias: [8, 33],
     prestaciones_notas: "Reconocimiento de créditos fiscales (Cuotas)",
     importe_demandado: 4500000.00,
     abogado_responsable: "Lic. Ricardo Monreal Ávila",
@@ -581,7 +591,8 @@ const casosFake = [
       { tipo_persona: "MORAL", empresa: "Afianzadora Nacional" }
     ],
     codemandados: [],
-    prestacion_reclamada: 3,
+    prestacion_principal: 3,
+    prestaciones_secundarias: [32],
     prestaciones_notas: "Cobro de fianza por vicios ocultos obra HGR 200",
     importe_demandado: 3000000.00,
     abogado_responsable: "Lic. Laura Esquivel Pérez",
@@ -609,7 +620,8 @@ const casosFake = [
     actor: { tipo_persona: "FISICA", nombres: "Pedro", apellido_paterno: "Infante", apellido_materno: "Cruz" },
     demandados: [],
     codemandados: [],
-    prestacion_reclamada: 5, // Daño moral
+    prestacion_principal: 5,
+    prestaciones_secundarias: [2, 37],
     prestaciones_notas: "Demanda por supuesta mala praxis administrativa",
     importe_demandado: 100000.00,
     abogado_responsable: "Lic. Fernando Ruiz Díaz",
@@ -646,7 +658,8 @@ const casosFake = [
       { tipo_persona: "MORAL", empresa: "Seguridad Privada Colima" }
     ],
     codemandados: [],
-    prestacion_reclamada: 9, // Rescisión
+    prestacion_principal: 9,
+    prestaciones_secundarias: [],
     prestaciones_notas: "Rescisión contrato seguridad por incumplimiento",
     importe_demandado: 0,
     pronostico: "INCIERTO",
@@ -674,7 +687,8 @@ const casosFake = [
     actor: { tipo_persona: "MORAL", empresa: "Sindicato Nacional" },
     demandados: [],
     codemandados: [],
-    prestacion_reclamada: 10, // Nulidad
+    prestacion_principal: 10,
+    prestaciones_secundarias: [17],
     prestaciones_notas: "Nulidad de convenio administrativo",
     importe_demandado: 0,
     pronostico: "DESFAVORABLE",
@@ -703,7 +717,8 @@ const casosFake = [
       { tipo_persona: "FISICA", nombres: "Jorge", apellido_paterno: "Negrete", apellido_materno: "Moreno" }
     ],
     codemandados: [],
-    prestacion_reclamada: 1, // Indemnización
+    prestacion_principal: 1,
+    prestaciones_secundarias: [26],
     prestaciones_notas: "Daños a vehículo oficial",
     importe_demandado: 45000.00,
     pronostico: "FAVORABLE",
@@ -731,7 +746,8 @@ const casosFake = [
     actor: { tipo_persona: "MORAL", empresa: "Proveedor de Limpieza S.A." },
     demandados: [],
     codemandados: [],
-    prestacion_reclamada: 2, // Prestaciones
+    prestacion_principal: 2,
+    prestaciones_secundarias: [21],
     prestaciones_notas: "Reclamo de intereses moratorios",
     importe_demandado: 50000.00,
     pronostico: "INCIERTO",
@@ -760,7 +776,8 @@ const casosFake = [
       { tipo_persona: "MORAL", empresa: "Arrendadora del Golfo" }
     ],
     codemandados: [],
-    prestacion_reclamada: 8, // Finiquito
+    prestacion_principal: 8,
+    prestaciones_secundarias: [],
     prestaciones_notas: "Devolución de depósito en garantía",
     importe_demandado: 30000.00,
     abogado_responsable: "Lic. Ana Martínez Solís",
@@ -789,7 +806,8 @@ const casosFake = [
     actor: { tipo_persona: "FISICA", nombres: "Comunidad", apellido_paterno: "Indígena", apellido_materno: "Tlapa" },
     demandados: [],
     codemandados: [],
-    prestacion_reclamada: 4,
+    prestacion_principal: 4,
+    prestaciones_secundarias: [12],
     prestaciones_notas: "Deslinde de terrenos Hospital Rural",
     importe_demandado: 0,
     abogado_responsable: "Lic. Patricia Vega Noriega",
@@ -824,7 +842,8 @@ const casosFake = [
     actor: { tipo_persona: "MORAL", empresa: "Papelería del Centro" },
     demandados: [],
     codemandados: [],
-    prestacion_reclamada: 2,
+    prestacion_principal: 2,
+    prestaciones_secundarias: [21, 27],
     prestaciones_notas: "Pago de facturas rezagadas 2023",
     importe_demandado: 15000.00,
     pronostico: "DESFAVORABLE",
@@ -856,7 +875,8 @@ const casosFake = [
     codemandados: [
       { tipo_persona: "MORAL", empresa: "Avales Unidos S.A." }
     ],
-    prestacion_reclamada: 1,
+    prestacion_principal: 1,
+    prestaciones_secundarias: [26, 37],
     prestaciones_notas: "Recuperación de gastos por subrogación de servicios",
     importe_demandado: 85000.00,
     abogado_responsable: "Lic. Adriana Soto Mendoza",
@@ -995,6 +1015,6 @@ function formatearFecha(fecha) {
   if (isNaN(d.getTime())) return fecha;
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${dd}/${mm}/${yy}`;
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
 }

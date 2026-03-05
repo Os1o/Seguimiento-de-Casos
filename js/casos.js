@@ -40,13 +40,13 @@ document.addEventListener('DOMContentLoaded', function () {
         badgeRol.className = 'badge-rol badge-rol-' + usuario.rol;
     }
 
-    // Mostrar OOAD del usuario
+    // Mostrar JSJ del usuario
     const infoOOAD = document.getElementById('infoOOAD');
     if (infoOOAD && usuario.delegacion_id) {
         const deleg = obtenerDelegacion(usuario.delegacion_id);
         if (deleg) infoOOAD.textContent = deleg.nombre;
     } else if (infoOOAD && (usuario.rol === 'admin' || !usuario.delegacion_id)) {
-        infoOOAD.textContent = 'Todas las delegaciones';
+        infoOOAD.textContent = 'Todas las JSJ';
     }
 
     // Mostrar/ocultar enlace de admin
@@ -61,12 +61,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btnNuevo) btnNuevo.style.display = 'none';
     }
 
-    // Ocultar filtro de delegación para usuarios con OOAD fijo (ya está filtrado por su OOAD)
+    // Ocultar filtro de delegación para usuarios con JSJ fija (ya está filtrado por su JSJ)
     // Si no tiene delegacion_id (ej. consulta global), dejar el filtro visible
     if (usuario.rol !== 'admin' && usuario.delegacion_id) {
         const btnFiltroDelegacion = document.getElementById('btn_filtroDelegacion');
         if (btnFiltroDelegacion) {
-            btnFiltroDelegacion.closest('th').innerHTML = '<span style="padding:0 10px;font-size:13px;">OOAD/UMAE</span>';
+            btnFiltroDelegacion.closest('th').innerHTML = '<span style="padding:0 10px;font-size:13px;">JSJ</span>';
         }
     }
 
@@ -76,8 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Inicializar click en dona
     inicializarClickDona();
 
-    // Llenar filtros
-    llenarFiltros();
+    // Filtros ahora son reactivos (se calculan dinámicamente en toggleFiltro)
 
     // Event listeners para búsqueda
     document.getElementById('searchInput').addEventListener('input', filtrarCasos);
@@ -123,7 +122,7 @@ function cargarCasos() {
     // Guardar en localStorage con las fechas asignadas
     localStorage.setItem('casos', JSON.stringify(todosLosCasosSinFiltro));
 
-    // Filtrar por OOAD del usuario (si no es admin)
+    // Filtrar por JSJ del usuario (si no es admin)
     if (usuarioActual && usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
         todosLosCasos = todosLosCasosSinFiltro.filter(c => c.delegacion_id === usuarioActual.delegacion_id);
     } else {
@@ -199,6 +198,9 @@ function toggleFiltro(id, boton) {
     panel.style.top = (rect.bottom + window.scrollY + 4) + 'px';
     panel.style.left = (rect.left + window.scrollX) + 'px';
 
+    // FILTROS REACTIVOS: calcular opciones disponibles según los otros filtros activos
+    const opcionesDisponibles = calcularOpcionesDisponibles(id);
+
     // Construir opciones
     lista.innerHTML = '';
 
@@ -208,17 +210,95 @@ function toggleFiltro(id, boton) {
     opcionTodos.onclick = () => seleccionarFiltro(id, '', 'Todos');
     lista.appendChild(opcionTodos);
 
-    opcionesFiltros[id].forEach(op => {
+    opcionesDisponibles.forEach(op => {
         const item = document.createElement('div');
         item.className = 'filtro-opcion';
-        if (estadoFiltros[id] === op.valor) item.classList.add('filtro-opcion-seleccionada');
-        item.textContent = op.etiqueta;
+        if (estadoFiltros[id] == op.valor) item.classList.add('filtro-opcion-seleccionada');
+        item.textContent = op.etiqueta + ' (' + op.count + ')';
         item.onclick = () => seleccionarFiltro(id, op.valor, op.etiqueta);
         lista.appendChild(item);
     });
 
     panel.style.display = 'block';
     filtroAbierto = id;
+}
+
+function calcularOpcionesDisponibles(filtroActual) {
+    // Filtrar casos con todos los filtros EXCEPTO el filtro actual
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+
+    const casosBase = todosLosCasos.filter(caso => {
+        // Busqueda
+        let cumpleBusqueda = true;
+        if (searchTerm) {
+            const expediente = (caso.numero_expediente || '').toLowerCase();
+            const actorNombre = (getActorNombre(caso) || '').toLowerCase();
+            const demandadosNombre = (getDemandadosNombres(caso) || '').toLowerCase();
+            cumpleBusqueda = expediente.includes(searchTerm) || actorNombre.includes(searchTerm) || demandadosNombre.includes(searchTerm);
+        }
+
+        // Aplicar todos los filtros EXCEPTO el filtro actual
+        const cumpleDelegacion = filtroActual === 'filtroDelegacion' || !estadoFiltros.filtroDelegacion || caso.delegacion_id == estadoFiltros.filtroDelegacion;
+        const cumpleEstatus = filtroActual === 'filtroEstatus' || !estadoFiltros.filtroEstatus || caso.estatus === estadoFiltros.filtroEstatus;
+        const cumpleTipo = filtroActual === 'filtroTipo' || !estadoFiltros.filtroTipo || caso.tipo_juicio === estadoFiltros.filtroTipo;
+        const cumpleJurisdiccion = filtroActual === 'filtroJurisdiccion' || !estadoFiltros.filtroJurisdiccion || caso.jurisdiccion === estadoFiltros.filtroJurisdiccion;
+        const cumplePosicionIMSS = filtroActual === 'filtroPosicionIMSS' || !estadoFiltros.filtroPosicionIMSS || caso.imss_es === estadoFiltros.filtroPosicionIMSS;
+
+        let cumplePronostico = true;
+        if (filtroPronosticoDona) {
+            const pron = caso.pronostico || (caso.seguimiento && caso.seguimiento.pronostico) || null;
+            if (filtroPronosticoDona === 'FAVORABLE') cumplePronostico = pron === 'FAVORABLE';
+            else if (filtroPronosticoDona === 'DESFAVORABLE') cumplePronostico = pron === 'DESFAVORABLE';
+            else if (filtroPronosticoDona === 'SIN_PRONOSTICO') cumplePronostico = !pron;
+        }
+
+        return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleJurisdiccion && cumplePosicionIMSS && cumplePronostico;
+    });
+
+    // Extraer valores únicos con conteo para el filtro actual
+    const conteo = {};
+
+    casosBase.forEach(caso => {
+        let valor, etiqueta;
+
+        switch (filtroActual) {
+            case 'filtroDelegacion':
+                valor = caso.delegacion_id;
+                const deleg = obtenerDelegacion(caso.delegacion_id);
+                etiqueta = deleg ? deleg.nombre : 'Desconocida';
+                break;
+            case 'filtroEstatus':
+                valor = caso.estatus;
+                etiqueta = caso.estatus === 'TRAMITE' ? 'Trámite' : 'Concluido';
+                break;
+            case 'filtroTipo':
+                valor = caso.tipo_juicio;
+                etiqueta = caso.tipo_juicio;
+                break;
+            case 'filtroJurisdiccion':
+                valor = caso.jurisdiccion;
+                etiqueta = caso.jurisdiccion === 'LOCAL' ? 'Local' : 'Federal';
+                break;
+            case 'filtroPosicionIMSS':
+                valor = caso.imss_es;
+                etiqueta = caso.imss_es === 'ACTOR' ? 'Actor' : caso.imss_es === 'DEMANDADO' ? 'Demandado' : 'Tercero';
+                break;
+        }
+
+        if (valor !== undefined && valor !== null) {
+            if (!conteo[valor]) {
+                conteo[valor] = { valor, etiqueta, count: 0 };
+            }
+            conteo[valor].count++;
+        }
+    });
+
+    return Object.values(conteo).sort((a, b) => {
+        if (typeof a.etiqueta === 'string' && typeof b.etiqueta === 'string') {
+            return a.etiqueta.localeCompare(b.etiqueta);
+        }
+        return 0;
+    });
 }
 
 function seleccionarFiltro(filtroId, valor, etiqueta) {
@@ -539,25 +619,29 @@ function getCodemandadosNombres(caso) {
 }
 
 function getPrestacionesTexto(caso) {
-    // Compatibilidad: nuevo formato (array de IDs) y viejo (un solo ID)
-    let ids = [];
-    if (caso.prestaciones_reclamadas && Array.isArray(caso.prestaciones_reclamadas)) {
-        ids = caso.prestaciones_reclamadas;
+    // Nuevo modelo: prestacion_principal + prestaciones_secundarias
+    let principalId = caso.prestacion_principal || null;
+    let numSecundarias = 0;
+
+    if (principalId) {
+        numSecundarias = (caso.prestaciones_secundarias && caso.prestaciones_secundarias.length) || 0;
+    } else if (caso.prestaciones_reclamadas && Array.isArray(caso.prestaciones_reclamadas)) {
+        // Fallback formato anterior
+        principalId = caso.prestaciones_reclamadas[0];
+        numSecundarias = caso.prestaciones_reclamadas.length - 1;
     } else if (caso.prestacion_reclamada) {
-        ids = [caso.prestacion_reclamada];
+        principalId = caso.prestacion_reclamada;
     }
 
-    if (ids.length === 0) return '-';
+    if (!principalId) return '-';
 
-    const nombres = ids.map(id => {
-        const p = catalogos.prestaciones.find(pr => pr.id === id);
-        return p ? p.nombre : '';
-    }).filter(Boolean);
+    const principal = catalogos.prestaciones.find(p => p.id === principalId);
+    const nombrePrincipal = principal ? principal.nombre : 'Desconocida';
 
-    if (nombres.length === 0) return '-';
-    if (nombres.length === 1) return nombres[0];
-    // Mostrar la primera y cuantas mas hay
-    return `${nombres[0]} <span style="color: var(--color-text-light);">+${nombres.length - 1} más</span>`;
+    if (numSecundarias > 0) {
+        return `${nombrePrincipal} <span style="color: var(--color-text-light);">+${numSecundarias}</span>`;
+    }
+    return nombrePrincipal;
 }
 
 function obtenerNumeroExpediente(casoId) {
@@ -620,36 +704,116 @@ function abrirModalAcumular(casoId) {
 
     casoAcumularId = casoId;
     document.getElementById('acumularExpediente').textContent = caso.numero_expediente;
+    document.getElementById('acumularMateria').textContent = caso.tipo_juicio;
 
-    // Llenar select con casos acumulables
-    const select = document.getElementById('selectAcumularA');
-    select.innerHTML = '<option value="">Sin acumular</option>';
+    const deleg = obtenerDelegacion(caso.delegacion_id);
+    document.getElementById('acumularJSJ').textContent = deleg ? deleg.nombre : '---';
+
+    // Limpiar búsqueda y resultados
+    document.getElementById('inputBuscarAcumular').value = '';
+    document.getElementById('selectAcumularA').value = caso.acumulado_a || '';
+    document.getElementById('resultadosAcumular').innerHTML = '<div style="padding: 12px; color: var(--color-text-light); text-align: center; font-size: 13px;">Escriba para buscar expedientes</div>';
+
+    // Filtro JSJ: solo para admin
+    const jsjFilterGroup = document.getElementById('acumularJSJFilterGroup');
+    const selectJSJ = document.getElementById('selectAcumularJSJ');
+    if (usuarioActual && usuarioActual.rol === 'admin') {
+        jsjFilterGroup.style.display = 'block';
+        selectJSJ.innerHTML = '<option value="">Todas las JSJ</option>';
+        catalogos.delegaciones.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.nombre;
+            selectJSJ.appendChild(opt);
+        });
+        // Pre-seleccionar la JSJ del caso actual
+        selectJSJ.value = caso.delegacion_id;
+    } else {
+        jsjFilterGroup.style.display = 'none';
+    }
+
+    // Si ya está acumulado, mostrar el caso padre
+    if (caso.acumulado_a) {
+        const casoPadre = casos.find(c => c.id === caso.acumulado_a);
+        if (casoPadre) {
+            document.getElementById('inputBuscarAcumular').value = casoPadre.numero_expediente;
+            buscarExpedientesAcumular();
+        }
+    }
+
+    document.getElementById('modalAcumular').style.display = 'flex';
+}
+
+function buscarExpedientesAcumular() {
+    const casosStr = localStorage.getItem('casos');
+    const casos = casosStr ? JSON.parse(casosStr) : [];
+    const caso = casos.find(c => c.id === casoAcumularId);
+    if (!caso) return;
+
+    const termino = document.getElementById('inputBuscarAcumular').value.trim().toLowerCase();
+    const contenedor = document.getElementById('resultadosAcumular');
+    const hiddenInput = document.getElementById('selectAcumularA');
+
+    if (termino.length < 2) {
+        contenedor.innerHTML = '<div style="padding: 12px; color: var(--color-text-light); text-align: center; font-size: 13px;">Escriba al menos 2 caracteres</div>';
+        return;
+    }
 
     const fechaActual = caso.fecha_inicio ? new Date(caso.fecha_inicio) : null;
     const materiaActual = caso.tipo_juicio;
 
-    const acumulables = casos.filter(c =>
+    // Determinar JSJ para filtrar
+    let jsjFiltro = null;
+    if (usuarioActual && usuarioActual.rol === 'admin') {
+        const selectJSJ = document.getElementById('selectAcumularJSJ');
+        jsjFiltro = selectJSJ.value ? parseInt(selectJSJ.value) : null;
+    } else if (usuarioActual && usuarioActual.delegacion_id) {
+        jsjFiltro = usuarioActual.delegacion_id;
+    }
+
+    const resultados = casos.filter(c =>
         c.id !== caso.id &&
         c.estatus === 'TRAMITE' &&
         !c.acumulado_a &&
         c.tipo_juicio === materiaActual &&
-        fechaActual && c.fecha_inicio && new Date(c.fecha_inicio) < fechaActual
+        (!jsjFiltro || c.delegacion_id === jsjFiltro) &&
+        fechaActual && c.fecha_inicio && new Date(c.fecha_inicio) < fechaActual &&
+        (c.numero_expediente || '').toLowerCase().includes(termino)
     );
 
-    acumulables.forEach(c => {
-        const option = document.createElement('option');
-        option.value = c.id;
-        const actorNombre = getActorNombre(c) || 'N/A';
-        option.textContent = `${c.numero_expediente} - ${actorNombre}`;
-        select.appendChild(option);
-    });
-
-    // Pre-seleccionar si ya está acumulado
-    if (caso.acumulado_a) {
-        select.value = caso.acumulado_a;
+    if (resultados.length === 0) {
+        contenedor.innerHTML = '<div style="padding: 12px; color: var(--color-text-light); text-align: center; font-size: 13px;">No se encontraron expedientes</div>';
+        return;
     }
 
-    document.getElementById('modalAcumular').style.display = 'flex';
+    const seleccionadoActual = hiddenInput.value;
+
+    contenedor.innerHTML = resultados.slice(0, 10).map(c => {
+        const actorNombre = getActorNombre(c) || 'N/A';
+        const delegNombre = obtenerDelegacion(c.delegacion_id);
+        const isSelected = parseInt(seleccionadoActual) === c.id;
+        return `
+            <div onclick="seleccionarCasoAcumular(${c.id})"
+                 style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--color-border); ${isSelected ? 'background: #e8f5e9;' : ''}"
+                 onmouseover="this.style.background='${isSelected ? '#c8e6c9' : '#f5f5f5'}'"
+                 onmouseout="this.style.background='${isSelected ? '#e8f5e9' : ''}'">
+                <div style="font-weight: 600; font-size: 14px;">${c.numero_expediente}</div>
+                <div style="font-size: 12px; color: var(--color-text-light);">${actorNombre} · ${delegNombre ? delegNombre.nombre : ''}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function seleccionarCasoAcumular(casoId) {
+    const hiddenInput = document.getElementById('selectAcumularA');
+    if (parseInt(hiddenInput.value) === casoId) {
+        // Deseleccionar
+        hiddenInput.value = '';
+    } else {
+        hiddenInput.value = casoId;
+    }
+    // Re-renderizar para mostrar selección
+    buscarExpedientesAcumular();
 }
 
 function cerrarModalAcumular() {
@@ -797,7 +961,7 @@ function confirmarEliminar(casoId) {
         return;
     }
 
-    // Trabajar con TODOS los casos del localStorage (no solo los filtrados por OOAD)
+    // Trabajar con TODOS los casos del localStorage (no solo los filtrados por JSJ)
     const casosStr = localStorage.getItem('casos');
     let todosCasosGlobal = casosStr ? JSON.parse(casosStr) : [];
 

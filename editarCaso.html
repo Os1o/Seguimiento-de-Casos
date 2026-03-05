@@ -41,7 +41,7 @@
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label required">OOAD / UMAE</label>
+                        <label class="form-label required">JSJ</label>
                         <select id="delegacion" class="form-select" required>
                             <option value="">Seleccione...</option>
                         </select>
@@ -218,7 +218,14 @@
                 <h3 class="form-section-title">Prestaciones</h3>
 
                 <div class="form-group">
-                    <label class="form-label required">Prestaciones Reclamadas</label>
+                    <label class="form-label required">Prestación Principal</label>
+                    <select id="prestacionPrincipal" class="form-select" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Prestaciones Secundarias</label>
                     <div id="prestacionesMultiselect" class="multiselect-container">
                         <div class="multiselect-trigger" id="prestacionesTrigger" onclick="toggleMultiselectPrestaciones()">
                             <span class="multiselect-placeholder" id="prestacionesPlaceholder">Seleccione prestaciones...</span>

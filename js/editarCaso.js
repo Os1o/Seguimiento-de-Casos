@@ -83,7 +83,7 @@ function llenarDelegaciones(usuario) {
         select.appendChild(option);
     });
 
-    // Si no es admin, bloquear OOAD
+    // Si no es admin, bloquear JSJ
     if (usuario && usuario.rol !== 'admin' && usuario.delegacion_id) {
         select.value = usuario.delegacion_id;
         select.disabled = true;
@@ -112,6 +112,19 @@ function llenarTribunales(usuario, delegacionId) {
 }
 
 function llenarPrestaciones() {
+    // Llenar select de prestación principal
+    const selectPrincipal = document.getElementById('prestacionPrincipal');
+    if (selectPrincipal) {
+        selectPrincipal.innerHTML = '<option value="">Seleccione...</option>';
+        catalogos.prestaciones.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = p.nombre;
+            selectPrincipal.appendChild(option);
+        });
+    }
+
+    // Llenar multiselect de prestaciones secundarias
     const container = document.getElementById('prestacionesOpciones');
     container.innerHTML = '';
     catalogos.prestaciones.forEach(p => {
@@ -341,9 +354,22 @@ function llenarFormulario() {
         });
     }
 
-    // 10. PRESTACIONES (compatibilidad: prestacion_reclamada -> prestaciones_reclamadas)
-    const prestaciones = obtenerPrestacionesDelCaso();
-    prestaciones.forEach(pId => {
+    // 10. PRESTACIONES - Principal y Secundarias
+    // Cargar prestación principal
+    const selectPrincipal = document.getElementById('prestacionPrincipal');
+    if (selectPrincipal && casoActual.prestacion_principal) {
+        selectPrincipal.value = casoActual.prestacion_principal;
+    } else if (selectPrincipal && casoActual.prestacion_reclamada) {
+        selectPrincipal.value = casoActual.prestacion_reclamada;
+    }
+
+    // Cargar prestaciones secundarias
+    const secundarias = casoActual.prestaciones_secundarias || [];
+    // Fallback: si tiene prestaciones_reclamadas array, cargar todas excepto la primera como secundarias
+    const idsSecundarias = secundarias.length > 0 ? secundarias :
+        (casoActual.prestaciones_reclamadas ? casoActual.prestaciones_reclamadas.slice(1) : []);
+
+    idsSecundarias.forEach(pId => {
         const cb = document.getElementById(`prestacion_${pId}`);
         if (cb) {
             cb.checked = true;
@@ -386,6 +412,13 @@ function obtenerActoresDelCaso() {
 function obtenerPrestacionesDelCaso() {
     if (casoActual.prestaciones_reclamadas && Array.isArray(casoActual.prestaciones_reclamadas)) {
         return casoActual.prestaciones_reclamadas;
+    }
+    if (casoActual.prestacion_principal) {
+        const ids = [casoActual.prestacion_principal];
+        if (casoActual.prestaciones_secundarias && Array.isArray(casoActual.prestaciones_secundarias)) {
+            ids.push(...casoActual.prestaciones_secundarias);
+        }
+        return ids;
     }
     if (casoActual.prestacion_reclamada) {
         return [casoActual.prestacion_reclamada];
@@ -787,8 +820,8 @@ function guardarCambios(e) {
     const casoEditado = construirObjetoCaso();
 
     // Validar
-    if (!casoEditado.prestaciones_reclamadas || casoEditado.prestaciones_reclamadas.length === 0) {
-        alert('Debe seleccionar al menos una prestacion reclamada');
+    if (!casoEditado.prestacion_principal) {
+        alert('Debe seleccionar una prestación principal');
         return;
     }
 
@@ -850,10 +883,16 @@ function construirObjetoCaso() {
     // Codemandados
     const codemandados = obtenerPersonasDinamicas('codemandado_');
 
-    // Prestaciones (array de IDs) - desde multiselect dropdown
-    const prestacionesSeleccionadas = [];
+    // Prestación principal (single select)
+    const prestacionPrincipal = parseInt(document.getElementById('prestacionPrincipal').value) || null;
+
+    // Prestaciones secundarias (multiselect) - excluir la principal
+    const prestacionesSecundarias = [];
     document.querySelectorAll('#prestacionesOpciones input[type="checkbox"]:checked').forEach(cb => {
-        prestacionesSeleccionadas.push(parseInt(cb.value));
+        const val = parseInt(cb.value);
+        if (val !== prestacionPrincipal) {
+            prestacionesSecundarias.push(val);
+        }
     });
 
     // Importe
@@ -881,7 +920,8 @@ function construirObjetoCaso() {
         actores: actores,
         demandados: demandados,
         codemandados: codemandados,
-        prestaciones_reclamadas: prestacionesSeleccionadas,
+        prestacion_principal: prestacionPrincipal,
+        prestaciones_secundarias: prestacionesSecundarias,
         prestaciones_notas: document.getElementById('prestacionesNotas').value,
         importe_demandado: importeDemandado,
         abogado_responsable: document.getElementById('abogadoResponsable').value || null,
