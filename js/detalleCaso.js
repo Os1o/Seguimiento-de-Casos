@@ -266,16 +266,16 @@ function renderizarCaso() {
     
     // Actores
     const actores = obtenerActoresDelCaso();
-    renderizarPartesCompactas('Actor', actores, casoActual.imss_es);
+    renderizarPartesCompactas('Actor', actores);
     
     // Demandados
     if (casoActual.demandados && Array.isArray(casoActual.demandados)) {
-        renderizarPartesCompactas('Demandado', casoActual.demandados, casoActual.imss_es);
+        renderizarPartesCompactas('Demandado', casoActual.demandados);
     }
     
     // Codemandados
     if (casoActual.codemandados && Array.isArray(casoActual.codemandados)) {
-        renderizarPartesCompactas('Codemandado', casoActual.codemandados, casoActual.imss_es);
+        renderizarPartesCompactas('Codemandado', casoActual.codemandados);
     }
 
     // === ACUMULADOS ===
@@ -330,7 +330,7 @@ function renderizarCaso() {
 }
 
 // === RENDERIZAR PARTES EN FORMATO COMPACTO ===
-function renderizarPartesCompactas(tipo, partes, imssEs) {
+/*function renderizarPartesCompactas(tipo, partes, imssEs) {
     const seccion = document.getElementById(`seccion${tipo}`);
     const lista = document.getElementById(`${tipo.toLowerCase()}Info`);
     const count = document.getElementById(`${tipo.toLowerCase()}Count`);
@@ -372,7 +372,57 @@ function renderizarPartesCompactas(tipo, partes, imssEs) {
             </div>
         `;
     }).filter(html => html && html.trim() !== '').join('');
+}*/
+
+
+// === RENDERIZAR PARTES (SIN FILTRO IMSS) ===
+function renderizarPartesCompactas(tipo, partes) {
+    const seccion = document.getElementById(`seccion${tipo}`);
+    const lista = document.getElementById(`${tipo.toLowerCase()}Info`);
+    const count = document.getElementById(`${tipo.toLowerCase()}Count`);
+    
+    // Validación básica de elementos
+    if (!seccion || !lista) {
+        console.warn(`No se encontró seccion o lista para ${tipo}`);
+        return;
+    }
+    
+    // Si no hay partes, ocultar sección
+    if (!partes || !Array.isArray(partes) || partes.length === 0) {
+        seccion.style.display = 'none';
+        return;
+    }
+    
+    // Mostrar sección y contador
+    seccion.style.display = 'block';
+    if (count) {
+        count.textContent = partes.length;
+    }
+    
+    // Generar HTML de cada parte
+    lista.innerHTML = partes.map((persona, index) => {
+        if (!persona) return '';
+        
+        // Obtener nombre según tipo de persona
+        const nombre = persona.tipo_persona === 'FISICA' 
+            ? `${persona.nombres || ''} ${persona.apellido_paterno || ''} ${persona.apellido_materno || ''}`.trim()
+            : (persona.empresa || persona.nombre || persona.entidad || '---');
+        
+        const tipoBadge = persona.tipo_persona === 'FISICA' ? 'fisica' : 'moral';
+        const tipoTexto = persona.tipo_persona === 'FISICA' ? 'Persona Física' : 'Persona Moral';
+        
+        return `
+            <div class="parte-item parte-${tipo.toLowerCase()}">
+                <div class="parte-info">
+                    <span class="parte-num">${String(index + 1).padStart(2, '0')}</span>
+                    <span class="parte-nombre">${nombre}</span>
+                </div>
+                <span class="parte-tipo-badge ${tipoBadge}">${tipoTexto}</span>
+            </div>
+        `;
+    }).filter(html => html && html.trim() !== '').join('');
 }
+
 
 // Compatibilidad: obtener actores como array
 function obtenerActoresDelCaso() {
