@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle del Asunto - Sistema de Gestion de Juicios</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header-gob">
+        <div class="header-logo">
+            <span class="logo-text">Gobierno de México</span>
+        </div>
+        <nav class="header-nav">
+            <a href="casos.html" class="btn-header-link">&larr; Inicio</a>
+            <div class="header-user">
+                <span id="nombreUsuario">Cargando...</span>
+            </div>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </nav>
+    </header>
+
+    <!-- Contenido Principal -->
+    <div class="container">
+        <!-- Breadcrumbs -->
+        <div class="breadcrumbs">
+            <a href="casos.html" class="breadcrumb-link">Asuntos</a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current" id="breadcrumbExpediente">Detalle</span>
+        </div>
+
+        <!-- Header del Caso -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    Expediente: <span id="numeroExpediente">---</span>
+                    <span class="badge-estatus" id="badgeEstatus">---</span>
+                </h1>
+                <p class="page-subtitle">
+                    Registrado el <span id="fechaCreacion">---</span>
+                    <span id="fechaActualizacionInfo"
+                        style="display: none; margin-left: 12px; color: var(--color-text-light);">
+                        • Última actualización: <span id="fechaActualizacion">---</span>
+                    </span>
+                </p>
+            </div>
+        </div>
+        <!-- Seccion 1: Datos del Registro -->
+        <div class="seccion">
+            <h3>Datos del Registro</h3>
+
+            <div class="campo-grupo">
+                <div class="campo">
+                    <span class="campo-label">Delegacion</span>
+                    <div class="campo-valor" id="delegacion">---</div>
+                </div>
+                <div class="campo">
+                    <span class="campo-label">Area Generadora</span>
+                    <div class="campo-valor" id="area">---</div>
+                </div>
+            </div>
+
+            <div class="campo-grupo">
+                <div class="campo">
+                    <span class="campo-label">Jurisdiccion</span>
+                    <div class="campo-valor" id="jurisdiccion">---</div>
+                </div>
+                <div class="campo">
+                    <span class="campo-label">Tipo de Juicio</span>
+                    <div class="campo-valor" id="tipoJuicio">---</div>
+                </div>
+                <div class="campo">
+                    <span class="campo-label">Tribunal</span>
+                    <div class="campo-valor" id="tribunal">---</div>
+                </div>
+            </div>
+
+            <div class="campo-grupo">
+                <div class="campo">
+                    <span class="campo-label">Fecha de Inicio</span>
+                    <div class="campo-valor" id="fechaInicio">---</div>
+                </div>
+                <div class="campo">
+                    <span class="campo-label">Calidad del IMSS</span>
+                    <div class="campo-valor" id="imssEs">---</div>
+                </div>
+            </div>
+
+            <div class="campo-grupo">
+                <div class="campo">
+                    <span class="campo-label">Prestaciones Reclamadas</span>
+                    <div class="campo-valor" id="prestacion">---</div>
+                </div>
+                <div class="campo">
+                    <span class="campo-label">Importe Demandado</span>
+                    <div class="campo-valor" id="importeDemandado">---</div>
+                </div>
+            </div>
+
+            <div class="campo">
+                <span class="campo-label">Notas de Prestaciones</span>
+                <div class="campo-valor" id="prestacionesNotas">---</div>
+            </div>
+
+            <div class="campo-grupo">
+                <div class="campo">
+                    <span class="campo-label">Abogado Responsable</span>
+                    <div class="campo-valor" id="abogadoResponsable">
+                        <span class="campo-vacio">Sin asignar</span>
+                    </div>
+                </div>
+                <div class="campo">
+                    <span class="campo-label">Pronostico</span>
+                    <div class="campo-valor" id="pronostico">
+                        <span class="campo-vacio">Sin informacion</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actor -->
+            <div class="campo" id="seccionActor" style="display: none;">
+                <span class="campo-label">Actor(es)</span>
+                <div id="actorInfo"></div>
+            </div>
+
+            <!-- Demandados -->
+            <div class="campo" id="seccionDemandados" style="display: none;">
+                <span class="campo-label">Demandado(s)</span>
+                <div id="demandadosInfo"></div>
+            </div>
+
+            <!-- Codemandados -->
+            <div class="campo" id="seccionCodemandados" style="display: none;">
+                <span class="campo-label">Codemandado(s)</span>
+                <div id="codemandadosInfo"></div>
+            </div>
+
+            <!-- Acumulado -->
+            <div class="campo" id="seccionAcumulado" style="display: none;">
+                <span class="campo-label">Acumulado a</span>
+                <div class="campo-valor" id="acumuladoA">---</div>
+            </div>
+
+            <!-- Juicios Acumulados -->
+            <div class="campo" id="seccionJuiciosAcumulados" style="display: none;">
+                <span class="campo-label">Juicios Acumulados</span>
+                <div id="juiciosAcumuladosInfo"></div>
+            </div>
+        </div>
+
+        <!-- Seccion 2: Seguimiento del Juicio -->
+        <div class="seccion">
+            <h3>Seguimiento del Juicio</h3>
+
+            <div class="campo-grupo">
+                <div class="campo">
+                    <span class="campo-label">Fecha de actuación</span>
+                    <div class="campo-valor" id="fechaActuacion">
+                        <span class="campo-vacio">Sin información</span>
+                    </div>
+                </div>
+                <div class="campo">
+                    <span class="campo-label">Tipo de actuación</span>
+                    <div class="campo-valor" id="tipoActuacion">
+                        <span class="campo-vacio">Sin información</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="campo">
+                <span class="campo-label">Descripción de lo sucedido</span>
+                <div class="campo-valor" id="descripcionActuacion">
+                    <span class="campo-vacio">Sin información</span>
+                </div>
+            </div>
+
+            <div class="campo-grupo">
+                <div class="campo">
+                    <span class="campo-label">Próximo vencimiento</span>
+                    <div class="campo-valor" id="fechaVencimiento">
+                        <span class="campo-vacio">Sin información</span>
+                    </div>
+                </div>
+                <div class="campo" id="campoSIIJ" style="display: none;">
+                    <span class="campo-label">¿Actualizado en el SIIJ?</span>
+                    <div class="campo-valor" id="actualizadoSIIJ">
+                        <span class="campo-vacio">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="campo">
+                <span class="campo-label">Documentos Adjuntos</span>
+                <div class="campo-valor" id="documentosAdjuntos">
+                    <span class="campo-vacio">Sin documentos</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Accion -->
+        <div class="botones-accion">
+            <button class="btn-volver" onclick="volver()">
+                &larr; Volver a la lista
+            </button>
+            <button class="btn-editar" id="btnEditar" onclick="editarDatos()">
+                Editar Datos
+            </button>
+            <button class="btn-actualizar" id="btnActualizar" onclick="abrirActualizacion()">
+                Actualizar Seguimiento
+            </button>
+        </div>
+    </div>
+
+    <script src="js/datosFake.js"></script>
+    <script src="js/detalleCaso.js"></script>
+</body>
+
+</html>
