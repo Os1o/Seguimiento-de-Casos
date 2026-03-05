@@ -380,3 +380,153 @@ function formatearFecha(fecha) {
     const yyyy = d.getFullYear();
     return `${dd}/${mm}/${yyyy}`;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// === Renderizar Prestaciones (1 a N) ===
+function renderPrestaciones(prestaciones) {
+    const tbody = document.getElementById('prestacionesBody');
+    const count = document.getElementById('prestacionesCount');
+    
+    if (!prestaciones || !prestaciones.length) {
+        tbody.innerHTML = `
+            <tr>
+                <td class="prestacion-num">1</td>
+                <td><span class="prestacion-tipo principal">Principal</span></td>
+                <td class="prestacion-desc" id="prestacion">---</td>
+            </tr>
+        `;
+        count.style.display = 'none';
+        return;
+    }
+    
+    count.textContent = `(${prestaciones.length} prestaciones)`;
+    count.style.display = 'inline';
+    
+    tbody.innerHTML = prestaciones.map((p, index) => `
+        <tr>
+            <td class="prestacion-num">${index + 1}</td>
+            <td><span class="prestacion-tipo ${p.tipo || 'secundaria'}">${p.tipo || 'Secundaria'}</span></td>
+            <td class="prestacion-desc">${p.descripcion || '---'}</td>
+        </tr>
+    `).join('');
+}
+
+// === Renderizar Partes (1 a N) ===
+function renderPartes(tipo, partes) {
+    const seccion = document.getElementById(`seccion${tipo}`);
+    const lista = document.getElementById(`${tipo.toLowerCase()}Info`);
+    const count = document.getElementById(`${tipo.toLowerCase()}Count`);
+    
+    if (!partes || !partes.length) {
+        seccion.style.display = 'none';
+        return;
+    }
+    
+    seccion.style.display = 'block';
+    count.textContent = partes.length;
+    
+    lista.innerHTML = partes.map((parte, index) => `
+        <div class="parte-item parte-${tipo.toLowerCase()}">
+            <div class="parte-info">
+                <span class="parte-num">${String(index + 1).padStart(2, '0')}</span>
+                <span class="parte-nombre">${parte.nombre || parte.entidad || '---'}</span>
+            </div>
+            <span class="parte-tipo-badge ${parte.tipoPersona || 'fisica'}">
+                ${parte.tipoPersona === 'moral' ? 'Persona Moral' : 'Persona Física'}
+            </span>
+        </div>
+    `).join('');
+}
+
+// === Renderizar Documentos ===
+function renderDocumentos(documentos) {
+    const container = document.getElementById('documentosAdjuntos');
+    
+    if (!documentos || !documentos.length) {
+        container.innerHTML = '<span class="info-vacio">Sin documentos</span>';
+        return;
+    }
+    
+    container.innerHTML = documentos.map(doc => `
+        <div class="documento-item">
+            <span class="documento-icon">${doc.ext || 'PDF'}</span>
+            <span>${doc.nombre || 'Documento'}</span>
+        </div>
+    `).join('');
+}
+
+// === Renderizar Notas ===
+function renderNotas(nota) {
+    const seccion = document.getElementById('seccionNotas');
+    const contenido = document.getElementById('prestacionesNotas');
+    const meta = document.getElementById('notasMeta');
+    
+    if (!nota || !nota.texto) {
+        seccion.style.display = 'none';
+        return;
+    }
+    
+    seccion.style.display = 'block';
+    contenido.textContent = nota.texto;
+    
+    if (nota.autor || nota.fecha) {
+        meta.style.display = 'flex';
+        if (nota.autor) {
+            document.getElementById('notasAutor').textContent = nota.autor;
+        }
+        if (nota.fecha) {
+            document.getElementById('notasFecha').textContent = nota.fecha;
+        }
+    }
+}
+
+// === Verificar y Mostrar Partes después de cargar datos ===
+function verificarYRenderizarPartes() {
+    // Ejemplo de llamada - ajusta según tu estructura de datos actual
+    // Esto debe llamarse después de que se carguen los datos del caso
+    
+    const casoActual = obtenerCasoActual(); // Tu función existente
+    
+    if (casoActual) {
+        // Renderizar prestaciones
+        if (casoActual.prestaciones) {
+            renderPrestaciones(casoActual.prestaciones);
+        }
+        
+        // Renderizar partes
+        if (casoActual.actores) {
+            renderPartes('Actor', casoActual.actores);
+        }
+        if (casoActual.demandados) {
+            renderPartes('Demandado', casoActual.demandados);
+        }
+        if (casoActual.codemandados) {
+            renderPartes('Codemandado', casoActual.codemandados);
+        }
+        
+        // Renderizar documentos
+        if (casoActual.documentos) {
+            renderDocumentos(casoActual.documentos);
+        }
+        
+        // Renderizar notas
+        if (casoActual.notas) {
+            renderNotas(casoActual.notas);
+        }
+    }
+}
+
+// === Ejecutar después de cargar datos ===
+setTimeout(verificarYRenderizarPartes, 100);
