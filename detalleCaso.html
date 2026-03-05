@@ -4,24 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle del Asunto - Sistema de Gestión de Juicios</title>
+    <title>Detalle del Asunto - Sistema de Gestion de Juicios</title>
     <link rel="stylesheet" href="css/styles.css">
-    <style>
-        /* Estilos rápidos para asegurar que las nuevas secciones se vean bien */
-        .badge-tramite { background-color: #D4C19C; color: #4D1325; padding: 4px 12px; border-radius: 12px; font-size: 0.9rem; }
-        .badge-concluido { background-color: #621132; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.9rem; }
-        .prestacion-tipo { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: bold; }
-        .prestacion-tipo.principal { background: #e8e8e8; color: #621132; border: 1px solid #621132; }
-        .prestacion-tipo.secundaria { background: #f4f4f4; color: #666; border: 1px solid #ccc; }
-        .persona-card { background: #f9f9f9; padding: 10px; border-left: 4px solid #D4C19C; margin-bottom: 8px; border-radius: 4px; }
-        .persona-tipo { font-size: 0.7rem; color: #666; text-transform: uppercase; }
-        .persona-nombre { font-weight: bold; color: #333; }
-        .sin-cuantia { color: #888; font-style: italic; }
-        .importe { font-weight: bold; color: #2e7d32; }
-    </style>
 </head>
 
 <body>
+    <!-- Header -->
     <header class="header-gob">
         <div class="header-logo">
             <span class="logo-text">Gobierno de México</span>
@@ -35,180 +23,265 @@
         </nav>
     </header>
 
+    <!-- Contenido Principal -->
     <div class="container">
+        <!-- Breadcrumbs -->
         <div class="breadcrumbs">
             <a href="casos.html" class="breadcrumb-link">Asuntos</a>
             <span class="breadcrumb-separator">/</span>
-            <span class="breadcrumb-current" id="breadcrumbExpediente">Cargando...</span>
+            <span class="breadcrumb-current" id="breadcrumbExpediente">Detalle</span>
         </div>
 
-        <div class="page-header">
-            <div>
-                <h1 class="page-title">
-                    Expediente: <span id="numeroExpediente">---</span>
+        <!-- Tarjeta Principal -->
+        <div class="caso-main-card">
+            <div class="caso-main-header">
+                <div class="caso-info">
+                    <h1 class="caso-expediente">
+                        <span class="expediente-label">Expediente</span>
+                        <span id="numeroExpediente">---</span>
+                    </h1>
+                    <p class="caso-fecha">
+                        Registrado el <span id="fechaCreacion">---</span>
+                        <!-- ✅ ESTOS SON LOS QUE TU JS NECESITA -->
+                        <span id="fechaActualizacionInfo" style="display: none; margin-left: 12px; opacity: 0.8;">
+                            • Última actualización: <span id="fechaActualizacion">---</span>
+                        </span>
+                    </p>
+                </div>
+                <div class="caso-estatus-container">
                     <span class="badge-estatus" id="badgeEstatus">---</span>
-                </h1>
-                <p class="page-subtitle">
-                    Registrado el <span id="fechaCreacion">---</span>
-                    <span id="fechaActualizacionInfo" style="display: none; margin-left: 12px; color: #666;">
-                        • Última actualización: <span id="fechaActualizacion">---</span>
-                    </span>
-                </p>
+                </div>
             </div>
         </div>
 
-        <div class="seccion">
-            <h3>Datos del Registro</h3>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <span class="campo-label">Delegación / OOAD</span>
-                    <div class="campo-valor" id="delegacion">---</div>
-                </div>
-                <div class="campo">
-                    <span class="campo-label">Área Generadora</span>
-                    <div class="campo-valor" id="area">---</div>
-                </div>
+        <!-- SECCIÓN 1: DATOS DEL REGISTRO -->
+        <div class="seccion-card seccion-registro">
+            <div class="seccion-title">
+                <h2>Datos del Registro</h2>
             </div>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <span class="campo-label">Jurisdicción</span>
-                    <div class="campo-valor" id="jurisdiccion">---</div>
+            <div class="seccion-body">
+                <!-- Ubicación -->
+                <div class="info-group">
+                    <h4 class="group-title">Ubicación</h4>
+                    <div class="info-grid info-grid-3">
+                        <div class="info-item">
+                            <span class="info-label">Delegación</span>
+                            <span class="info-value" id="delegacion">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Área Generadora</span>
+                            <span class="info-value" id="area">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Jurisdicción</span>
+                            <span class="info-value" id="jurisdiccion">---</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="campo">
-                    <span class="campo-label">Tipo de Juicio</span>
-                    <div class="campo-valor" id="tipoJuicio">---</div>
+
+                <!-- Información Legal -->
+                <div class="info-group">
+                    <h4 class="group-title">Información Legal</h4>
+                    <div class="info-grid info-grid-3">
+                        <div class="info-item">
+                            <span class="info-label">Tipo de Juicio</span>
+                            <span class="info-value" id="tipoJuicio">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Tribunal</span>
+                            <span class="info-value" id="tribunal">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fecha de Inicio</span>
+                            <span class="info-value" id="fechaInicio">---</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="campo">
-                <span class="campo-label">Tribunal / Juzgado</span>
-                <div class="campo-valor" id="tribunal">---</div>
-            </div>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <span class="campo-label">Fecha de Inicio</span>
-                    <div class="campo-valor" id="fechaInicio">---</div>
+                <!-- Calidad IMSS -->
+                <div class="info-group">
+                    <h4 class="group-title">Calidad del IMSS</h4>
+                    <div class="info-item">
+                        <span class="info-value info-value-imss" id="imssEs">---</span>
+                    </div>
                 </div>
-                <div class="campo">
-                    <span class="campo-label">Calidad del IMSS</span>
-                    <div class="campo-valor" id="imssEs">---</div>
-                </div>
-            </div>
 
-            <hr>
-
-            <div class="campo">
-                <span class="campo-label">Prestaciones Reclamadas <span id="prestacionesCount"></span></span>
-                <table class="tabla-prestaciones">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;">#</th>
-                            <th style="width: 120px;">Tipo</th>
-                            <th>Descripción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="prestacionesBody">
+                <!-- Prestaciones (Tabla) -->
+                <div class="info-group">
+                    <h4 class="group-title">
+                        Prestaciones Reclamadas
+                        <span class="prestacion-count" id="prestacionesCount"></span>
+                    </h4>
+                    <table class="prestaciones-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th style="width: 120px;">Tipo</th>
+                                <th>Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prestacionesBody">
+                            <tr>
+                                <td class="prestacion-num">1</td>
+                                <td><span class="prestacion-tipo principal">Principal</span></td>
+                                <td class="prestacion-desc" id="prestacion">---</td>
+                            </tr>
                         </tbody>
-                </table>
-            </div>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <span class="campo-label">Importe Demandado</span>
-                    <div class="campo-valor" id="importeDemandado">---</div>
+                    </table>
                 </div>
-                <div class="campo">
-                    <span class="campo-label">Pronóstico</span>
-                    <div class="campo-valor" id="pronostico">---</div>
+
+                <!-- Importe -->
+                <div class="info-group">
+                    <h4 class="group-title">Importe Demandado</h4>
+                    <div class="info-item">
+                        <span class="info-value info-value-importe" id="importeDemandado">---</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="campo">
-                <span class="campo-label">Notas sobre Prestaciones</span>
-                <div class="campo-valor" id="prestacionesNotas">---</div>
-            </div>
+                <!-- Responsable y Pronóstico -->
+                <div class="info-group">
+                    <h4 class="group-title">Responsable</h4>
+                    <div class="info-grid info-grid-2">
+                        <div class="info-item">
+                            <span class="info-label">Abogado Responsable</span>
+                            <div class="info-value" id="abogadoResponsable">
+                                <span class="info-vacio">Sin asignar</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Pronóstico</span>
+                            <div class="info-value" id="pronostico">
+                                <span class="info-vacio">Sin información</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="campo">
-                <span class="campo-label">Abogado Responsable</span>
-                <div class="campo-valor" id="abogadoResponsable">---</div>
-            </div>
+                <!-- Notas de Abogados -->
+                <div class="info-group" id="seccionNotas" style="display: none;">
+                    <h4 class="group-title">Notas / Comentarios</h4>
+                    <div class="notas-box">
+                        <div class="notas-header">
+                            <span class="notas-title">Nota del Abogado Responsable</span>
+                        </div>
+                        <div class="notas-content" id="prestacionesNotas">
+                            <span class="info-vacio">Sin comentarios</span>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="campo" id="seccionActor" style="display: none;">
-                <span class="campo-label">Actor(es)</span>
-                <div id="actorInfo"></div>
-            </div>
+                <!-- Partes Involucradas -->
+                <div class="info-group">
+                    <h4 class="group-title">Partes Involucradas</h4>
+                    
+                    <!-- Actores -->
+                    <div class="partes-section" id="seccionActor" style="display: none;">
+                        <div class="partes-section-header">
+                            <span class="partes-section-title">
+                                Actores
+                                <span class="partes-count" id="actorCount">0</span>
+                            </span>
+                        </div>
+                        <div class="partes-list" id="actorInfo"></div>
+                    </div>
 
-            <div class="campo" id="seccionDemandados" style="display: none;">
-                <span class="campo-label">Demandado(s)</span>
-                <div id="demandadosInfo"></div>
-            </div>
+                    <!-- Demandados -->
+                    <div class="partes-section" id="seccionDemandados" style="display: none;">
+                        <div class="partes-section-header">
+                            <span class="partes-section-title">
+                                Demandados
+                                <span class="partes-count" id="demandadoCount">0</span>
+                            </span>
+                        </div>
+                        <div class="partes-list" id="demandadosInfo"></div>
+                    </div>
 
-            <div class="campo" id="seccionCodemandados" style="display: none;">
-                <span class="campo-label">Codemandado(s)</span>
-                <div id="codemandadosInfo"></div>
-            </div>
+                    <!-- Codemandados -->
+                    <div class="partes-section" id="seccionCodemandados" style="display: none;">
+                        <div class="partes-section-header">
+                            <span class="partes-section-title">
+                                Codemandados
+                                <span class="partes-count" id="codemandadoCount">0</span>
+                            </span>
+                        </div>
+                        <div class="partes-list" id="codemandadosInfo"></div>
+                    </div>
+                </div>
 
-            <div class="campo" id="seccionAcumulado" style="display: none;">
-                <span class="campo-label">Acumulado al Expediente</span>
-                <div class="campo-valor" id="acumuladoA">---</div>
-            </div>
-
-            <div class="campo" id="seccionJuiciosAcumulados" style="display: none;">
-                <span class="campo-label">Expedientes Acumulados a este Juicio</span>
-                <div id="juiciosAcumuladosInfo"></div>
+                <!-- Acumulados -->
+                <div class="info-group" id="seccionAcumulado" style="display: none;">
+                    <h4 class="group-title">Acumulados</h4>
+                    <div class="info-item">
+                        <span class="info-label">Acumulado a</span>
+                        <span class="info-value" id="acumuladoA">---</span>
+                    </div>
+                    <div class="info-item" id="seccionJuiciosAcumulados" style="display: none;">
+                        <span class="info-label">Juicios Acumulados</span>
+                        <div id="juiciosAcumuladosInfo"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="seccion">
-            <h3>Seguimiento del Juicio</h3>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <span class="campo-label">Última Actuación</span>
-                    <div class="campo-valor" id="fechaActuacion">---</div>
-                </div>
-                <div class="campo">
-                    <span class="campo-label">Tipo de Actuación</span>
-                    <div class="campo-valor" id="tipoActuacion">---</div>
-                </div>
+        <!-- SECCIÓN 2: SEGUIMIENTO DEL ASUNTO -->
+        <div class="seccion-card seccion-seguimiento">
+            <div class="seccion-title">
+                <h2>Seguimiento del Asunto</h2>
             </div>
-
-            <div class="campo">
-                <span class="campo-label">Resumen de lo sucedido</span>
-                <div class="campo-valor" id="descripcionActuacion">---</div>
-            </div>
-
-            <div class="campo-grupo">
-                <div class="campo">
-                    <span class="campo-label" style="color: #d32f2f;">Próximo Vencimiento / Término</span>
-                    <div class="campo-valor" id="fechaVencimiento" style="font-weight: bold; color: #d32f2f;">---</div>
+            <div class="seccion-body">
+                <!-- Última Actuación -->
+                <div class="info-group">
+                    <h4 class="group-title">Última Actuación</h4>
+                    <div class="timeline-box">
+                        <div class="timeline-date-box">
+                            <span class="timeline-date" id="fechaActuacion">
+                                <span class="info-vacio">Sin información</span>
+                            </span>
+                        </div>
+                        <div class="timeline-content-box">
+                            <div class="timeline-type" id="tipoActuacion">
+                                <span class="info-vacio">Sin información</span>
+                            </div>
+                            <div class="timeline-desc" id="descripcionActuacion">
+                                <span class="info-vacio">Sin información</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="campo" id="campoSIIJ" style="display: none;">
-                    <span class="campo-label">¿Actualizado en SIIJ?</span>
-                    <div class="campo-valor" id="actualizadoSIIJ">---</div>
-                </div>
-            </div>
 
-            <div class="campo">
-                <span class="campo-label">Expediente Digital (PDF)</span>
-                <div class="campo-valor" id="documentosAdjuntos">
-                    <span class="campo-vacio">No hay documentos adjuntos</span>
+                <!-- Próximos Vencimientos -->
+                <div class="info-group">
+                    <h4 class="group-title">Próximos Vencimientos</h4>
+                    <div class="vencimientos-box">
+                        <div class="vencimiento-item">
+                            <span class="vencimiento-label">Fecha Límite</span>
+                            <span class="vencimiento-value" id="fechaVencimiento">
+                                <span class="info-vacio">Sin información</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documentos -->
+                <div class="info-group">
+                    <h4 class="group-title">Documentos Adjuntos</h4>
+                    <div class="documentos-box" id="documentosAdjuntos">
+                        <span class="info-vacio">Sin documentos</span>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- Botones de Acción -->
         <div class="botones-accion">
-            <button class="btn-volver" onclick="volver()">
-                &larr; Volver a la lista
+            <button class="btn btn-volver" onclick="volver()">
+                <span class="btn-icon">&larr;</span> Volver a la lista
             </button>
-            <button class="btn-editar" id="btnEditar" onclick="editarDatos()">
-                Editar Datos Base
+            <button class="btn btn-editar" id="btnEditar" onclick="editarDatos()">
+                <span class="btn-icon">&#9998;</span> Editar Datos
             </button>
-            <button class="btn-actualizar" id="btnActualizar" onclick="abrirActualizacion()">
-                Actualizar Seguimiento
+            <button class="btn btn-actualizar" id="btnActualizar" onclick="abrirActualizacion()">
+                <span class="btn-icon">&#8635;</span> Actualizar Seguimiento
             </button>
         </div>
     </div>

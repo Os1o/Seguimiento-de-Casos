@@ -1,0 +1,382 @@
+// =====================================================
+// DETALLE DEL CASO
+// =====================================================
+
+let casoActual = null;
+
+// Verificar sesion
+document.addEventListener('DOMContentLoaded', function () {
+    const usuarioStr = sessionStorage.getItem('usuario');
+
+    if (!usuarioStr) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    const usuario = JSON.parse(usuarioStr);
+    document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
+
+    // Ocultar botones de acción según rol
+    if (usuario.rol === 'consulta') {
+        const btnEditar = document.getElementById('btnEditar');
+        const btnActualizar = document.getElementById('btnActualizar');
+        if (btnEditar) btnEditar.style.display = 'none';
+        if (btnActualizar) btnActualizar.style.display = 'none';
+    } else if (usuario.rol === 'editor') {
+        // Editor solo puede crear y consultar, no editar datos ni eliminar
+        const btnEditar = document.getElementById('btnEditar');
+        if (btnEditar) btnEditar.style.display = 'none';
+    }
+
+    cargarDetalleCaso();
+});
+
+function cerrarSesion() {
+    sessionStorage.removeItem('usuario');
+    window.location.href = 'login.html';
+}
+
+function cargarDetalleCaso() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const casoId = parseInt(urlParams.get('id'));
+
+    if (!casoId) {
+        alert('No se especificó un asunto');
+        window.location.href = 'casos.html';
+        return;
+    }
+
+    const casosGuardados = localStorage.getItem('casos');
+    const casos = casosGuardados ? JSON.parse(casosGuardados) : casosFake;
+
+    casoActual = casos.find(c => c.id === casoId);
+
+    if (!casoActual) {
+        alert('Asunto no encontrado');
+        window.location.href = 'casos.html';
+        return;
+    }
+
+    renderizarCaso();
+}
+
+function renderizarCaso() {
+    // Header
+    document.getElementById('numeroExpediente').textContent = casoActual.numero_expediente;
+    document.getElementById('breadcrumbExpediente').textContent = casoActual.numero_expediente;
+
+    const badgeEstatus = document.getElementById('badgeEstatus');
+    badgeEstatus.textContent = casoActual.estatus === 'TRAMITE' ? 'En Tramite' : 'Concluido';
+    badgeEstatus.className = 'badge-estatus ' + (casoActual.estatus === 'TRAMITE' ? 'badge-tramite' : 'badge-concluido');
+
+    const fecha = new Date(casoActual.fecha_creacion);
+    const ddC = String(fecha.getDate()).padStart(2, '0');
+    const mmC = String(fecha.getMonth() + 1).padStart(2, '0');
+    const yyyyC = fecha.getFullYear();
+    const hhC = String(fecha.getHours()).padStart(2, '0');
+    const minC = String(fecha.getMinutes()).padStart(2, '0');
+    document.getElementById('fechaCreacion').textContent = `${ddC}/${mmC}/${yyyyC} ${hhC}:${minC}`;
+
+    // Fecha de actualización (si es diferente a la de creación)
+    if (casoActual.fecha_actualizacion && casoActual.fecha_actualizacion !== casoActual.fecha_creacion) {
+        const fechaAct = new Date(casoActual.fecha_actualizacion);
+        const ddA = String(fechaAct.getDate()).padStart(2, '0');
+        const mmA = String(fechaAct.getMonth() + 1).padStart(2, '0');
+        const yyyyA = fechaAct.getFullYear();
+        const hhA = String(fechaAct.getHours()).padStart(2, '0');
+        const minA = String(fechaAct.getMinutes()).padStart(2, '0');
+        document.getElementById('fechaActualizacion').textContent = `${ddA}/${mmA}/${yyyyA} ${hhA}:${minA}`;
+        document.getElementById('fechaActualizacionInfo').style.display = 'inline';
+    }
+
+    // Datos del Registro
+    const delegacion = catalogos.delegaciones.find(d => d.id === casoActual.delegacion_id);
+    document.getElementById('delegacion').textContent = delegacion ? delegacion.nombre : '---';
+
+    const areas = catalogos.areas[casoActual.delegacion_id] || [];
+    const area = areas.find(a => a.id === casoActual.area_generadora_id);
+    document.getElementById('area').textContent = area ? area.nombre : '---';
+
+    document.getElementById('jurisdiccion').textContent = casoActual.jurisdiccion;
+
+    // Tipo de juicio completo
+    let tipoCompleto = casoActual.tipo_juicio;
+    if (casoActual.subtipo_juicio) tipoCompleto += ' - ' + casoActual.subtipo_juicio;
+    if (casoActual.sub_subtipo_juicio) tipoCompleto += ' - ' + casoActual.sub_subtipo_juicio;
+    tipoCompleto += casoActual.jurisdiccion === 'FEDERAL' ? ' (Federal)' : ' (Local)';
+    document.getElementById('tipoJuicio').textContent = tipoCompleto;
+
+    const tribunal = catalogos.tribunales.find(t => t.id === casoActual.tribunal_id);
+    document.getElementById('tribunal').textContent = tribunal ? tribunal.nombre : '---';
+
+    document.getElementById('fechaInicio').textContent = formatearFecha(casoActual.fecha_inicio);
+    document.getElementById('imssEs').textContent = casoActual.imss_es;
+
+    // Prestaciones: mostrar principal destacada y secundarias separadas
+    const principalId = casoActual.prestacion_principal || null;
+    const secundariasIds = casoActual.prestaciones_secundarias || [];
+
+    if (principalId) {
+        const principal = catalogos.prestaciones.find(p => p.id === principalId);
+        let htmlPrest = '<div style="margin-bottom: 6px;"><strong>Principal:</strong> ' + (principal ? principal.nombre : 'Desconocida') + '</div>';
+
+        if (secundariasIds.length > 0) {
+            const nombres = secundariasIds.map(id => {
+                const p = catalogos.prestaciones.find(pr => pr.id === id);
+                return p ? p.nombre : 'Desconocida';
+            });
+            htmlPrest += '<div style="color: var(--color-text-light); font-size: 13px;"><strong>Secundarias:</strong></div>';
+            htmlPrest += nombres.map(n => '<div style="margin-bottom: 2px; padding-left: 12px; font-size: 13px; color: var(--color-text-light);">- ' + n + '</div>').join('');
+        }
+
+        document.getElementById('prestacion').innerHTML = htmlPrest;
+    } else {
+        // Fallback formatos anteriores
+        const prestacionesIds = obtenerPrestacionesDelCaso();
+        if (prestacionesIds.length > 0) {
+            const nombres = prestacionesIds.map(id => {
+                const p = catalogos.prestaciones.find(pr => pr.id === id);
+                return p ? p.nombre : 'Desconocida';
+            });
+            document.getElementById('prestacion').innerHTML = nombres.map(n => '<div style="margin-bottom: 4px;">- ' + n + '</div>').join('');
+        } else {
+            document.getElementById('prestacion').textContent = '---';
+        }
+    }
+
+    // Importe
+    const importeElem = document.getElementById('importeDemandado');
+    if (casoActual.importe_demandado === 0) {
+        importeElem.innerHTML = '<span class="sin-cuantia">Sin cuantia</span>';
+    } else {
+        importeElem.innerHTML = '<span class="importe">$' + casoActual.importe_demandado.toLocaleString('es-MX', { minimumFractionDigits: 2 }) + '</span>';
+    }
+
+    document.getElementById('prestacionesNotas').textContent = casoActual.prestaciones_notas || '---';
+
+    // Abogado Responsable (del caso directamente o del seguimiento para compatibilidad)
+    const abogado = casoActual.abogado_responsable ||
+        (casoActual.seguimiento && casoActual.seguimiento.abogado_responsable) || null;
+    if (abogado) {
+        document.getElementById('abogadoResponsable').textContent = abogado;
+    }
+
+    // Pronostico (del caso directamente o del seguimiento para compatibilidad)
+    const pronostico = casoActual.pronostico ||
+        (casoActual.seguimiento && casoActual.seguimiento.pronostico) || null;
+    if (pronostico) {
+        document.getElementById('pronostico').innerHTML = `<strong>${pronostico}</strong>`;
+    }
+
+    // Actores (compatibilidad: actor objeto -> actores array)
+    const actores = obtenerActoresDelCaso();
+    if (casoActual.imss_es !== 'ACTOR' && actores.length > 0) {
+        document.getElementById('seccionActor').style.display = 'block';
+        document.getElementById('actorInfo').innerHTML = actores.map(a => renderizarPersona(a)).join('');
+    }
+
+    // Demandados
+    if (casoActual.imss_es !== 'DEMANDADO' && casoActual.demandados && casoActual.demandados.length > 0) {
+        document.getElementById('seccionDemandados').style.display = 'block';
+        document.getElementById('demandadosInfo').innerHTML = casoActual.demandados.map(d => renderizarPersona(d)).join('');
+    }
+
+    // Codemandados
+    if (casoActual.codemandados && casoActual.codemandados.length > 0) {
+        document.getElementById('seccionCodemandados').style.display = 'block';
+        document.getElementById('codemandadosInfo').innerHTML = casoActual.codemandados.map(c => renderizarPersona(c)).join('');
+    }
+
+    // Acumulado a
+    if (casoActual.acumulado_a) {
+        const casosGuardados = localStorage.getItem('casos');
+        const casos = casosGuardados ? JSON.parse(casosGuardados) : casosFake;
+        const casoPadre = casos.find(c => c.id === casoActual.acumulado_a);
+
+        document.getElementById('seccionAcumulado').style.display = 'block';
+        document.getElementById('acumuladoA').innerHTML = casoPadre
+            ? `<a href="detalleCaso.html?id=${casoPadre.id}" style="color: #621132; text-decoration: underline;">${casoPadre.numero_expediente}</a>`
+            : '---';
+    }
+
+    // Juicios acumulados
+    if (casoActual.juicios_acumulados && casoActual.juicios_acumulados.length > 0) {
+        const casosGuardados = localStorage.getItem('casos');
+        const casos = casosGuardados ? JSON.parse(casosGuardados) : casosFake;
+
+        document.getElementById('seccionJuiciosAcumulados').style.display = 'block';
+
+        const casosAcumulados = casoActual.juicios_acumulados
+            .map(id => casos.find(c => c.id === id))
+            .filter(c => c);
+
+        const html = `
+            <div class="acumulados-list">
+                <strong>Este caso tiene ${casosAcumulados.length} juicio(s) acumulado(s):</strong>
+                <ul>
+                    ${casosAcumulados.map(c => `
+                        <li>
+                            <a href="detalleCaso.html?id=${c.id}" style="color: #621132; text-decoration: underline;">
+                                ${c.numero_expediente}
+                            </a>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+
+        document.getElementById('juiciosAcumuladosInfo').innerHTML = html;
+    }
+
+    // Seguimiento del Juicio
+    renderizarSeguimiento();
+
+    // Verificar si se debe deshabilitar el boton de actualizar
+    verificarBotonActualizar();
+}
+
+// Compatibilidad: obtener actores como array
+function obtenerActoresDelCaso() {
+    if (casoActual.actores && Array.isArray(casoActual.actores)) {
+        return casoActual.actores;
+    }
+    if (casoActual.actor && casoActual.actor.tipo_persona) {
+        return [casoActual.actor];
+    }
+    return [];
+}
+
+// Compatibilidad: obtener prestaciones como array
+function obtenerPrestacionesDelCaso() {
+    if (casoActual.prestaciones_reclamadas && Array.isArray(casoActual.prestaciones_reclamadas)) {
+        return casoActual.prestaciones_reclamadas;
+    }
+    // Nuevo modelo: prestacion_principal + prestaciones_secundarias
+    if (casoActual.prestacion_principal) {
+        const ids = [casoActual.prestacion_principal];
+        if (casoActual.prestaciones_secundarias && Array.isArray(casoActual.prestaciones_secundarias)) {
+            ids.push(...casoActual.prestaciones_secundarias);
+        }
+        return ids;
+    }
+    // Legacy
+    if (casoActual.prestacion_reclamada) {
+        return [casoActual.prestacion_reclamada];
+    }
+    return [];
+}
+
+function renderizarPersona(persona) {
+    if (!persona) return '';
+
+    let html = '<div class="persona-card">';
+    html += `<div class="persona-tipo">${persona.tipo_persona === 'FISICA' ? 'Persona Fisica' : 'Persona Moral'}</div>`;
+
+    if (persona.tipo_persona === 'FISICA') {
+        html += `<div class="persona-nombre">${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}</div>`;
+    } else {
+        html += `<div class="persona-nombre">${persona.empresa}</div>`;
+    }
+
+    html += '</div>';
+    return html;
+}
+
+function renderizarSeguimiento() {
+    const seg = casoActual.seguimiento || {};
+
+    // Fecha de actuación
+    if (seg.fecha_actuacion) {
+        document.getElementById('fechaActuacion').textContent = formatearFecha(seg.fecha_actuacion);
+    }
+
+    // Tipo de actuación
+    if (seg.tipo_actuacion) {
+        document.getElementById('tipoActuacion').innerHTML = `<strong>${seg.tipo_actuacion}</strong>`;
+    }
+
+    // Descripción
+    if (seg.descripcion) {
+        document.getElementById('descripcionActuacion').textContent = seg.descripcion;
+    }
+
+    // Próximo vencimiento
+    if (casoActual.fecha_vencimiento) {
+        document.getElementById('fechaVencimiento').textContent = formatearFecha(casoActual.fecha_vencimiento);
+    }
+
+    // ¿Actualizado en el SIIJ? (solo visible si tiene valor o si es admin)
+    const usuarioStr = sessionStorage.getItem('usuario');
+    const usuario = usuarioStr ? JSON.parse(usuarioStr) : null;
+    if (usuario && usuario.rol === 'admin') {
+        const campoSIIJ = document.getElementById('campoSIIJ');
+        if (campoSIIJ) campoSIIJ.style.display = 'block';
+        if (seg.actualizado_siij) {
+            const textos = { SI: 'Sí', NO: 'No', PENDIENTE: 'Pendiente' };
+            const colores = { SI: 'var(--color-success)', NO: 'var(--color-danger)', PENDIENTE: 'var(--color-warning)' };
+            document.getElementById('actualizadoSIIJ').innerHTML = `<strong style="color: ${colores[seg.actualizado_siij] || 'inherit'};">${textos[seg.actualizado_siij] || seg.actualizado_siij}</strong>`;
+        }
+    }
+
+    // Documentos adjuntos
+    const docsContainer = document.getElementById('documentosAdjuntos');
+    if (docsContainer && casoActual.documentos && casoActual.documentos.length > 0) {
+        docsContainer.innerHTML = casoActual.documentos.map((doc, i) => `
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span>📄</span>
+                <a href="#" onclick="abrirPDF(${i}); return false;" style="color: var(--color-primary); text-decoration: underline; font-size: 14px;">${doc.nombre}</a>
+                <small style="color: var(--color-text-light);">(${Math.round(doc.tamaño / 1024)} KB)</small>
+            </div>
+        `).join('');
+    }
+}
+
+// Verificar si todos los campos de seguimiento estan llenos para deshabilitar boton
+function verificarBotonActualizar() {
+    // Ya no se deshabilita: la actualización siempre puede recibir nuevos datos
+}
+
+function volver() {
+    window.location.href = 'casos.html';
+}
+
+function editarDatos() {
+    window.location.href = `editarCaso.html?id=${casoActual.id}`;
+}
+
+function abrirActualizacion() {
+    window.location.href = `actualizarCaso.html?id=${casoActual.id}`;
+}
+
+function abrirPDF(index) {
+    if (!casoActual || !casoActual.documentos || !casoActual.documentos[index]) return;
+    const dataUrl = casoActual.documentos[index].data;
+    const byteString = atob(dataUrl.split(',')[1]);
+    const mimeType = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: mimeType });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
+}
+
+function formatearFecha(fecha) {
+    if (!fecha) return '---';
+    // Parsear manualmente si es solo YYYY-MM-DD para evitar desfase UTC
+    const soloFecha = typeof fecha === 'string' ? fecha.split('T')[0] : null;
+    let d;
+    if (soloFecha && /^\d{4}-\d{2}-\d{2}$/.test(soloFecha)) {
+        const [año, mes, dia] = soloFecha.split('-').map(Number);
+        d = new Date(año, mes - 1, dia);
+    } else {
+        d = new Date(fecha);
+    }
+    if (isNaN(d.getTime())) return fecha;
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+}
