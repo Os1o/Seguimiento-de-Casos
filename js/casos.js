@@ -338,6 +338,11 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
+// Scroll cierra el panel de filtros
+window.addEventListener('scroll', function () {
+    if (filtroAbierto) cerrarTodosLosFiltros();
+}, true);
+
 function filtrarCasos() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const { filtroDelegacion: delegacionId, filtroEstatus: estatus, filtroTipo: tipo, filtroJurisdiccion: jurisdiccion, filtroPosicionIMSS: posicionIMSS } = estadoFiltros;
