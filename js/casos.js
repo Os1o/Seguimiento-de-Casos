@@ -1030,8 +1030,8 @@ function renderizarGraficaPronostico() {
     const ctx = canvas.getContext('2d');
     const size = canvas.width;
     const center = size / 2;
-    const maxOffset = 8; // espacio reservado para el efecto de "elevar" segmentos
-    const radius = size / 2 - maxOffset - 4;
+    const growMax = 5; // px que crece el segmento seleccionado
+    const radius = size / 2 - growMax - 2; // radio base con margen para crecimiento
     const innerRadius = radius * 0.58;
 
     // Contar pronosticos: si hay filtro de estatus activo, usar todos los filtrados (ya vienen filtrados por estatus).
@@ -1116,18 +1116,14 @@ function renderizarGraficaPronostico() {
         // Determinar si hay algun segmento seleccionado para atenuar los demas
         const haySeleccion = segsToDraw.some(s => s.isSelected);
 
-        // Dibujar cada segmento con offsets para hover/seleccion
+        // Dibujar cada segmento: seleccionado/hover crece en radio (no se desplaza)
         segsToDraw.forEach(seg => {
-            const midAngle = (seg.startAngle + seg.endAngle) / 2;
-            let offsetX = 0;
-            let offsetY = 0;
+            let drawRadius = radius;
 
             if (seg.isSelected) {
-                offsetX = Math.cos(midAngle) * maxOffset;
-                offsetY = Math.sin(midAngle) * maxOffset;
+                drawRadius = radius + 5;
             } else if (seg.isHovered) {
-                offsetX = Math.cos(midAngle) * (maxOffset * 0.6);
-                offsetY = Math.sin(midAngle) * (maxOffset * 0.6);
+                drawRadius = radius + 3;
             }
 
             ctx.save();
@@ -1141,25 +1137,23 @@ function renderizarGraficaPronostico() {
             if (seg.isSelected) {
                 ctx.shadowColor = seg.color;
                 ctx.shadowBlur = 6;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
             }
 
             ctx.fillStyle = seg.color;
             ctx.beginPath();
-            ctx.moveTo(center + offsetX, center + offsetY);
-            ctx.arc(center + offsetX, center + offsetY, radius, seg.startAngle, seg.endAngle);
+            ctx.moveTo(center, center);
+            ctx.arc(center, center, drawRadius, seg.startAngle, seg.endAngle);
             ctx.closePath();
             ctx.fill();
 
-            // Borde blanco grueso para segmento seleccionado
+            // Borde blanco para segmento seleccionado
             if (seg.isSelected) {
                 ctx.shadowBlur = 0;
                 ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.moveTo(center + offsetX, center + offsetY);
-                ctx.arc(center + offsetX, center + offsetY, radius, seg.startAngle, seg.endAngle);
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, drawRadius, seg.startAngle, seg.endAngle);
                 ctx.closePath();
                 ctx.stroke();
             }
@@ -1172,43 +1166,53 @@ function renderizarGraficaPronostico() {
         ctx.arc(center, center, innerRadius, 0, Math.PI * 2);
         ctx.fill();
 
+        // Funcion auxiliar: dibujar texto que quepa en el centro
+        const maxTextWidth = innerRadius * 1.7; // ancho maximo disponible
+        function fitText(text, baseFontSize, bold) {
+            let fontSize = baseFontSize;
+            const prefix = bold ? 'bold ' : '';
+            while (fontSize > 5) {
+                ctx.font = prefix + fontSize + 'px Montserrat, sans-serif';
+                if (ctx.measureText(text).width <= maxTextWidth) break;
+                fontSize--;
+            }
+            return fontSize;
+        }
+
         // Centro de la dona: prioridad hover > seleccion > default
         const hoveredSeg = segsToDraw.find(s => s.isHovered);
         const selectedSeg = segsToDraw.find(s => s.isSelected);
 
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
         if (hoveredSeg) {
-            // Hover: mostrar valor y etiqueta del segmento con su color
+            // Hover: valor + etiqueta del segmento con su color
             ctx.fillStyle = hoveredSeg.color;
-            ctx.font = 'bold 16px Montserrat, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            fitText(String(hoveredSeg.valor), 16, true);
             ctx.fillText(hoveredSeg.valor, center, center - 6);
 
             ctx.fillStyle = '#555';
-            ctx.font = '8px Montserrat, sans-serif';
+            fitText(hoveredSeg.label, 9, false);
             ctx.fillText(hoveredSeg.label, center, center + 8);
         } else if (selectedSeg) {
-            // Seleccion activa: mostrar valor y etiqueta del segmento seleccionado
+            // Seleccion activa: valor + etiqueta del segmento seleccionado
             ctx.fillStyle = selectedSeg.color;
-            ctx.font = 'bold 18px Montserrat, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            fitText(String(selectedSeg.valor), 18, true);
             ctx.fillText(selectedSeg.valor, center, center - 6);
 
             ctx.fillStyle = selectedSeg.color;
-            ctx.font = 'bold 8px Montserrat, sans-serif';
+            fitText(selectedSeg.label, 9, true);
             ctx.fillText(selectedSeg.label, center, center + 9);
         } else {
             // Default: total general
             ctx.fillStyle = '#333';
-            ctx.font = 'bold 18px Montserrat, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            fitText(String(totalDatos), 18, true);
             ctx.fillText(totalDatos, center, center - 3);
 
             ctx.fillStyle = '#888';
-            ctx.font = '8px Montserrat, sans-serif';
             const centerLabel = estadoFiltros.filtroEstatus === 'CONCLUIDO' ? 'concluidos' : 'trámites';
+            fitText(centerLabel, 9, false);
             ctx.fillText(centerLabel, center, center + 10);
         }
     }
@@ -1283,12 +1287,11 @@ function inicializarClickDona() {
         const dx = x - center;
         const dy = y - center;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const maxOff = 8;
-        const radius = canvas.width / 2 - maxOff - 4;
+        const radius = canvas.width / 2 - 7;
         const innerRadius = radius * 0.58;
 
-        // Solo aceptar click en el área de la dona (no el centro vacío, con margen extra para offset)
-        if (dist < innerRadius || dist > radius + maxOff) return;
+        // Solo aceptar click en el área de la dona (incluye zona de crecimiento)
+        if (dist < innerRadius || dist > radius + 5) return;
 
         // Calcular ángulo del click
         let angle = Math.atan2(dy, dx);
@@ -1317,13 +1320,12 @@ function inicializarClickDona() {
         const dx = x - center;
         const dy = y - center;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const maxOff = 8;
-        const radius = canvas.width / 2 - maxOff - 4;
+        const radius = canvas.width / 2 - 7;
         const innerRadius = radius * 0.58;
 
         let newHovered = -1;
 
-        if (dist >= innerRadius && dist <= radius + maxOff) {
+        if (dist >= innerRadius && dist <= radius + 5) {
             let angle = Math.atan2(dy, dx);
             if (angle < -Math.PI / 2) angle += Math.PI * 2;
 
