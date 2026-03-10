@@ -98,7 +98,7 @@ function limpiarFiltros() {
 
     // Restaurar etiquetas de botones
     document.querySelectorAll('.filtro-btn-custom').forEach(btn => {
-        btn.innerHTML = `${btn.dataset.nombre} ▾`;
+        btn.innerHTML = `<span class="filtro-btn-nombre">${btn.dataset.nombre} <span class="filtro-flecha">&#9660;</span></span>`;
         btn.classList.remove('filtro-activo');
     });
 
@@ -312,10 +312,10 @@ function seleccionarFiltro(filtroId, valor, etiqueta) {
     const btn = document.getElementById('btn_' + filtroId);
     const nombreColumna = btn.dataset.nombre;
     if (valor) {
-        btn.innerHTML = `${nombreColumna} <span class="filtro-valor-badge">${etiqueta}</span> &#9660;`;
+        btn.innerHTML = `<span class="filtro-btn-nombre">${nombreColumna} <span class="filtro-flecha">&#9660;</span></span><span class="filtro-valor-badge">${etiqueta}</span>`;
         btn.classList.add('filtro-activo');
     } else {
-        btn.innerHTML = `${nombreColumna} &#9660;`;
+        btn.innerHTML = `<span class="filtro-btn-nombre">${nombreColumna} <span class="filtro-flecha">&#9660;</span></span>`;
         btn.classList.remove('filtro-activo');
     }
 
