@@ -1447,6 +1447,8 @@ body {
 
 .grafica-dona-row canvas {
   flex-shrink: 0;
+  width: 110px;
+  height: 110px;
 }
 
 .grafica-leyenda {
@@ -1928,13 +1930,11 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    text-transform: uppercase;
 }
 
 .expediente-label {
     font-size: 0.75rem;
     opacity: 0.9;
-    text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: 500;
 }
@@ -1999,7 +1999,6 @@ body {
     font-size: 0.85rem;
     color: #621132;
     font-weight: 600;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
@@ -2031,7 +2030,6 @@ body {
     font-size: 0.75rem;
     color: #6b7280;
     font-weight: 500;
-    text-transform: uppercase;
     letter-spacing: 0.3px;
 }
 
@@ -2095,7 +2093,6 @@ body {
     font-size: 0.75rem;
     color: #6b7280;
     font-weight: 600;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
