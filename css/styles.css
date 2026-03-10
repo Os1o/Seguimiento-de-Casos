@@ -2369,6 +2369,72 @@ body {
     text-transform: uppercase;
 }
 
+/* Card compacta de Última Actuación */
+.actuacion-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.actuacion-header {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.actuacion-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.actuacion-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.actuacion-valor {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+}
+
+.actuacion-tipo {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.actuacion-desc-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 14px;
+}
+
+.actuacion-desc {
+    color: #4b5563;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    text-transform: uppercase;
+}
+
 /* Vencimientos */
 .vencimientos-box {
     display: flex;

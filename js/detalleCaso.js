@@ -473,7 +473,7 @@ function renderizarSeguimiento() {
     if (seg.tipo_actuacion) {
         const tipoElem = document.getElementById('tipoActuacion');
         if (tipoElem) {
-            tipoElem.innerHTML = `<span class="timeline-type">${seg.tipo_actuacion}</span>`;
+            tipoElem.textContent = seg.tipo_actuacion;
         }
     }
 
