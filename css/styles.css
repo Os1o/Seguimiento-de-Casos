@@ -1459,6 +1459,19 @@ body {
   align-items: center;
   gap: 6px;
   font-size: 12px;
+  transition: all 0.2s ease;
+  padding: 3px 6px;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+}
+
+.leyenda-item:hover {
+  background: rgba(0,0,0,0.04);
+  transform: translateX(2px);
+}
+
+.leyenda-activa {
+  transform: scale(1.03);
 }
 
 .leyenda-color {
@@ -1466,17 +1479,20 @@ body {
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .leyenda-texto {
   color: var(--color-text);
   white-space: nowrap;
+  transition: color 0.2s ease;
 }
 
 .leyenda-valor {
   font-weight: 700;
   color: var(--color-text);
   margin-left: auto;
+  transition: color 0.2s ease;
 }
 
 @media (max-width: 968px) {

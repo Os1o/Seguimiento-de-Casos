@@ -1171,20 +1171,34 @@ function renderizarGraficaPronostico() {
         ctx.arc(center, center, innerRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Tooltip: si hay hover, mostrar etiqueta y valor en el centro
+        // Centro de la dona: prioridad hover > seleccion > default
         const hoveredSeg = segsToDraw.find(s => s.isHovered);
+        const selectedSeg = segsToDraw.find(s => s.isSelected);
+
         if (hoveredSeg) {
-            ctx.fillStyle = '#333';
-            ctx.font = 'bold 14px Montserrat, sans-serif';
+            // Hover: mostrar valor y etiqueta del segmento con su color
+            ctx.fillStyle = hoveredSeg.color;
+            ctx.font = 'bold 16px Montserrat, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(hoveredSeg.valor, center, center - 5);
+            ctx.fillText(hoveredSeg.valor, center, center - 6);
 
-            ctx.fillStyle = '#666';
-            ctx.font = '7px Montserrat, sans-serif';
+            ctx.fillStyle = '#555';
+            ctx.font = '8px Montserrat, sans-serif';
             ctx.fillText(hoveredSeg.label, center, center + 8);
+        } else if (selectedSeg) {
+            // Seleccion activa: mostrar valor y etiqueta del segmento seleccionado
+            ctx.fillStyle = selectedSeg.color;
+            ctx.font = 'bold 18px Montserrat, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(selectedSeg.valor, center, center - 6);
+
+            ctx.fillStyle = selectedSeg.color;
+            ctx.font = 'bold 8px Montserrat, sans-serif';
+            ctx.fillText(selectedSeg.label, center, center + 9);
         } else {
-            // Numero total en el centro
+            // Default: total general
             ctx.fillStyle = '#333';
             ctx.font = 'bold 18px Montserrat, sans-serif';
             ctx.textAlign = 'center';
@@ -1208,17 +1222,30 @@ function renderizarGraficaPronostico() {
         }
     }
 
-    // Leyenda (clickeable)
+    // Leyenda (clickeable con feedback visual fuerte)
     const leyenda = document.getElementById('leyendaPronostico');
     if (leyenda) {
+        const hayFiltroActivo = !!filtroPronosticoDona;
         leyenda.innerHTML = datos.map(d => {
             const filtroValor = d.label === 'Favorable' ? 'FAVORABLE' : d.label === 'Desfavorable' ? 'DESFAVORABLE' : 'SIN_PRONOSTICO';
             const activo = filtroPronosticoDona === filtroValor;
+            const inactivo = hayFiltroActivo && !activo;
+
+            let estiloItem = 'cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.2s;';
+            if (activo) {
+                estiloItem += ` font-weight: bold; text-decoration: underline; background: ${d.color}22; border-left: 3px solid ${d.color};`;
+            } else if (inactivo) {
+                estiloItem += ' opacity: 0.4;';
+            }
+
+            const estiloTexto = activo ? `color: ${d.color}; font-weight: bold;` : '';
+            const estiloValor = activo ? `color: ${d.color}; font-weight: bold; font-size: 1.05em;` : '';
+
             return `
-            <div class="leyenda-item ${activo ? 'leyenda-activa' : ''}" style="cursor: pointer; ${activo ? 'font-weight: bold; text-decoration: underline;' : ''}" onclick="clickDonaFiltro('${filtroValor}')">
-                <span class="leyenda-color" style="background: ${d.color};"></span>
-                <span class="leyenda-texto">${d.label}</span>
-                <span class="leyenda-valor">${d.valor}</span>
+            <div class="leyenda-item ${activo ? 'leyenda-activa' : ''}" style="${estiloItem}" onclick="clickDonaFiltro('${filtroValor}')">
+                <span class="leyenda-color" style="background: ${d.color}; ${activo ? 'transform: scale(1.3); box-shadow: 0 0 4px ' + d.color + ';' : ''}"></span>
+                <span class="leyenda-texto" style="${estiloTexto}">${d.label}</span>
+                <span class="leyenda-valor" style="${estiloValor}">${d.valor}</span>
             </div>
         `;
         }).join('');
