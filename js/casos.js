@@ -1030,8 +1030,8 @@ function renderizarGraficaPronostico() {
     const ctx = canvas.getContext('2d');
     const size = canvas.width;
     const center = size / 2;
-    const maxOffset = 10; // espacio reservado para el efecto de "elevar" segmentos
-    const radius = size / 2 - maxOffset - 2;
+    const maxOffset = 8; // espacio reservado para el efecto de "elevar" segmentos
+    const radius = size / 2 - maxOffset - 4;
     const innerRadius = radius * 0.58;
 
     // Contar pronosticos: si hay filtro de estatus activo, usar todos los filtrados (ya vienen filtrados por estatus).
@@ -1123,11 +1123,11 @@ function renderizarGraficaPronostico() {
             let offsetY = 0;
 
             if (seg.isSelected) {
-                offsetX = Math.cos(midAngle) * 10;
-                offsetY = Math.sin(midAngle) * 10;
+                offsetX = Math.cos(midAngle) * maxOffset;
+                offsetY = Math.sin(midAngle) * maxOffset;
             } else if (seg.isHovered) {
-                offsetX = Math.cos(midAngle) * 6;
-                offsetY = Math.sin(midAngle) * 6;
+                offsetX = Math.cos(midAngle) * (maxOffset * 0.6);
+                offsetY = Math.sin(midAngle) * (maxOffset * 0.6);
             }
 
             ctx.save();
@@ -1137,10 +1137,10 @@ function renderizarGraficaPronostico() {
                 ctx.globalAlpha = 0.35;
             }
 
-            // Sombra para segmento seleccionado
+            // Sombra sutil para segmento seleccionado
             if (seg.isSelected) {
                 ctx.shadowColor = seg.color;
-                ctx.shadowBlur = 12;
+                ctx.shadowBlur = 6;
                 ctx.shadowOffsetX = 0;
                 ctx.shadowOffsetY = 0;
             }
@@ -1283,11 +1283,12 @@ function inicializarClickDona() {
         const dx = x - center;
         const dy = y - center;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const radius = canvas.width / 2 - 12;
+        const maxOff = 8;
+        const radius = canvas.width / 2 - maxOff - 4;
         const innerRadius = radius * 0.58;
 
         // Solo aceptar click en el área de la dona (no el centro vacío, con margen extra para offset)
-        if (dist < innerRadius || dist > radius + 10) return;
+        if (dist < innerRadius || dist > radius + maxOff) return;
 
         // Calcular ángulo del click
         let angle = Math.atan2(dy, dx);
@@ -1316,12 +1317,13 @@ function inicializarClickDona() {
         const dx = x - center;
         const dy = y - center;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const radius = canvas.width / 2 - 12;
+        const maxOff = 8;
+        const radius = canvas.width / 2 - maxOff - 4;
         const innerRadius = radius * 0.58;
 
         let newHovered = -1;
 
-        if (dist >= innerRadius && dist <= radius + 10) {
+        if (dist >= innerRadius && dist <= radius + maxOff) {
             let angle = Math.atan2(dy, dx);
             if (angle < -Math.PI / 2) angle += Math.PI * 2;
 

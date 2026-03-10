@@ -957,7 +957,6 @@ body {
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  text-transform: uppercase;
 }
 
 .menu-item:last-child {
@@ -1087,7 +1086,6 @@ body {
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  text-transform: uppercase;
 }
 
 .menu-item:last-child {
@@ -1680,7 +1678,6 @@ body {
   white-space: normal;
   word-break: break-word;
   line-height: 1.3;
-  text-transform: uppercase;
 }
 
 .filtro-btn-custom:hover {
