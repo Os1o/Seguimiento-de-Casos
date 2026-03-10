@@ -198,10 +198,10 @@ function toggleFiltro(id, boton) {
     const panel = document.getElementById('filtroPanel');
     const lista = document.getElementById('filtroPanelLista');
 
-    // Calcular posición del botón en la pantalla
+    // Calcular posición del botón en pantalla (fixed, sin scroll)
     const rect = boton.getBoundingClientRect();
-    panel.style.top = (rect.bottom + window.scrollY + 4) + 'px';
-    panel.style.left = (rect.left + window.scrollX) + 'px';
+    panel.style.top = (rect.bottom + 4) + 'px';
+    panel.style.left = rect.left + 'px';
 
     // FILTROS REACTIVOS: calcular opciones disponibles según los otros filtros activos
     const opcionesDisponibles = calcularOpcionesDisponibles(id);
