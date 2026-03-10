@@ -8,6 +8,8 @@ let paginaActual = 1;
 const REGISTROS_POR_PAGINA = 10;
 let usuarioActual = null;
 let filtroPronosticoDona = ''; // Filtro activo desde click en la dona
+let estatusAutoSetByDona = false; // Indica si el filtro de estatus fue auto-asignado por click en la dona
+window.hoveredDonaSegment = -1; // Índice del segmento de dona actualmente bajo hover
 
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -87,6 +89,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function limpiarFiltros() {
     document.getElementById('searchInput').value = '';
+
+    // Resetear flag de auto-set por dona
+    estatusAutoSetByDona = false;
 
     // Resetear estado
     Object.keys(estadoFiltros).forEach(k => estadoFiltros[k] = '');
@@ -1028,9 +1033,10 @@ function renderizarGraficaPronostico() {
     const radius = size / 2 - 4;
     const innerRadius = radius * 0.58;
 
-    // Contar pronosticos solo de casos en TRAMITE (usando filtrados para reaccionar a filtros)
+    // Contar pronosticos: si hay filtro de estatus activo, usar todos los filtrados (ya vienen filtrados por estatus).
+    // Si no hay filtro de estatus, filtrar solo TRAMITE como comportamiento por defecto.
     const datosFuente = casosFiltrados && casosFiltrados.length >= 0 ? casosFiltrados : todosLosCasos;
-    const tramites = datosFuente.filter(c => c.estatus === 'TRAMITE');
+    const tramites = estadoFiltros.filtroEstatus ? datosFuente : datosFuente.filter(c => c.estatus === 'TRAMITE');
     let favorable = 0;
     let desfavorable = 0;
     let sinPronostico = 0;
@@ -1069,27 +1075,94 @@ function renderizarGraficaPronostico() {
         ctx.fillText('Sin datos', center, center + 4);
     } else {
         let startAngle = -Math.PI / 2;
+        let segIndex = 0;
 
+        // Primera pasada: construir segmentos y dibujar segmentos normales
+        const segsToDraw = [];
         datos.forEach(d => {
             if (d.valor === 0) return;
             const sliceAngle = (d.valor / totalDatos) * Math.PI * 2;
+            const filtroValor = d.label === 'Favorable' ? 'FAVORABLE' : d.label === 'Desfavorable' ? 'DESFAVORABLE' : 'SIN_PRONOSTICO';
+            const isSelected = filtroPronosticoDona === filtroValor;
+            const isHovered = window.hoveredDonaSegment === segIndex;
 
-            ctx.fillStyle = d.color;
-            ctx.beginPath();
-            ctx.moveTo(center, center);
-            ctx.arc(center, center, radius, startAngle, startAngle + sliceAngle);
-            ctx.closePath();
-            ctx.fill();
+            segsToDraw.push({
+                label: d.label,
+                valor: d.valor,
+                color: d.color,
+                startAngle: startAngle,
+                endAngle: startAngle + sliceAngle,
+                sliceAngle: sliceAngle,
+                filtroValor: filtroValor,
+                isSelected: isSelected,
+                isHovered: isHovered,
+                index: segIndex
+            });
 
-            // Guardar segmento para click interactivo
+            // Guardar segmento para click/hover interactivo
             window.datosDonaSegmentos.push({
                 label: d.label,
                 startAngle: startAngle,
                 endAngle: startAngle + sliceAngle,
-                color: d.color
+                color: d.color,
+                valor: d.valor
             });
 
             startAngle += sliceAngle;
+            segIndex++;
+        });
+
+        // Determinar si hay algun segmento seleccionado para atenuar los demas
+        const haySeleccion = segsToDraw.some(s => s.isSelected);
+
+        // Dibujar cada segmento con offsets para hover/seleccion
+        segsToDraw.forEach(seg => {
+            const midAngle = (seg.startAngle + seg.endAngle) / 2;
+            let offsetX = 0;
+            let offsetY = 0;
+
+            if (seg.isSelected) {
+                offsetX = Math.cos(midAngle) * 10;
+                offsetY = Math.sin(midAngle) * 10;
+            } else if (seg.isHovered) {
+                offsetX = Math.cos(midAngle) * 6;
+                offsetY = Math.sin(midAngle) * 6;
+            }
+
+            ctx.save();
+
+            // Atenuar segmentos no seleccionados cuando hay seleccion activa
+            if (haySeleccion && !seg.isSelected) {
+                ctx.globalAlpha = 0.35;
+            }
+
+            // Sombra para segmento seleccionado
+            if (seg.isSelected) {
+                ctx.shadowColor = seg.color;
+                ctx.shadowBlur = 12;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
+
+            ctx.fillStyle = seg.color;
+            ctx.beginPath();
+            ctx.moveTo(center + offsetX, center + offsetY);
+            ctx.arc(center + offsetX, center + offsetY, radius, seg.startAngle, seg.endAngle);
+            ctx.closePath();
+            ctx.fill();
+
+            // Borde blanco grueso para segmento seleccionado
+            if (seg.isSelected) {
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(center + offsetX, center + offsetY);
+                ctx.arc(center + offsetX, center + offsetY, radius, seg.startAngle, seg.endAngle);
+                ctx.closePath();
+                ctx.stroke();
+            }
+            ctx.restore();
         });
 
         // Recortar centro (dona)
@@ -1098,16 +1171,41 @@ function renderizarGraficaPronostico() {
         ctx.arc(center, center, innerRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Numero total en el centro
-        ctx.fillStyle = '#333';
-        ctx.font = 'bold 18px Montserrat, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(totalDatos, center, center - 3);
+        // Tooltip: si hay hover, mostrar etiqueta y valor en el centro
+        const hoveredSeg = segsToDraw.find(s => s.isHovered);
+        if (hoveredSeg) {
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Montserrat, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(hoveredSeg.valor, center, center - 5);
 
-        ctx.fillStyle = '#888';
-        ctx.font = '8px Montserrat, sans-serif';
-        ctx.fillText('trámites', center, center + 10);
+            ctx.fillStyle = '#666';
+            ctx.font = '7px Montserrat, sans-serif';
+            ctx.fillText(hoveredSeg.label, center, center + 8);
+        } else {
+            // Numero total en el centro
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 18px Montserrat, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(totalDatos, center, center - 3);
+
+            ctx.fillStyle = '#888';
+            ctx.font = '8px Montserrat, sans-serif';
+            const centerLabel = estadoFiltros.filtroEstatus === 'CONCLUIDO' ? 'concluidos' : 'trámites';
+            ctx.fillText(centerLabel, center, center + 10);
+        }
+    }
+
+    // Actualizar etiqueta dinámica de la gráfica según filtro de estatus
+    const graficaLabel = document.querySelector('.grafica-label');
+    if (graficaLabel) {
+        if (estadoFiltros.filtroEstatus === 'CONCLUIDO') {
+            graficaLabel.textContent = 'Pronóstico de Asuntos Concluidos';
+        } else {
+            graficaLabel.textContent = 'Pronóstico de Asuntos en Trámite';
+        }
     }
 
     // Leyenda (clickeable)
@@ -1177,20 +1275,87 @@ function inicializarClickDona() {
             }
         }
     });
+
+    // Hover: detectar segmento bajo el mouse y re-renderizar con efecto visual
+    canvas.addEventListener('mousemove', function (e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        const center = canvas.width / 2;
+        const dx = x - center;
+        const dy = y - center;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const radius = canvas.width / 2 - 4;
+        const innerRadius = radius * 0.58;
+
+        let newHovered = -1;
+
+        if (dist >= innerRadius && dist <= radius) {
+            let angle = Math.atan2(dy, dx);
+            if (angle < -Math.PI / 2) angle += Math.PI * 2;
+
+            const segmentos = window.datosDonaSegmentos || [];
+            for (let i = 0; i < segmentos.length; i++) {
+                if (angle >= segmentos[i].startAngle && angle < segmentos[i].endAngle) {
+                    newHovered = i;
+                    break;
+                }
+            }
+        }
+
+        // Actualizar cursor
+        canvas.style.cursor = newHovered >= 0 ? 'pointer' : 'default';
+
+        // Solo re-renderizar si cambió el segmento hovered
+        if (newHovered !== window.hoveredDonaSegment) {
+            window.hoveredDonaSegment = newHovered;
+            renderizarGraficaPronostico();
+        }
+    });
+
+    // Resetear hover al salir del canvas
+    canvas.addEventListener('mouseleave', function () {
+        canvas.style.cursor = 'default';
+        if (window.hoveredDonaSegment !== -1) {
+            window.hoveredDonaSegment = -1;
+            renderizarGraficaPronostico();
+        }
+    });
 }
 
 function clickDonaFiltro(valor) {
     // Toggle: si ya está seleccionado, limpiar
     if (filtroPronosticoDona === valor) {
         filtroPronosticoDona = '';
+        // Si el estatus fue auto-asignado por la dona, limpiarlo al desactivar el filtro de dona
+        if (estatusAutoSetByDona) {
+            estatusAutoSetByDona = false;
+            seleccionarFiltro('filtroEstatus', '', '');
+            return; // seleccionarFiltro ya llama a filtrarCasos
+        }
     } else {
         filtroPronosticoDona = valor;
+        // Si no hay filtro de estatus activo, auto-asignar TRAMITE para contexto
+        if (!estadoFiltros.filtroEstatus) {
+            estatusAutoSetByDona = true;
+            seleccionarFiltro('filtroEstatus', 'TRAMITE', 'Trámite');
+            return; // seleccionarFiltro ya llama a filtrarCasos
+        }
     }
     filtrarCasos();
 }
 
 function limpiarFiltroDona() {
     filtroPronosticoDona = '';
+    // Si el estatus fue auto-asignado por la dona, limpiarlo también
+    if (estatusAutoSetByDona) {
+        estatusAutoSetByDona = false;
+        seleccionarFiltro('filtroEstatus', '', '');
+        return; // seleccionarFiltro ya llama a filtrarCasos
+    }
     filtrarCasos();
 }
 

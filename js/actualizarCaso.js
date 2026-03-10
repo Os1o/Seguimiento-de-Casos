@@ -223,7 +223,7 @@ function guardarActualizacion(e) {
 
     const fechaActuacion = document.getElementById('fechaActuacion').value;
     const tipoActuacion = document.getElementById('tipoActuacion').value;
-    const descripcion = document.getElementById('descripcionActuacion').value || null;
+    const descripcion = (document.getElementById('descripcionActuacion').value || '').toUpperCase() || null;
     const fechaVencimiento = document.getElementById('fechaVencimiento').value || null;
 
     // Actualizar seguimiento con nuevos campos

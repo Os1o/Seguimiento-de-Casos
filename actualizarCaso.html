@@ -45,9 +45,9 @@
                 </div>
             </div>
 
-            <!-- Fecha de actuación y Tipo de actuación -->
+            <!-- Fecha de actuación, Tipo de actuación y Próximo vencimiento -->
             <div class="form-section">
-                <div class="form-grid">
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
                     <div class="form-group">
                         <label class="form-label required">Fecha de actuación</label>
                         <input type="date" id="fechaActuacion" class="form-input" required>
@@ -79,14 +79,9 @@
                             <option value="Vista">Vista</option>
                         </select>
                     </div>
-                </div>
-            </div>
 
-            <!-- Próximo vencimiento -->
-            <div class="form-section">
-                <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Próximo vencimiento <small style="color: var(--color-text-light);">(opcional)</small></label>
+                        <label class="form-label">Fecha de Próximo vencimiento <small style="color: var(--color-text-light);">(opcional)</small></label>
                         <input type="date" id="fechaVencimiento" class="form-input">
                     </div>
                 </div>

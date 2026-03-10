@@ -309,6 +309,16 @@ body {
   resize: vertical;
 }
 
+/* Mayúsculas en inputs de texto */
+.form-input,
+.form-textarea {
+  text-transform: uppercase;
+}
+.form-input::placeholder,
+.form-textarea::placeholder {
+  text-transform: none;
+}
+
 .form-input[type="password"] {
   letter-spacing: 2px;
 }

@@ -643,11 +643,11 @@ function construirObjetoCaso() {
 
     let numeroExpediente;
     if (esLocal) {
-        numeroExpediente = document.getElementById('numeroLocal').value;
+        numeroExpediente = (document.getElementById('numeroLocal').value || '').toUpperCase();
     } else {
         const num = document.getElementById('numeroFederal').value;
         const ano = document.getElementById('anoFederal').value;
-        numeroExpediente = `${num}/${ano}`;
+        numeroExpediente = `${num}/${ano}`.toUpperCase();
     }
 
     const imssEs = document.querySelector('input[name="imssEs"]:checked').value;
@@ -707,9 +707,9 @@ function construirObjetoCaso() {
         codemandados: codemandados,
         prestacion_principal: prestacionPrincipal,
         prestaciones_secundarias: prestacionesSecundarias,
-        prestaciones_notas: document.getElementById('prestacionesNotas').value,
+        prestaciones_notas: (document.getElementById('prestacionesNotas').value || '').toUpperCase() || null,
         importe_demandado: importeDemandado,
-        abogado_responsable: document.getElementById('abogadoResponsable').value || null,
+        abogado_responsable: (document.getElementById('abogadoResponsable').value || '').toUpperCase() || null,
         pronostico: document.getElementById('pronostico').value || null,
         estatus: 'TRAMITE',
         juicios_acumulados: [],
@@ -744,14 +744,14 @@ function obtenerPersonasDinamicas(prefijo) {
         if (tipo === 'FISICA') {
             personas.push({
                 tipo_persona: 'FISICA',
-                nombres: document.getElementById(`${id}_nombres`).value,
-                apellido_paterno: document.getElementById(`${id}_paterno`).value,
-                apellido_materno: document.getElementById(`${id}_materno`).value
+                nombres: (document.getElementById(`${id}_nombres`).value || '').toUpperCase(),
+                apellido_paterno: (document.getElementById(`${id}_paterno`).value || '').toUpperCase(),
+                apellido_materno: (document.getElementById(`${id}_materno`).value || '').toUpperCase()
             });
         } else {
             personas.push({
                 tipo_persona: 'MORAL',
-                empresa: document.getElementById(`${id}_empresa`).value
+                empresa: (document.getElementById(`${id}_empresa`).value || '').toUpperCase()
             });
         }
     });
