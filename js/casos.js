@@ -338,9 +338,12 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
-// Scroll cierra el panel de filtros
-window.addEventListener('scroll', function () {
-    if (filtroAbierto) cerrarTodosLosFiltros();
+// Scroll cierra el panel de filtros (excepto scroll dentro del propio dropdown)
+window.addEventListener('scroll', function (e) {
+    if (!filtroAbierto) return;
+    const panel = document.getElementById('filtroPanel');
+    if (panel && panel.contains(e.target)) return; // scroll dentro del dropdown, ignorar
+    cerrarTodosLosFiltros();
 }, true);
 
 function filtrarCasos() {
