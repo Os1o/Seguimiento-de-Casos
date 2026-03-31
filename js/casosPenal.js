@@ -252,11 +252,10 @@ function obtenerNombreEstadoProcesal(id) {
         const ep = catalogosDB.estadosProcesales.find(e => e.id === id);
         return ep ? ep.nombre : null;
     }
-    // Fallback: buscar en casosPenalEstados (datos locales)
     const estados = {
-        1: 'Investigación inicial', 2: 'Investigación complementaria', 3: 'Etapa intermedia',
-        4: 'Juicio oral', 5: 'Sentenciado', 6: 'Ejecución de sentencia',
-        7: 'Recurso de apelación', 8: 'Amparo', 9: 'Concluido'
+        1: 'Etapa de investigación',
+        2: 'Etapa intermedia o etapa de preparación a juicio',
+        3: 'Etapa de juicio oral'
     };
     return estados[id] || null;
 }
@@ -269,6 +268,7 @@ const estadoFiltros = {
     filtroDelegacion: '',
     filtroEstatus: '',
     filtroDelito: '',
+    filtroEstatusJSJ: '',
     filtroEstadoProcesal: ''
 };
 
@@ -279,6 +279,7 @@ const opcionesFiltros = {
         { valor: 'CONCLUIDO', etiqueta: 'Concluido' }
     ],
     filtroDelito: [],
+    filtroEstatusJSJ: [],
     filtroEstadoProcesal: []
 };
 
@@ -298,6 +299,17 @@ function llenarFiltros() {
         if (nombre && !delitosVistos.has(nombre)) {
             delitosVistos.add(nombre);
             opcionesFiltros.filtroDelito.push({ valor: nombre, etiqueta: nombre });
+        }
+    });
+
+    // Estatus Investigación JSJ
+    opcionesFiltros.filtroEstatusJSJ = [];
+    const estatusJSJVistos = new Set();
+    todosLosCasos.forEach(c => {
+        const nombre = c.estatus_investigacion_jsj;
+        if (nombre && !estatusJSJVistos.has(nombre)) {
+            estatusJSJVistos.add(nombre);
+            opcionesFiltros.filtroEstatusJSJ.push({ valor: nombre, etiqueta: nombre });
         }
     });
 
@@ -361,6 +373,7 @@ function toggleFiltro(id, boton) {
                 const nombre = c.delito_nombre || obtenerNombreDelito(c.delito_id);
                 return nombre === op.valor;
             }
+            if (id === 'filtroEstatusJSJ') return c.estatus_investigacion_jsj === op.valor;
             if (id === 'filtroEstadoProcesal') {
                 const nombre = c.estado_procesal_nombre || obtenerNombreEstadoProcesal(c.estado_procesal_id);
                 return nombre === op.valor;
@@ -425,6 +438,9 @@ function aplicarFiltros() {
             const nombre = caso.delito_nombre || obtenerNombreDelito(caso.delito_id);
             if (nombre !== estadoFiltros.filtroDelito) return false;
         }
+
+        // Filtro estatus investigación JSJ
+        if (estadoFiltros.filtroEstatusJSJ && caso.estatus_investigacion_jsj !== estadoFiltros.filtroEstatusJSJ) return false;
 
         // Filtro estado procesal
         if (estadoFiltros.filtroEstadoProcesal) {
@@ -516,6 +532,7 @@ function renderizarTabla() {
                 <td><small>${delitoNombre}</small></td>
                 <td><small>${denunciante}</small></td>
                 <td><small>${responsable}</small></td>
+                <td><small>${caso.estatus_investigacion_jsj || '---'}</small></td>
                 <td><small>${estadoProcesal}</small></td>
                 <td>${badgeSentencia}</td>
                 <td>${formatearFecha(caso.fecha_inicio)}</td>

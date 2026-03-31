@@ -33,7 +33,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     cargarDelegaciones();
     cargarDelitos();
     cargarEstadosProcesales();
+    cargarEstatusInvestigacion();
     initRadioButtons();
+    initExpedienteCompuesto();
 
     // Submit
     document.getElementById('formNuevoCaso').addEventListener('submit', function (e) {
@@ -67,20 +69,9 @@ function cargarDelitos() {
     if (catalogosCargados && catalogosDB.delitos.length > 0) {
         delitos = catalogosDB.delitos;
     } else {
-        // Fallback
         delitos = [
-            { id: 1, nombre: 'Robo' }, { id: 2, nombre: 'Robo calificado' },
-            { id: 3, nombre: 'Fraude' }, { id: 4, nombre: 'Abuso de confianza' },
-            { id: 5, nombre: 'Daño en propiedad ajena' }, { id: 6, nombre: 'Lesiones' },
-            { id: 7, nombre: 'Homicidio culposo' }, { id: 8, nombre: 'Amenazas' },
-            { id: 9, nombre: 'Usurpación de funciones' }, { id: 10, nombre: 'Falsificación de documentos' },
-            { id: 11, nombre: 'Uso de documento falso' }, { id: 12, nombre: 'Despojo' },
-            { id: 13, nombre: 'Extorsión' }, { id: 14, nombre: 'Delitos contra la salud' },
-            { id: 15, nombre: 'Delitos contra el patrimonio institucional' },
-            { id: 16, nombre: 'Peculado' }, { id: 17, nombre: 'Cohecho' },
-            { id: 18, nombre: 'Ejercicio indebido del servicio público' },
-            { id: 19, nombre: 'Uso indebido de atribuciones y facultades' },
-            { id: 20, nombre: 'Violación de sellos' }
+            { id: 1, nombre: 'ABUSO DE CONFIANZA' }, { id: 17, nombre: 'FRAUDE' },
+            { id: 22, nombre: 'LESIONES' }, { id: 27, nombre: 'ROBO' }
         ];
     }
 
@@ -100,17 +91,42 @@ function cargarEstadosProcesales() {
         estados = catalogosDB.estadosProcesales;
     } else {
         estados = [
-            { id: 1, nombre: 'Investigación inicial' }, { id: 2, nombre: 'Investigación complementaria' },
-            { id: 3, nombre: 'Etapa intermedia' }, { id: 4, nombre: 'Juicio oral' },
-            { id: 5, nombre: 'Sentenciado' }, { id: 6, nombre: 'Ejecución de sentencia' },
-            { id: 7, nombre: 'Recurso de apelación' }, { id: 8, nombre: 'Amparo' },
-            { id: 9, nombre: 'Concluido' }
+            { id: 1, nombre: 'Etapa de investigación' },
+            { id: 2, nombre: 'Etapa intermedia o etapa de preparación a juicio' },
+            { id: 3, nombre: 'Etapa de juicio oral' }
         ];
     }
 
     estados.forEach(e => {
         const opt = document.createElement('option');
         opt.value = e.id;
+        opt.textContent = e.nombre;
+        select.appendChild(opt);
+    });
+}
+
+function cargarEstatusInvestigacion() {
+    const select = document.getElementById('estatusInvestigacionJSJ');
+    if (!select) return;
+
+    let estatus;
+    if (catalogosCargados && catalogosDB.estatusInvestigacion && catalogosDB.estatusInvestigacion.length > 0) {
+        estatus = catalogosDB.estatusInvestigacion;
+    } else {
+        estatus = [
+            { id: 1, nombre: 'ACUERDO REPARATORIO' },
+            { id: 2, nombre: 'EN TRÁMITE' },
+            { id: 3, nombre: 'CONCLUIDO' },
+            { id: 4, nombre: 'INCOMPETENCIA' },
+            { id: 5, nombre: 'NO EJERCICIO DE LA ACCIÓN PENAL' },
+            { id: 6, nombre: 'SE SEÑALA NUEVA FECHA PARA AUDIENCIA DE JUICIO ORAL' },
+            { id: 7, nombre: 'CAUSA PENAL' }
+        ];
+    }
+
+    estatus.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.nombre;
         opt.textContent = e.nombre;
         select.appendChild(opt);
     });
@@ -134,9 +150,57 @@ function initRadioButtons() {
     });
 }
 
+// =====================================================
+// EXPEDIENTE COMPUESTO: JURISDICCION/ENTIDAD/OOAD/NUM/AÑO
+// =====================================================
+
+function initExpedienteCompuesto() {
+    const campos = ['expJurisdiccion', 'expEntidad', 'expOoad', 'expNumero', 'expAnio'];
+    campos.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', actualizarPreviewExpediente);
+            el.addEventListener('change', actualizarPreviewExpediente);
+        }
+    });
+}
+
+function actualizarPreviewExpediente() {
+    const j = document.getElementById('expJurisdiccion').value;
+    const e = document.getElementById('expEntidad').value.toUpperCase();
+    const o = document.getElementById('expOoad').value.toUpperCase();
+    const n = document.getElementById('expNumero').value;
+    const a = document.getElementById('expAnio').value;
+
+    // Forzar mayúsculas en los inputs
+    document.getElementById('expEntidad').value = e;
+    document.getElementById('expOoad').value = o;
+
+    const partes = [j, e, o, n, a].filter(p => p);
+    const preview = document.getElementById('previewExpediente');
+    if (preview) {
+        preview.textContent = partes.length > 0 ? 'Vista previa: ' + partes.join('/') : 'Vista previa: ---';
+    }
+}
+
+function obtenerNumeroExpediente() {
+    const j = document.getElementById('expJurisdiccion').value;
+    const e = document.getElementById('expEntidad').value.toUpperCase();
+    const o = document.getElementById('expOoad').value.toUpperCase();
+    const n = document.getElementById('expNumero').value;
+    const a = document.getElementById('expAnio').value;
+
+    if (!j || !e || !o || !n || !a) return null;
+    return `${j}/${e}/${o}/${n}/${a}`;
+}
+
+// =====================================================
+// GUARDAR
+// =====================================================
+
 function guardarCaso() {
     const delegacionId = parseInt(document.getElementById('delegacion').value);
-    const numeroExpediente = document.getElementById('numeroExpediente').value.trim();
+    const numeroExpediente = obtenerNumeroExpediente();
     const fechaInicio = document.getElementById('fechaInicio').value;
     const delitoId = parseInt(document.getElementById('delito').value);
     const estadoProcesalId = parseInt(document.getElementById('estadoProcesal').value);
@@ -194,6 +258,7 @@ function guardarCaso() {
         delito_id: delitoId,
         denunciante: denunciante,
         probable_responsable: probableResponsable,
+        estatus_investigacion_jsj: document.getElementById('estatusInvestigacionJSJ').value || null,
         fecha_conocimiento_amp: document.getElementById('fechaConocimientoAmp').value || null,
         estado_procesal_id: estadoProcesalId,
         acciones_pendientes: document.getElementById('accionesPendientes').value.trim() || null,

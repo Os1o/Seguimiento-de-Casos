@@ -87,6 +87,9 @@ function renderizarDetalle() {
     document.getElementById('denunciante').textContent = getPersonaNombreLocal(caso.denunciante);
     document.getElementById('probableResponsable').textContent = getPersonaNombreLocal(caso.probable_responsable);
 
+    // Estatus investigación JSJ
+    document.getElementById('estatusInvestigacionJSJ').textContent = caso.estatus_investigacion_jsj || '---';
+
     // Estado procesal
     const estadoProcesal = obtenerNombreEstadoProcesalLocal(caso.estado_procesal_id);
     document.getElementById('estadoProcesal').textContent = estadoProcesal || '---';
@@ -185,13 +188,9 @@ function obtenerNombreDelitoLocal(id) {
         return d ? d.nombre : null;
     }
     const delitos = {
-        1: 'Robo', 2: 'Robo calificado', 3: 'Fraude', 4: 'Abuso de confianza',
-        5: 'Daño en propiedad ajena', 6: 'Lesiones', 7: 'Homicidio culposo',
-        8: 'Amenazas', 9: 'Usurpación de funciones', 10: 'Falsificación de documentos',
-        11: 'Uso de documento falso', 12: 'Despojo', 13: 'Extorsión',
-        14: 'Delitos contra la salud', 15: 'Delitos contra el patrimonio institucional',
-        16: 'Peculado', 17: 'Cohecho', 18: 'Ejercicio indebido del servicio público',
-        19: 'Uso indebido de atribuciones y facultades', 20: 'Violación de sellos'
+        1: 'ABUSO DE CONFIANZA', 5: 'COHECHO', 7: 'DAÑOS', 13: 'FALSIFICACIÓN DE DOCUMENTOS',
+        17: 'FRAUDE', 20: 'HOMICIDIO POR OMISIÓN EN AGRAVIO', 22: 'LESIONES', 27: 'ROBO',
+        35: 'SUPLANTACION DE IDENTIDAD'
     };
     return delitos[id] || null;
 }
@@ -203,9 +202,9 @@ function obtenerNombreEstadoProcesalLocal(id) {
         return e ? e.nombre : null;
     }
     const estados = {
-        1: 'Investigación inicial', 2: 'Investigación complementaria', 3: 'Etapa intermedia',
-        4: 'Juicio oral', 5: 'Sentenciado', 6: 'Ejecución de sentencia',
-        7: 'Recurso de apelación', 8: 'Amparo', 9: 'Concluido'
+        1: 'Etapa de investigación',
+        2: 'Etapa intermedia o etapa de preparación a juicio',
+        3: 'Etapa de juicio oral'
     };
     return estados[id] || null;
 }

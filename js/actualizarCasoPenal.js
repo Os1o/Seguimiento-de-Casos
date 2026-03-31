@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     cargarResumen();
     cargarTiposActuacion();
     cargarEstadosProcesales();
+    cargarEstatusInvestigacion();
     renderizarTimeline();
 
     // Fecha por defecto: hoy
@@ -106,17 +107,48 @@ function cargarTiposActuacion() {
 
 function cargarEstadosProcesales() {
     const select = document.getElementById('nuevoEstadoProcesal');
-    const estados = catalogosCargados && catalogosDB.estadosProcesales.length > 0 ? catalogosDB.estadosProcesales : [
-        { id: 1, nombre: 'Investigación inicial' }, { id: 2, nombre: 'Investigación complementaria' },
-        { id: 3, nombre: 'Etapa intermedia' }, { id: 4, nombre: 'Juicio oral' },
-        { id: 5, nombre: 'Sentenciado' }, { id: 6, nombre: 'Ejecución de sentencia' },
-        { id: 7, nombre: 'Recurso de apelación' }, { id: 8, nombre: 'Amparo' },
-        { id: 9, nombre: 'Concluido' }
-    ];
+    let estados;
+
+    if (catalogosCargados && catalogosDB.estadosProcesales.length > 0) {
+        estados = catalogosDB.estadosProcesales;
+    } else {
+        estados = [
+            { id: 1, nombre: 'Etapa de investigación' },
+            { id: 2, nombre: 'Etapa intermedia o etapa de preparación a juicio' },
+            { id: 3, nombre: 'Etapa de juicio oral' }
+        ];
+    }
 
     estados.forEach(e => {
         const opt = document.createElement('option');
         opt.value = e.id;
+        opt.textContent = e.nombre;
+        select.appendChild(opt);
+    });
+}
+
+function cargarEstatusInvestigacion() {
+    const select = document.getElementById('nuevoEstatusJSJ');
+    if (!select) return;
+
+    let estatus;
+    if (catalogosCargados && catalogosDB.estatusInvestigacion && catalogosDB.estatusInvestigacion.length > 0) {
+        estatus = catalogosDB.estatusInvestigacion;
+    } else {
+        estatus = [
+            { id: 1, nombre: 'ACUERDO REPARATORIO' },
+            { id: 2, nombre: 'EN TRÁMITE' },
+            { id: 3, nombre: 'CONCLUIDO' },
+            { id: 4, nombre: 'INCOMPETENCIA' },
+            { id: 5, nombre: 'NO EJERCICIO DE LA ACCIÓN PENAL' },
+            { id: 6, nombre: 'SE SEÑALA NUEVA FECHA PARA AUDIENCIA DE JUICIO ORAL' },
+            { id: 7, nombre: 'CAUSA PENAL' }
+        ];
+    }
+
+    estatus.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.nombre;
         opt.textContent = e.nombre;
         select.appendChild(opt);
     });
@@ -150,6 +182,12 @@ function guardarActuacion() {
     // Actualizar seguimiento (último)
     casos[idx].seguimiento = nuevaActuacion;
     casos[idx].fecha_actualizacion = new Date().toISOString();
+
+    // Actualizar estatus inv. JSJ si se seleccionó
+    const nuevoEstatusJSJ = document.getElementById('nuevoEstatusJSJ').value;
+    if (nuevoEstatusJSJ) {
+        casos[idx].estatus_investigacion_jsj = nuevoEstatusJSJ;
+    }
 
     // Actualizar estado procesal si se seleccionó
     const nuevoEstadoProcesal = document.getElementById('nuevoEstadoProcesal').value;
@@ -205,13 +243,9 @@ function obtenerNombreDelitoLocal(id) {
         return d ? d.nombre : null;
     }
     const delitos = {
-        1: 'Robo', 2: 'Robo calificado', 3: 'Fraude', 4: 'Abuso de confianza',
-        5: 'Daño en propiedad ajena', 6: 'Lesiones', 7: 'Homicidio culposo',
-        8: 'Amenazas', 9: 'Usurpación de funciones', 10: 'Falsificación de documentos',
-        11: 'Uso de documento falso', 12: 'Despojo', 13: 'Extorsión',
-        14: 'Delitos contra la salud', 15: 'Delitos contra el patrimonio institucional',
-        16: 'Peculado', 17: 'Cohecho', 18: 'Ejercicio indebido del servicio público',
-        19: 'Uso indebido de atribuciones y facultades', 20: 'Violación de sellos'
+        1: 'ABUSO DE CONFIANZA', 5: 'COHECHO', 7: 'DAÑOS', 13: 'FALSIFICACIÓN DE DOCUMENTOS',
+        17: 'FRAUDE', 20: 'HOMICIDIO POR OMISIÓN EN AGRAVIO', 22: 'LESIONES', 27: 'ROBO',
+        35: 'SUPLANTACION DE IDENTIDAD'
     };
     return delitos[id] || null;
 }
@@ -223,9 +257,9 @@ function obtenerNombreEstadoProcesalLocal(id) {
         return e ? e.nombre : null;
     }
     const estados = {
-        1: 'Investigación inicial', 2: 'Investigación complementaria', 3: 'Etapa intermedia',
-        4: 'Juicio oral', 5: 'Sentenciado', 6: 'Ejecución de sentencia',
-        7: 'Recurso de apelación', 8: 'Amparo', 9: 'Concluido'
+        1: 'Etapa de investigación',
+        2: 'Etapa intermedia o etapa de preparación a juicio',
+        3: 'Etapa de juicio oral'
     };
     return estados[id] || null;
 }

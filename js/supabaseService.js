@@ -13,7 +13,8 @@ const catalogosDB = {
     tiposJuicio: {},  // { materia: [tipos] }
     subtiposJuicio: {},// { tipo_juicio_id: [subtipos] }
     delitos: [],
-    estadosProcesales: []
+    estadosProcesales: [],
+    estatusInvestigacion: []
 };
 
 let catalogosCargados = false;
@@ -36,7 +37,8 @@ async function cargarCatalogos() {
             { data: tiposJuicio },
             { data: subtiposJuicio },
             { data: delitos },
-            { data: estadosProcesales }
+            { data: estadosProcesales },
+            { data: estatusInvestigacion }
         ] = await Promise.all([
             supabase.from('delegaciones').select('*').order('id'),
             supabase.from('areas').select('*').order('delegacion_id, id'),
@@ -45,8 +47,9 @@ async function cargarCatalogos() {
             supabase.from('tipos_actuacion').select('*').order('id'),
             supabase.from('tipos_juicio').select('*').order('id'),
             supabase.from('subtipos_juicio').select('*').order('id'),
-            supabase.from('delitos').select('*').order('id'),
-            supabase.from('estados_procesales').select('*').order('orden')
+            supabase.from('delitos').select('*').order('nombre'),
+            supabase.from('estados_procesales').select('*').order('orden'),
+            supabase.from('estatus_investigacion').select('*').order('id')
         ]);
 
         catalogosDB.delegaciones = delegaciones || [];
@@ -78,6 +81,7 @@ async function cargarCatalogos() {
 
         catalogosDB.delitos = delitos || [];
         catalogosDB.estadosProcesales = estadosProcesales || [];
+        catalogosDB.estatusInvestigacion = estatusInvestigacion || [];
 
         catalogosCargados = true;
         console.log('✅ Catálogos cargados desde Supabase');
@@ -113,6 +117,10 @@ function obtenerDelitoDB(id) {
 
 function obtenerEstadoProcesalDB(id) {
     return catalogosDB.estadosProcesales.find(e => e.id === id);
+}
+
+function obtenerEstatusInvestigacionDB(id) {
+    return catalogosDB.estatusInvestigacion.find(e => e.id === id);
 }
 
 function obtenerTribunalesPorDelegacion(delegacionId) {
