@@ -63,6 +63,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btnNuevo) btnNuevo.style.display = 'none';
     }
 
+    // Ocultar pestaña Penal si no tiene permiso
+    if (!usuario.permiso_penal && usuario.rol !== 'admin') {
+        const linkPenal = document.getElementById('linkPenal');
+        if (linkPenal) linkPenal.style.display = 'none';
+    }
+
     // Ocultar filtro de delegación para usuarios con JSJ fija (ya está filtrado por su JSJ)
     // Si no tiene delegacion_id (ej. consulta global), dejar el filtro visible
     if (usuario.rol !== 'admin' && usuario.delegacion_id) {

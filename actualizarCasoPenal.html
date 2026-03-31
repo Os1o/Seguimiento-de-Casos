@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualizar Seguimiento Penal - Sistema de Gestión</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header-gob">
+        <div class="header-logo">
+            <span class="logo-text">Gobierno de México</span>
+        </div>
+        <nav class="header-nav">
+            <a href="penal.html" class="btn-header-link">&larr; Asuntos Penales</a>
+            <div class="header-user">
+                <span id="nombreUsuario">Usuario</span>
+            </div>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="penal.html">Asuntos Penales</a>
+            <span class="breadcrumb-separator">></span>
+            <span id="breadcrumbExpediente">Actualizar Seguimiento</span>
+        </div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Actualizar Seguimiento</h1>
+                <p class="page-subtitle" id="subtituloExpediente">Agregar nueva actuación al expediente</p>
+            </div>
+        </div>
+
+        <!-- Resumen del caso -->
+        <div class="card" style="margin-bottom: 24px;">
+            <h3 class="section-title">Resumen del Asunto</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Expediente</span>
+                    <span class="info-value" id="resumenExpediente">---</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Delito</span>
+                    <span class="info-value" id="resumenDelito">---</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Estado Procesal</span>
+                    <span class="info-value" id="resumenEstadoProcesal">---</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Estatus</span>
+                    <span class="info-value" id="resumenEstatus">---</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario de actualización -->
+        <form id="formActualizar" class="card">
+            <div class="form-section">
+                <h3 class="form-section-title">Nueva Actuación</h3>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label required">Fecha de Actuación</label>
+                        <input type="date" id="fechaActuacion" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Tipo de Actuación</label>
+                        <select id="tipoActuacion" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">Descripción</label>
+                    <textarea id="descripcion" class="form-textarea" placeholder="Describa la actuación realizada..." required></textarea>
+                </div>
+            </div>
+
+            <!-- Actualizar estado procesal (opcional) -->
+            <div class="form-section">
+                <h3 class="form-section-title">Actualizar Estado (opcional)</h3>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Nuevo Estado Procesal</label>
+                        <select id="nuevoEstadoProcesal" class="form-select">
+                            <option value="">Sin cambio</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nuevo Estatus</label>
+                        <select id="nuevoEstatus" class="form-select">
+                            <option value="">Sin cambio</option>
+                            <option value="TRAMITE">En Trámite</option>
+                            <option value="CONCLUIDO">Concluido</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px;">
+                <a href="penal.html" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-success">Guardar Actuación</button>
+            </div>
+        </form>
+
+        <!-- Timeline de actuaciones previas -->
+        <div class="card" style="margin-top: 24px;">
+            <h3 class="section-title">Historial de Actuaciones</h3>
+            <div id="timeline" class="timeline"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabaseClient.js"></script>
+    <script src="js/supabaseService.js"></script>
+    <script src="js/datosFake.js"></script>
+    <script src="js/actualizarCasoPenal.js"></script>
+</body>
+</html>

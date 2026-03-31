@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asuntos Penales - Sistema de Gestión</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header-gob">
+        <div class="header-logo">
+            <span class="logo-text">Gobierno de México</span>
+        </div>
+        <nav class="header-nav">
+            <a href="adminUsuarios.html" id="linkAdmin" class="btn-header-link" style="display:none;">Administrar Usuarios</a>
+            <div class="header-user">
+                <span id="nombreUsuario">Usuario</span>
+                <span id="badgeRol" class="badge-rol"></span>
+                <small id="infoOOAD" class="info-ooad"></small>
+            </div>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </nav>
+    </header>
+
+    <!-- Contenido Principal -->
+    <div class="container">
+        <!-- Módulo switcher -->
+        <div class="modulo-switcher">
+            <a href="casos.html" class="modulo-tab">Civil / Mercantil</a>
+            <a href="penal.html" class="modulo-tab modulo-tab-active">Penal</a>
+        </div>
+
+        <!-- Encabezado de Página -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Asuntos Penales</h1>
+                <p class="page-subtitle">Gestión y seguimiento de expedientes penales</p>
+            </div>
+            <a href="nuevoCasoPenal.html" class="btn btn-primary" id="btnNuevoRegistro">
+                + Nuevo Registro
+            </a>
+        </div>
+
+        <!-- Dashboard: Contadores + Gráfica -->
+        <div class="dashboard-row">
+            <div class="contador-card">
+                <div class="contador-numero" id="totalCasos" style="color: var(--color-secondary);">0</div>
+                <div class="contador-label">Total Registros</div>
+            </div>
+            <div class="contador-card">
+                <div class="contador-numero" id="casosTramite" style="color: var(--color-warning);">0</div>
+                <div class="contador-label">En Trámite</div>
+            </div>
+            <div class="contador-card">
+                <div class="contador-numero" id="casosConcluidos" style="color: var(--color-success);">0</div>
+                <div class="contador-label">Concluidos</div>
+            </div>
+            <div class="contador-card grafica-card">
+                <div class="grafica-label">Estado Procesal de Asuntos en Trámite</div>
+                <div class="grafica-dona-row">
+                    <canvas id="chartEstadoProcesal" width="110" height="110"></canvas>
+                    <div class="grafica-leyenda" id="leyendaEstadoProcesal"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Indicador de filtro de dona -->
+        <div id="indicadorFiltroDona" style="display:none; background: #fff3cd; padding: 8px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; color: #856404;"></div>
+
+        <!-- Búsqueda -->
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <input type="text" id="searchInput" class="search-input"
+                    placeholder="Buscar por expediente, denunciante o probable responsable...">
+                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
+                    Limpiar Filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de Asuntos Penales -->
+        <div class="table-container">
+            <table class="table" id="tablaCasos">
+                <colgroup>
+                    <col class="col-delegacion">
+                    <col class="col-estatus">
+                    <col class="col-expediente">
+                    <col style="width: 120px;">
+                    <col style="width: 140px;">
+                    <col style="width: 140px;">
+                    <col style="width: 130px;">
+                    <col style="width: 100px;">
+                    <col style="width: 100px;">
+                    <col class="col-actualizacion">
+                    <col class="col-acciones">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="th-filtrable">
+                            <button id="btn_filtroDelegacion" class="filtro-btn-custom" data-nombre="JSJ"
+                                onclick="toggleFiltro('filtroDelegacion', this)"><span class="filtro-btn-nombre">JSJ <span class="filtro-flecha">&#9660;</span></span></button>
+                        </th>
+                        <th class="th-filtrable">
+                            <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus"
+                                onclick="toggleFiltro('filtroEstatus', this)"><span class="filtro-btn-nombre">Estatus <span class="filtro-flecha">&#9660;</span></span></button>
+                        </th>
+                        <th>Núm. expediente</th>
+                        <th class="th-filtrable">
+                            <button id="btn_filtroDelito" class="filtro-btn-custom" data-nombre="Delito"
+                                onclick="toggleFiltro('filtroDelito', this)"><span class="filtro-btn-nombre">Delito <span class="filtro-flecha">&#9660;</span></span></button>
+                        </th>
+                        <th>Denunciante</th>
+                        <th>Probable Responsable</th>
+                        <th class="th-filtrable">
+                            <button id="btn_filtroEstadoProcesal" class="filtro-btn-custom" data-nombre="Estado Procesal"
+                                onclick="toggleFiltro('filtroEstadoProcesal', this)"><span class="filtro-btn-nombre">Estado Procesal <span class="filtro-flecha">&#9660;</span></span></button>
+                        </th>
+                        <th>Sentencia</th>
+                        <th>Fecha inicio</th>
+                        <th>Últ. actualización</th>
+                        <th class="th-sticky-right"></th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCasosBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Panel flotante de filtro -->
+        <div id="filtroPanel" style="display:none; position:fixed; z-index:9999;">
+            <div id="filtroPanelLista" class="filtro-panel-lista"></div>
+        </div>
+
+        <!-- Paginación -->
+        <div id="paginacion" class="paginacion" style="display:none;"></div>
+
+        <!-- Mensaje si no hay asuntos -->
+        <div id="mensajeVacio" class="card text-center" style="display: none; padding: 40px;">
+            <p style="font-size: 18px; color: var(--color-text-light);">
+                No se encontraron asuntos con los filtros aplicados
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabaseClient.js"></script>
+    <script src="js/supabaseService.js"></script>
+    <script src="js/datosFake.js"></script>
+    <script src="js/casosPenal.js"></script>
+</body>
+
+</html>

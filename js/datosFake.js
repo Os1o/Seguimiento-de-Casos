@@ -961,6 +961,214 @@ function inicializarUsuarios() {
 }
 inicializarUsuarios();
 
+// =====================================================
+// CASOS PENALES FAKE
+// =====================================================
+const casosPenalFake = [
+  {
+    id: 1, numero: 1, delegacion_id: 5,
+    numero_expediente: "PEN-CHS-001/2024",
+    fecha_inicio: "2024-03-15",
+    delito_id: 1,
+    denunciante: { tipo_persona: "MORAL", empresa: "IMSS Delegación Chiapas" },
+    probable_responsable: { tipo_persona: "FISICA", nombres: "Miguel", apellido_paterno: "Hernández", apellido_materno: "Cruz" },
+    fecha_conocimiento_amp: "2024-03-16",
+    estado_procesal_id: 4,
+    acciones_pendientes: "Dar seguimiento a la audiencia de juicio oral programada para el 15/04/2025",
+    fecha_judicializacion: "2024-08-20",
+    determinacion_judicial: "Vinculado a proceso",
+    sentencia: null, fecha_sentencia: null, fecha_conclusion: null,
+    dato_relevante: "Robo de equipo médico del almacén del HGZ No. 1",
+    estatus: "TRAMITE",
+    abogado_responsable: "Lic. Fernando Ruiz Díaz",
+    fecha_creacion: "2024-03-15T09:00:00",
+    fecha_actualizacion: "2025-03-01T10:00:00",
+    seguimiento: { fecha_actuacion: "2025-03-01", tipo_actuacion: "Audiencia", descripcion: "Se programó audiencia de juicio oral para el 15/04/2025." },
+    seguimientos: [
+      { fecha_actuacion: "2024-03-16", tipo_actuacion: "Denuncia", descripcion: "Se presentó denuncia ante el Ministerio Público por robo de equipo médico." },
+      { fecha_actuacion: "2024-05-20", tipo_actuacion: "Investigación", descripcion: "El MP recabó videos de vigilancia y declaraciones de testigos." },
+      { fecha_actuacion: "2024-08-20", tipo_actuacion: "Vinculación a proceso", descripcion: "Juez de Control dictó auto de vinculación a proceso contra el imputado." },
+      { fecha_actuacion: "2025-03-01", tipo_actuacion: "Audiencia", descripcion: "Se programó audiencia de juicio oral para el 15/04/2025." }
+    ]
+  },
+  {
+    id: 2, numero: 2, delegacion_id: 5,
+    numero_expediente: "PEN-CHS-002/2024",
+    fecha_inicio: "2024-05-10",
+    delito_id: 3,
+    denunciante: { tipo_persona: "MORAL", empresa: "IMSS Delegación Chiapas" },
+    probable_responsable: { tipo_persona: "FISICA", nombres: "Laura", apellido_paterno: "Mendoza", apellido_materno: "Ruiz" },
+    fecha_conocimiento_amp: "2024-05-11",
+    estado_procesal_id: 2,
+    acciones_pendientes: "Solicitar informe pericial contable al MP",
+    fecha_judicializacion: null, determinacion_judicial: null,
+    sentencia: null, fecha_sentencia: null, fecha_conclusion: null,
+    dato_relevante: "Fraude en licitación de servicios de limpieza",
+    estatus: "TRAMITE",
+    abogado_responsable: "Lic. Patricia Vega Noriega",
+    fecha_creacion: "2024-05-10T11:00:00",
+    fecha_actualizacion: "2025-02-15T14:00:00",
+    seguimiento: { fecha_actuacion: "2025-02-15", tipo_actuacion: "Promoción", descripcion: "Se promovió ante el MP la ampliación de la investigación a otros proveedores." },
+    seguimientos: [
+      { fecha_actuacion: "2024-05-11", tipo_actuacion: "Querella", descripcion: "Se presentó querella por fraude en proceso de licitación." },
+      { fecha_actuacion: "2024-08-15", tipo_actuacion: "Investigación", descripcion: "Se solicitó peritaje contable sobre las facturas presentadas." },
+      { fecha_actuacion: "2025-02-15", tipo_actuacion: "Promoción", descripcion: "Se promovió ante el MP la ampliación de la investigación a otros proveedores." }
+    ]
+  },
+  {
+    id: 3, numero: 3, delegacion_id: 2,
+    numero_expediente: "PEN-BC-001/2024",
+    fecha_inicio: "2024-06-01",
+    delito_id: 5,
+    denunciante: { tipo_persona: "MORAL", empresa: "IMSS Delegación Baja California" },
+    probable_responsable: { tipo_persona: "FISICA", nombres: "Ricardo", apellido_paterno: "Salinas", apellido_materno: "Pliego" },
+    fecha_conocimiento_amp: "2024-06-02",
+    estado_procesal_id: 5,
+    acciones_pendientes: null,
+    fecha_judicializacion: "2024-09-15",
+    determinacion_judicial: "Sentencia condenatoria",
+    sentencia: "FAVORABLE", fecha_sentencia: "2025-01-20", fecha_conclusion: "2025-01-20",
+    dato_relevante: "Daño a equipo de rayos X por negligencia",
+    estatus: "CONCLUIDO",
+    abogado_responsable: "Lic. Adriana Soto Mendoza",
+    fecha_creacion: "2024-06-01T10:00:00",
+    fecha_actualizacion: "2025-01-20T16:00:00",
+    seguimiento: { fecha_actuacion: "2025-01-20", tipo_actuacion: "Sentencia", descripcion: "Sentencia condenatoria. Se ordenó reparación del daño." },
+    seguimientos: [
+      { fecha_actuacion: "2024-06-02", tipo_actuacion: "Denuncia", descripcion: "Denuncia por daño a equipo de rayos X valorado en $2,500,000." },
+      { fecha_actuacion: "2024-09-15", tipo_actuacion: "Vinculación a proceso", descripcion: "Vinculación a proceso del imputado." },
+      { fecha_actuacion: "2025-01-20", tipo_actuacion: "Sentencia", descripcion: "Sentencia condenatoria. Se ordenó reparación del daño." }
+    ]
+  },
+  {
+    id: 4, numero: 4, delegacion_id: 1,
+    numero_expediente: "PEN-AGS-001/2024",
+    fecha_inicio: "2024-07-20",
+    delito_id: 10,
+    denunciante: { tipo_persona: "MORAL", empresa: "IMSS Delegación Aguascalientes" },
+    probable_responsable: { tipo_persona: "FISICA", nombres: "José", apellido_paterno: "García", apellido_materno: "López" },
+    fecha_conocimiento_amp: "2024-07-21",
+    estado_procesal_id: 1,
+    acciones_pendientes: "El MP solicitó ampliación de declaración del denunciante",
+    fecha_judicializacion: null, determinacion_judicial: null,
+    sentencia: null, fecha_sentencia: null, fecha_conclusion: null,
+    dato_relevante: "Presentación de recetas médicas falsas para obtener medicamentos controlados",
+    estatus: "TRAMITE",
+    abogado_responsable: "Lic. Ana Martínez Solís",
+    fecha_creacion: "2024-07-20T09:30:00",
+    fecha_actualizacion: "2025-02-28T11:00:00",
+    seguimiento: { fecha_actuacion: "2025-02-28", tipo_actuacion: "Investigación", descripcion: "El MP solicitó ampliación de declaración del denunciante." },
+    seguimientos: [
+      { fecha_actuacion: "2024-07-21", tipo_actuacion: "Denuncia", descripcion: "Se presentó denuncia por falsificación de recetas médicas." },
+      { fecha_actuacion: "2025-02-28", tipo_actuacion: "Investigación", descripcion: "El MP solicitó ampliación de declaración del denunciante." }
+    ]
+  },
+  {
+    id: 5, numero: 5, delegacion_id: 9,
+    numero_expediente: "PEN-DFN-001/2024",
+    fecha_inicio: "2024-08-05",
+    delito_id: 16,
+    denunciante: { tipo_persona: "MORAL", empresa: "IMSS Delegación Norte DF" },
+    probable_responsable: { tipo_persona: "FISICA", nombres: "Servidor", apellido_paterno: "Público", apellido_materno: "Federal" },
+    fecha_conocimiento_amp: "2024-08-06",
+    estado_procesal_id: 3,
+    acciones_pendientes: "Audiencia de etapa intermedia programada para 20/04/2025",
+    fecha_judicializacion: "2024-11-10",
+    determinacion_judicial: "Vinculado a proceso",
+    sentencia: null, fecha_sentencia: null, fecha_conclusion: null,
+    dato_relevante: "Peculado de recursos destinados a mantenimiento de equipos médicos",
+    estatus: "TRAMITE",
+    abogado_responsable: "Lic. Ricardo Monreal Ávila",
+    fecha_creacion: "2024-08-05T14:00:00",
+    fecha_actualizacion: "2025-03-10T09:00:00",
+    seguimiento: { fecha_actuacion: "2025-03-10", tipo_actuacion: "Audiencia", descripcion: "Se programó audiencia de etapa intermedia para 20/04/2025." },
+    seguimientos: [
+      { fecha_actuacion: "2024-08-06", tipo_actuacion: "Denuncia", descripcion: "Denuncia por peculado de recursos de mantenimiento." },
+      { fecha_actuacion: "2024-11-10", tipo_actuacion: "Vinculación a proceso", descripcion: "Auto de vinculación a proceso." },
+      { fecha_actuacion: "2025-03-10", tipo_actuacion: "Audiencia", descripcion: "Se programó audiencia de etapa intermedia para 20/04/2025." }
+    ]
+  },
+  {
+    id: 6, numero: 6, delegacion_id: 7,
+    numero_expediente: "PEN-COA-001/2024",
+    fecha_inicio: "2024-09-12",
+    delito_id: 12,
+    denunciante: { tipo_persona: "MORAL", empresa: "IMSS Delegación Coahuila" },
+    probable_responsable: { tipo_persona: "FISICA", nombres: "Grupo", apellido_paterno: "Invasor", apellido_materno: "Desconocido" },
+    fecha_conocimiento_amp: "2024-09-13",
+    estado_procesal_id: 1,
+    acciones_pendientes: "Solicitar medidas cautelares para proteger el inmueble",
+    fecha_judicializacion: null, determinacion_judicial: null,
+    sentencia: null, fecha_sentencia: null, fecha_conclusion: null,
+    dato_relevante: "Despojo de terreno aledaño a la UMF No. 5 en Torreón",
+    estatus: "TRAMITE",
+    abogado_responsable: "Lic. Fernando Ruiz Díaz",
+    fecha_creacion: "2024-09-12T10:00:00",
+    fecha_actualizacion: "2025-01-15T13:00:00",
+    seguimiento: { fecha_actuacion: "2025-01-15", tipo_actuacion: "Promoción", descripcion: "Se solicitaron medidas cautelares para protección del inmueble." },
+    seguimientos: [
+      { fecha_actuacion: "2024-09-13", tipo_actuacion: "Denuncia", descripcion: "Denuncia por despojo de terreno institucional." },
+      { fecha_actuacion: "2025-01-15", tipo_actuacion: "Promoción", descripcion: "Se solicitaron medidas cautelares para protección del inmueble." }
+    ]
+  },
+  {
+    id: 7, numero: 7, delegacion_id: 14,
+    numero_expediente: "PEN-GTO-001/2024",
+    fecha_inicio: "2024-10-01",
+    delito_id: 7,
+    denunciante: { tipo_persona: "FISICA", nombres: "Familia", apellido_paterno: "del", apellido_materno: "Paciente" },
+    probable_responsable: { tipo_persona: "FISICA", nombres: "Dr. Médico", apellido_paterno: "Residente", apellido_materno: "HGZ" },
+    fecha_conocimiento_amp: "2024-10-02",
+    estado_procesal_id: 5,
+    acciones_pendientes: null,
+    fecha_judicializacion: "2024-12-01",
+    determinacion_judicial: "Sentencia absolutoria",
+    sentencia: "FAVORABLE", fecha_sentencia: "2025-02-10", fecha_conclusion: "2025-02-10",
+    dato_relevante: "Denuncia por homicidio culposo durante intervención quirúrgica - se determinó que no hubo negligencia",
+    estatus: "CONCLUIDO",
+    abogado_responsable: "Lic. Miguel Ángel Torres",
+    fecha_creacion: "2024-10-01T08:00:00",
+    fecha_actualizacion: "2025-02-10T17:00:00",
+    seguimiento: { fecha_actuacion: "2025-02-10", tipo_actuacion: "Sentencia", descripcion: "Sentencia absolutoria. Se determinó que no hubo negligencia médica." },
+    seguimientos: [
+      { fecha_actuacion: "2024-10-02", tipo_actuacion: "Querella", descripcion: "Querella por homicidio culposo durante cirugía." },
+      { fecha_actuacion: "2024-12-01", tipo_actuacion: "Vinculación a proceso", descripcion: "Vinculación a proceso del médico residente." },
+      { fecha_actuacion: "2025-02-10", tipo_actuacion: "Sentencia", descripcion: "Sentencia absolutoria. Se determinó que no hubo negligencia médica." }
+    ]
+  },
+  {
+    id: 8, numero: 8, delegacion_id: 5,
+    numero_expediente: "PEN-CHS-003/2025",
+    fecha_inicio: "2025-01-15",
+    delito_id: 4,
+    denunciante: { tipo_persona: "MORAL", empresa: "IMSS Delegación Chiapas" },
+    probable_responsable: { tipo_persona: "FISICA", nombres: "Empleado", apellido_paterno: "Administrativo", apellido_materno: "X" },
+    fecha_conocimiento_amp: "2025-01-16",
+    estado_procesal_id: 1,
+    acciones_pendientes: "Integrar carpeta de investigación con auditoría interna",
+    fecha_judicializacion: null, determinacion_judicial: null,
+    sentencia: null, fecha_sentencia: null, fecha_conclusion: null,
+    dato_relevante: "Abuso de confianza por desvío de insumos del almacén general",
+    estatus: "TRAMITE",
+    abogado_responsable: "Lic. Fernando Ruiz Díaz",
+    fecha_creacion: "2025-01-15T09:00:00",
+    fecha_actualizacion: "2025-03-20T10:00:00",
+    seguimiento: { fecha_actuacion: "2025-03-20", tipo_actuacion: "Investigación", descripcion: "Se inició auditoría interna para cuantificar el daño patrimonial." },
+    seguimientos: [
+      { fecha_actuacion: "2025-01-16", tipo_actuacion: "Denuncia", descripcion: "Denuncia por abuso de confianza y desvío de insumos." },
+      { fecha_actuacion: "2025-03-20", tipo_actuacion: "Investigación", descripcion: "Se inició auditoría interna para cuantificar el daño patrimonial." }
+    ]
+  }
+];
+
+// Inicializar casos penales en localStorage
+function inicializarCasosPenal() {
+  if (!localStorage.getItem('casosPenal')) {
+    localStorage.setItem('casosPenal', JSON.stringify(casosPenalFake));
+  }
+}
+inicializarCasosPenal();
+
 // Funciones helper
 function obtenerDelegacion(id) {
   return catalogos.delegaciones.find(d => d.id === id);

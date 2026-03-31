@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Asunto Penal - Sistema de Gestión</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header-gob">
+        <div class="header-logo">
+            <span class="logo-text">Gobierno de México</span>
+        </div>
+        <nav class="header-nav">
+            <a href="penal.html" class="btn-header-link">&larr; Asuntos Penales</a>
+            <div class="header-user">
+                <span id="nombreUsuario">Usuario</span>
+            </div>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="penal.html">Asuntos Penales</a>
+            <span class="breadcrumb-separator">></span>
+            <span>Editar Asunto</span>
+        </div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Editar Asunto Penal</h1>
+                <p class="page-subtitle" id="subtituloExpediente">Modificar datos del expediente</p>
+            </div>
+        </div>
+
+        <form id="formEditarCaso" class="card">
+            <!-- SECCION 1: Información General -->
+            <div class="form-section">
+                <h3 class="form-section-title">Información General</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label required">Jefatura de Servicios Jurídicos</label>
+                        <select id="delegacion" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Número de Expediente</label>
+                        <input type="text" id="numeroExpediente" class="form-input" required>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label required">Fecha de Inicio</label>
+                        <input type="date" id="fechaInicio" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Delito</label>
+                        <select id="delito" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCION 2: Partes -->
+            <div class="form-section">
+                <h3 class="form-section-title">Partes</h3>
+                <div class="form-subsection">
+                    <h4 class="form-subsection-title">Denunciante</h4>
+                    <div class="form-group">
+                        <label class="form-label required">Tipo de Persona</label>
+                        <div class="form-radio-group">
+                            <div class="form-radio">
+                                <input type="radio" id="denuncianteFisica" name="denuncianteTipo" value="FISICA" required>
+                                <label for="denuncianteFisica">Física</label>
+                            </div>
+                            <div class="form-radio">
+                                <input type="radio" id="denuncianteMoral" name="denuncianteTipo" value="MORAL">
+                                <label for="denuncianteMoral">Moral</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="denuncianteFisicaCampos" style="display:none;">
+                        <div class="form-grid form-grid-3">
+                            <div class="form-group">
+                                <label class="form-label required">Nombre(s)</label>
+                                <input type="text" id="denuncianteNombres" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Apellido Paterno</label>
+                                <input type="text" id="denunciantePaterno" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Apellido Materno</label>
+                                <input type="text" id="denuncianteMaterno" class="form-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="denuncianteMoralCampos" style="display:none;">
+                        <div class="form-group">
+                            <label class="form-label required">Razón Social / Empresa</label>
+                            <input type="text" id="denuncianteEmpresa" class="form-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-subsection">
+                    <h4 class="form-subsection-title">Probable Responsable</h4>
+                    <div class="form-group">
+                        <label class="form-label required">Tipo de Persona</label>
+                        <div class="form-radio-group">
+                            <div class="form-radio">
+                                <input type="radio" id="responsableFisica" name="responsableTipo" value="FISICA" required>
+                                <label for="responsableFisica">Física</label>
+                            </div>
+                            <div class="form-radio">
+                                <input type="radio" id="responsableMoral" name="responsableTipo" value="MORAL">
+                                <label for="responsableMoral">Moral</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="responsableFisicaCampos" style="display:none;">
+                        <div class="form-grid form-grid-3">
+                            <div class="form-group">
+                                <label class="form-label required">Nombre(s)</label>
+                                <input type="text" id="responsableNombres" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Apellido Paterno</label>
+                                <input type="text" id="responsablePaterno" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Apellido Materno</label>
+                                <input type="text" id="responsableMaterno" class="form-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="responsableMoralCampos" style="display:none;">
+                        <div class="form-group">
+                            <label class="form-label required">Razón Social / Empresa</label>
+                            <input type="text" id="responsableEmpresa" class="form-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCION 3: Estado Procesal -->
+            <div class="form-section">
+                <h3 class="form-section-title">Estado Procesal</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Fecha de Conocimiento AMP</label>
+                        <input type="date" id="fechaConocimientoAmp" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Estado Procesal</label>
+                        <select id="estadoProcesal" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Acciones Pendientes</label>
+                    <textarea id="accionesPendientes" class="form-textarea"></textarea>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Fecha de Judicialización</label>
+                        <input type="date" id="fechaJudicializacion" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Determinación Judicial</label>
+                        <input type="text" id="determinacionJudicial" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCION 4: Sentencia -->
+            <div class="form-section">
+                <h3 class="form-section-title">Sentencia y Conclusión</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Sentencia</label>
+                        <select id="sentencia" class="form-select">
+                            <option value="">Sin sentencia</option>
+                            <option value="FAVORABLE">Favorable</option>
+                            <option value="DESFAVORABLE">Desfavorable</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha de Sentencia</label>
+                        <input type="date" id="fechaSentencia" class="form-input">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Fecha de Conclusión</label>
+                        <input type="date" id="fechaConclusion" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Abogado Responsable</label>
+                        <input type="text" id="abogadoResponsable" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCION 5: Dato Relevante -->
+            <div class="form-section">
+                <h3 class="form-section-title">Información Adicional</h3>
+                <div class="form-group">
+                    <label class="form-label">Dato Relevante</label>
+                    <textarea id="datoRelevante" class="form-textarea"></textarea>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px;">
+                <a href="penal.html" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-success">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabaseClient.js"></script>
+    <script src="js/supabaseService.js"></script>
+    <script src="js/datosFake.js"></script>
+    <script src="js/editarCasoPenal.js"></script>
+</body>
+</html>

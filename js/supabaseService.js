@@ -1,0 +1,437 @@
+// =====================================================
+// SUPABASE SERVICE - Capa de acceso a datos
+// Reemplaza el acceso directo a localStorage/datosFake
+// =====================================================
+
+// Cache de catálogos (se cargan una vez y se reutilizan)
+const catalogosDB = {
+    delegaciones: [],
+    areas: {},        // { delegacion_id: [areas] }
+    tribunales: [],
+    prestaciones: [],
+    tiposActuacion: [],
+    tiposJuicio: {},  // { materia: [tipos] }
+    subtiposJuicio: {},// { tipo_juicio_id: [subtipos] }
+    delitos: [],
+    estadosProcesales: []
+};
+
+let catalogosCargados = false;
+
+// =====================================================
+// CATÁLOGOS
+// =====================================================
+
+async function cargarCatalogos() {
+    if (catalogosCargados) return catalogosDB;
+
+    try {
+        // Cargar todo en paralelo
+        const [
+            { data: delegaciones },
+            { data: areas },
+            { data: tribunales },
+            { data: prestaciones },
+            { data: tiposActuacion },
+            { data: tiposJuicio },
+            { data: subtiposJuicio },
+            { data: delitos },
+            { data: estadosProcesales }
+        ] = await Promise.all([
+            supabase.from('delegaciones').select('*').order('id'),
+            supabase.from('areas').select('*').order('delegacion_id, id'),
+            supabase.from('tribunales').select('*').order('id'),
+            supabase.from('prestaciones').select('*').order('id'),
+            supabase.from('tipos_actuacion').select('*').order('id'),
+            supabase.from('tipos_juicio').select('*').order('id'),
+            supabase.from('subtipos_juicio').select('*').order('id'),
+            supabase.from('delitos').select('*').order('id'),
+            supabase.from('estados_procesales').select('*').order('orden')
+        ]);
+
+        catalogosDB.delegaciones = delegaciones || [];
+
+        // Agrupar áreas por delegación
+        catalogosDB.areas = {};
+        (areas || []).forEach(a => {
+            if (!catalogosDB.areas[a.delegacion_id]) catalogosDB.areas[a.delegacion_id] = [];
+            catalogosDB.areas[a.delegacion_id].push(a);
+        });
+
+        catalogosDB.tribunales = tribunales || [];
+        catalogosDB.prestaciones = prestaciones || [];
+        catalogosDB.tiposActuacion = tiposActuacion || [];
+
+        // Agrupar tipos de juicio por materia
+        catalogosDB.tiposJuicio = {};
+        (tiposJuicio || []).forEach(t => {
+            if (!catalogosDB.tiposJuicio[t.materia]) catalogosDB.tiposJuicio[t.materia] = [];
+            catalogosDB.tiposJuicio[t.materia].push(t);
+        });
+
+        // Agrupar subtipos por tipo_juicio_id
+        catalogosDB.subtiposJuicio = {};
+        (subtiposJuicio || []).forEach(s => {
+            if (!catalogosDB.subtiposJuicio[s.tipo_juicio_id]) catalogosDB.subtiposJuicio[s.tipo_juicio_id] = [];
+            catalogosDB.subtiposJuicio[s.tipo_juicio_id].push(s);
+        });
+
+        catalogosDB.delitos = delitos || [];
+        catalogosDB.estadosProcesales = estadosProcesales || [];
+
+        catalogosCargados = true;
+        console.log('✅ Catálogos cargados desde Supabase');
+        return catalogosDB;
+    } catch (err) {
+        console.error('Error cargando catálogos:', err);
+        throw err;
+    }
+}
+
+// Helpers de catálogos
+function obtenerDelegacionDB(id) {
+    return catalogosDB.delegaciones.find(d => d.id === id);
+}
+
+function obtenerAreaDB(delegacionId, areaId) {
+    const areas = catalogosDB.areas[delegacionId] || [];
+    return areas.find(a => a.id === areaId);
+}
+
+function obtenerTribunalDB(id) {
+    return catalogosDB.tribunales.find(t => t.id === id);
+}
+
+function obtenerPrestacionesDB(ids) {
+    if (!Array.isArray(ids)) return [];
+    return ids.map(id => catalogosDB.prestaciones.find(p => p.id === id)).filter(Boolean);
+}
+
+function obtenerDelitoDB(id) {
+    return catalogosDB.delitos.find(d => d.id === id);
+}
+
+function obtenerEstadoProcesalDB(id) {
+    return catalogosDB.estadosProcesales.find(e => e.id === id);
+}
+
+function obtenerTribunalesPorDelegacion(delegacionId) {
+    if (!delegacionId) return catalogosDB.tribunales;
+    return catalogosDB.tribunales.filter(t => t.delegacion_id === parseInt(delegacionId));
+}
+
+function obtenerTiposActuacionPorModulo(modulo) {
+    // modulo: 'CIVIL' o 'PENAL'
+    return catalogosDB.tiposActuacion.filter(t => t.modulo === 'AMBOS' || t.modulo === modulo);
+}
+
+// =====================================================
+// USUARIOS
+// =====================================================
+
+async function buscarUsuario(usuario, password) {
+    const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('usuario', usuario)
+        .eq('password', password)
+        .single();
+
+    if (error || !data) return null;
+    return data;
+}
+
+async function obtenerUsuarios() {
+    const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .order('id');
+    if (error) throw error;
+    return data || [];
+}
+
+async function guardarUsuario(usuario) {
+    if (usuario.id) {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .update(usuario)
+            .eq('id', usuario.id)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    } else {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .insert(usuario)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    }
+}
+
+// =====================================================
+// EXPEDIENTES CIVIL / MERCANTIL
+// =====================================================
+
+async function obtenerCasosCivil(filtros = {}) {
+    let query = supabase
+        .from('expedientes_civil')
+        .select('*')
+        .order('id', { ascending: true });
+
+    if (filtros.delegacion_id) {
+        query = query.eq('delegacion_id', filtros.delegacion_id);
+    }
+    if (filtros.estatus) {
+        query = query.eq('estatus', filtros.estatus);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // Cargar seguimiento más reciente para cada caso
+    const casos = data || [];
+    for (const caso of casos) {
+        const { data: seg } = await supabase
+            .from('seguimiento_civil')
+            .select('*')
+            .eq('expediente_id', caso.id)
+            .order('fecha_actuacion', { ascending: false })
+            .limit(1);
+        caso.seguimiento = seg && seg.length > 0 ? seg[0] : {};
+
+        // Cargar acumulados
+        const { data: acum } = await supabase
+            .from('acumulados_civil')
+            .select('caso_hijo_id')
+            .eq('caso_padre_id', caso.id);
+        caso.juicios_acumulados = (acum || []).map(a => a.caso_hijo_id);
+
+        // Cargar si está acumulado a otro
+        const { data: acumA } = await supabase
+            .from('acumulados_civil')
+            .select('caso_padre_id')
+            .eq('caso_hijo_id', caso.id);
+        caso.acumulado_a = acumA && acumA.length > 0 ? acumA[0].caso_padre_id : null;
+    }
+
+    return casos;
+}
+
+async function obtenerCasoCivil(id) {
+    const { data, error } = await supabase
+        .from('expedientes_civil')
+        .select('*')
+        .eq('id', id)
+        .single();
+    if (error) throw error;
+
+    // Seguimiento completo (timeline)
+    const { data: seguimientos } = await supabase
+        .from('seguimiento_civil')
+        .select('*')
+        .eq('expediente_id', id)
+        .order('fecha_actuacion', { ascending: false });
+    data.seguimientos = seguimientos || [];
+    data.seguimiento = seguimientos && seguimientos.length > 0 ? seguimientos[0] : {};
+
+    // Acumulados
+    const { data: acum } = await supabase
+        .from('acumulados_civil')
+        .select('caso_hijo_id')
+        .eq('caso_padre_id', id);
+    data.juicios_acumulados = (acum || []).map(a => a.caso_hijo_id);
+
+    const { data: acumA } = await supabase
+        .from('acumulados_civil')
+        .select('caso_padre_id')
+        .eq('caso_hijo_id', id);
+    data.acumulado_a = acumA && acumA.length > 0 ? acumA[0].caso_padre_id : null;
+
+    return data;
+}
+
+async function guardarCasoCivil(caso) {
+    // Separar seguimiento y acumulados del caso principal
+    const { seguimiento, seguimientos, juicios_acumulados, acumulado_a, ...casoDB } = caso;
+
+    if (casoDB.id) {
+        // Actualizar
+        casoDB.fecha_actualizacion = new Date().toISOString();
+        const { data, error } = await supabase
+            .from('expedientes_civil')
+            .update(casoDB)
+            .eq('id', casoDB.id)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    } else {
+        // Insertar nuevo
+        casoDB.fecha_creacion = new Date().toISOString();
+        casoDB.fecha_actualizacion = new Date().toISOString();
+        const { data, error } = await supabase
+            .from('expedientes_civil')
+            .insert(casoDB)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    }
+}
+
+async function eliminarCasoCivil(id) {
+    const { error } = await supabase
+        .from('expedientes_civil')
+        .delete()
+        .eq('id', id);
+    if (error) throw error;
+}
+
+async function agregarSeguimientoCivil(expedienteId, seguimiento) {
+    const { data, error } = await supabase
+        .from('seguimiento_civil')
+        .insert({
+            expediente_id: expedienteId,
+            fecha_actuacion: seguimiento.fecha_actuacion,
+            tipo_actuacion: seguimiento.tipo_actuacion,
+            descripcion: seguimiento.descripcion,
+            actualizado_siij: seguimiento.actualizado_siij || 'NO'
+        })
+        .select()
+        .single();
+    if (error) throw error;
+
+    // Actualizar fecha_actualizacion del expediente
+    await supabase
+        .from('expedientes_civil')
+        .update({ fecha_actualizacion: new Date().toISOString() })
+        .eq('id', expedienteId);
+
+    return data;
+}
+
+async function guardarAcumulacionCivil(casoPadreId, casoHijoId) {
+    const { error } = await supabase
+        .from('acumulados_civil')
+        .insert({ caso_padre_id: casoPadreId, caso_hijo_id: casoHijoId });
+    if (error) throw error;
+
+    // Cambiar estatus del hijo a CONCLUIDO
+    await supabase
+        .from('expedientes_civil')
+        .update({ estatus: 'CONCLUIDO' })
+        .eq('id', casoHijoId);
+}
+
+// =====================================================
+// EXPEDIENTES PENAL
+// =====================================================
+
+async function obtenerCasosPenal(filtros = {}) {
+    let query = supabase
+        .from('expedientes_penal')
+        .select('*')
+        .order('id', { ascending: true });
+
+    if (filtros.delegacion_id) {
+        query = query.eq('delegacion_id', filtros.delegacion_id);
+    }
+    if (filtros.estatus) {
+        query = query.eq('estatus', filtros.estatus);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const casos = data || [];
+    // Cargar último seguimiento para cada caso
+    for (const caso of casos) {
+        const { data: seg } = await supabase
+            .from('seguimiento_penal')
+            .select('*')
+            .eq('expediente_id', caso.id)
+            .order('fecha_actuacion', { ascending: false })
+            .limit(1);
+        caso.seguimiento = seg && seg.length > 0 ? seg[0] : {};
+    }
+
+    return casos;
+}
+
+async function obtenerCasoPenal(id) {
+    const { data, error } = await supabase
+        .from('expedientes_penal')
+        .select('*')
+        .eq('id', id)
+        .single();
+    if (error) throw error;
+
+    // Timeline completo
+    const { data: seguimientos } = await supabase
+        .from('seguimiento_penal')
+        .select('*')
+        .eq('expediente_id', id)
+        .order('fecha_actuacion', { ascending: false });
+    data.seguimientos = seguimientos || [];
+    data.seguimiento = seguimientos && seguimientos.length > 0 ? seguimientos[0] : {};
+
+    return data;
+}
+
+async function guardarCasoPenal(caso) {
+    const { seguimiento, seguimientos, ...casoDB } = caso;
+
+    if (casoDB.id) {
+        casoDB.fecha_actualizacion = new Date().toISOString();
+        const { data, error } = await supabase
+            .from('expedientes_penal')
+            .update(casoDB)
+            .eq('id', casoDB.id)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    } else {
+        casoDB.fecha_creacion = new Date().toISOString();
+        casoDB.fecha_actualizacion = new Date().toISOString();
+        const { data, error } = await supabase
+            .from('expedientes_penal')
+            .insert(casoDB)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    }
+}
+
+async function eliminarCasoPenal(id) {
+    const { error } = await supabase
+        .from('expedientes_penal')
+        .delete()
+        .eq('id', id);
+    if (error) throw error;
+}
+
+async function agregarSeguimientoPenal(expedienteId, seguimiento) {
+    const { data, error } = await supabase
+        .from('seguimiento_penal')
+        .insert({
+            expediente_id: expedienteId,
+            fecha_actuacion: seguimiento.fecha_actuacion,
+            tipo_actuacion: seguimiento.tipo_actuacion,
+            descripcion: seguimiento.descripcion
+        })
+        .select()
+        .single();
+    if (error) throw error;
+
+    await supabase
+        .from('expedientes_penal')
+        .update({ fecha_actualizacion: new Date().toISOString() })
+        .eq('id', expedienteId);
+
+    return data;
+}
