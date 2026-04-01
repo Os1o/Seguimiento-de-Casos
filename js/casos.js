@@ -1485,6 +1485,18 @@ function formatearFechaRelativa(fechaStr) {
     return formatearFecha(fechaStr);
 }
 
+function formatearMoneda(valor) {
+    const numero = Number(valor);
+    if (!Number.isFinite(numero)) return '$0.00';
+
+    return numero.toLocaleString('es-MX', {
+        style: 'currency',
+        currency: 'MXN',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
 /**
  * Determina si un caso fue editado (su fecha_actualizacion difiere de fecha_creacion)
  */
