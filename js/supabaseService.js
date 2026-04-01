@@ -319,6 +319,40 @@ async function guardarCasoCivil(caso) {
     // Separar seguimiento y acumulados del caso principal
     const { seguimiento, seguimientos, juicios_acumulados, acumulado_a, ...casoDB } = caso;
 
+    const columnasPermitidas = [
+        'id',
+        'numero',
+        'delegacion_id',
+        'area_generadora_id',
+        'jurisdiccion',
+        'tipo_juicio',
+        'subtipo_juicio',
+        'sub_subtipo_juicio',
+        'numero_juicio',
+        'anio',
+        'numero_expediente',
+        'tribunal_id',
+        'fecha_inicio',
+        'imss_es',
+        'actor',
+        'demandados',
+        'codemandados',
+        'prestacion_principal',
+        'prestaciones_secundarias',
+        'prestaciones_notas',
+        'importe_demandado',
+        'abogado_responsable',
+        'pronostico',
+        'estatus',
+        'fecha_vencimiento'
+    ];
+
+    Object.keys(casoDB).forEach(key => {
+        if (!columnasPermitidas.includes(key)) {
+            delete casoDB[key];
+        }
+    });
+
     if (!casoDB.anio && casoDB.ano) {
         casoDB.anio = casoDB.ano;
     }
@@ -347,6 +381,22 @@ async function guardarCasoCivil(caso) {
         if (error) throw error;
         return data;
     }
+}
+
+async function actualizarSeguimientoCasoCivil(expedienteId, seguimiento, fechaVencimiento = null) {
+    const actuacionGuardada = await agregarSeguimientoCivil(expedienteId, seguimiento);
+
+    const cambiosExpediente = {
+        id: expedienteId,
+        fecha_vencimiento: fechaVencimiento
+    };
+
+    const expedienteActualizado = await guardarCasoCivil(cambiosExpediente);
+
+    return {
+        actuacion: actuacionGuardada,
+        expediente: expedienteActualizado
+    };
 }
 
 async function eliminarCasoCivil(id) {
