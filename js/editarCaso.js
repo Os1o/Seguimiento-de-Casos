@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     inicializarFormulario(usuario);
+    llenarFormulario();
     configurarEventListeners(usuario);
 });
 
@@ -93,7 +94,6 @@ async function cargarCaso(casoId) {
         return;
     }
 
-    llenarFormulario();
 }
 
 // =====================================================
