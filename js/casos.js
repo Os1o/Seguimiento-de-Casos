@@ -92,11 +92,15 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     }
 
-    try {
-        await cargarCatalogos();
+    const [catalogosResult, casosResult] = await Promise.allSettled([
+        cargarCatalogos(),
+        cargarCasos()
+    ]);
+
+    if (catalogosResult.status === 'fulfilled') {
         sincronizarCatalogos();
-    } catch (err) {
-        console.warn('No se pudo conectar a Supabase, usando datos locales');
+    } else {
+        console.warn('No se pudo conectar a Supabase para catalogos, usando datos locales');
         if (typeof window.catalogos === 'undefined') {
             window.catalogos = {
                 delegaciones: [],
@@ -109,8 +113,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     }
 
-    // Cargar casos
-    await cargarCasos();
+    if (casosResult.status === 'rejected') {
+        console.warn('La carga principal de casos termino con fallback local:', casosResult.reason);
+    }
 
     // Inicializar click en dona
     inicializarClickDona();

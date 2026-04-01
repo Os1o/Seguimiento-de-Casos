@@ -1,4 +1,4 @@
-// =====================================================
+﻿// =====================================================
 // SUPABASE SERVICE - Capa de acceso a datos
 // Reemplaza el acceso directo a localStorage/datosFake
 // =====================================================
@@ -6,7 +6,7 @@
 const db = () => window.supabaseClient;
 const sb = () => window.supabaseClient;
 
-// Cache de catálogos (se cargan una vez y se reutilizan)
+// Cache de catÃ¡logos (se cargan una vez y se reutilizan)
 const catalogosDB = {
     delegaciones: [],
     areas: {},        // { delegacion_id: [areas] }
@@ -23,7 +23,7 @@ const catalogosDB = {
 let catalogosCargados = false;
 
 // =====================================================
-// CATÁLOGOS
+// CATÃLOGOS
 // =====================================================
 
 async function cargarCatalogos() {
@@ -57,7 +57,7 @@ async function cargarCatalogos() {
 
         catalogosDB.delegaciones = delegaciones || [];
 
-        // Agrupar áreas por delegación
+        // Agrupar Ã¡reas por delegaciÃ³n
         catalogosDB.areas = {};
         (areas || []).forEach(a => {
             if (!catalogosDB.areas[a.delegacion_id]) catalogosDB.areas[a.delegacion_id] = [];
@@ -87,15 +87,15 @@ async function cargarCatalogos() {
         catalogosDB.estatusInvestigacion = estatusInvestigacion || [];
 
         catalogosCargados = true;
-        console.log('✅ Catálogos cargados desde Supabase');
+        console.log('âœ… CatÃ¡logos cargados desde Supabase');
         return catalogosDB;
     } catch (err) {
-        console.error('Error cargando catálogos:', err);
+        console.error('Error cargando catÃ¡logos:', err);
         throw err;
     }
 }
 
-// Helpers de catálogos
+// Helpers de catÃ¡logos
 function obtenerDelegacionDB(id) {
     return catalogosDB.delegaciones.find(d => d.id === id);
 }
@@ -253,31 +253,62 @@ async function obtenerCasosCivil(filtros = {}) {
     const { data, error } = await query;
     if (error) throw error;
 
-    // Cargar seguimiento más reciente para cada caso
     const casos = data || [];
-    for (const caso of casos) {
-        const { data: seg } = await sb()
+    if (casos.length === 0) return casos;
+
+    const ids = casos.map(caso => caso.id);
+    const [
+        { data: seguimientos, error: errorSeguimientos },
+        { data: acumuladosPadre, error: errorAcumuladosPadre },
+        { data: acumuladosHijo, error: errorAcumuladosHijo }
+    ] = await Promise.all([
+        sb()
             .from('seguimiento_civil')
             .select('*')
-            .eq('expediente_id', caso.id)
-            .order('fecha_actuacion', { ascending: false })
-            .limit(1);
-        caso.seguimiento = seg && seg.length > 0 ? seg[0] : {};
-
-        // Cargar acumulados
-        const { data: acum } = await sb()
+            .in('expediente_id', ids)
+            .order('expediente_id', { ascending: true })
+            .order('fecha_actuacion', { ascending: false }),
+        sb()
             .from('acumulados_civil')
-            .select('caso_hijo_id')
-            .eq('caso_padre_id', caso.id);
-        caso.juicios_acumulados = (acum || []).map(a => a.caso_hijo_id);
-
-        // Cargar si está acumulado a otro
-        const { data: acumA } = await sb()
+            .select('caso_padre_id, caso_hijo_id')
+            .in('caso_padre_id', ids),
+        sb()
             .from('acumulados_civil')
-            .select('caso_padre_id')
-            .eq('caso_hijo_id', caso.id);
-        caso.acumulado_a = acumA && acumA.length > 0 ? acumA[0].caso_padre_id : null;
-    }
+            .select('caso_padre_id, caso_hijo_id')
+            .in('caso_hijo_id', ids)
+    ]);
+
+    if (errorSeguimientos) throw errorSeguimientos;
+    if (errorAcumuladosPadre) throw errorAcumuladosPadre;
+    if (errorAcumuladosHijo) throw errorAcumuladosHijo;
+
+    const seguimientoRecientePorExpediente = {};
+    (seguimientos || []).forEach(seg => {
+        if (!seguimientoRecientePorExpediente[seg.expediente_id]) {
+            seguimientoRecientePorExpediente[seg.expediente_id] = seg;
+        }
+    });
+
+    const juiciosAcumuladosPorPadre = {};
+    (acumuladosPadre || []).forEach(acum => {
+        if (!juiciosAcumuladosPorPadre[acum.caso_padre_id]) {
+            juiciosAcumuladosPorPadre[acum.caso_padre_id] = [];
+        }
+        juiciosAcumuladosPorPadre[acum.caso_padre_id].push(acum.caso_hijo_id);
+    });
+
+    const acumuladoAPorHijo = {};
+    (acumuladosHijo || []).forEach(acum => {
+        if (!acumuladoAPorHijo[acum.caso_hijo_id]) {
+            acumuladoAPorHijo[acum.caso_hijo_id] = acum.caso_padre_id;
+        }
+    });
+
+    casos.forEach(caso => {
+        caso.seguimiento = seguimientoRecientePorExpediente[caso.id] || {};
+        caso.juicios_acumulados = juiciosAcumuladosPorPadre[caso.id] || [];
+        caso.acumulado_a = acumuladoAPorHijo[caso.id] || null;
+    });
 
     return casos;
 }
@@ -290,26 +321,33 @@ async function obtenerCasoCivil(id) {
         .single();
     if (error) throw error;
 
-    // Seguimiento completo (timeline)
-    const { data: seguimientos } = await sb()
-        .from('seguimiento_civil')
-        .select('*')
-        .eq('expediente_id', id)
-        .order('fecha_actuacion', { ascending: false });
+    const [
+        { data: seguimientos, error: errorSeguimientos },
+        { data: acum, error: errorAcum },
+        { data: acumA, error: errorAcumA }
+    ] = await Promise.all([
+        sb()
+            .from('seguimiento_civil')
+            .select('*')
+            .eq('expediente_id', id)
+            .order('fecha_actuacion', { ascending: false }),
+        sb()
+            .from('acumulados_civil')
+            .select('caso_hijo_id')
+            .eq('caso_padre_id', id),
+        sb()
+            .from('acumulados_civil')
+            .select('caso_padre_id')
+            .eq('caso_hijo_id', id)
+    ]);
+
+    if (errorSeguimientos) throw errorSeguimientos;
+    if (errorAcum) throw errorAcum;
+    if (errorAcumA) throw errorAcumA;
+
     data.seguimientos = seguimientos || [];
     data.seguimiento = seguimientos && seguimientos.length > 0 ? seguimientos[0] : {};
-
-    // Acumulados
-    const { data: acum } = await sb()
-        .from('acumulados_civil')
-        .select('caso_hijo_id')
-        .eq('caso_padre_id', id);
     data.juicios_acumulados = (acum || []).map(a => a.caso_hijo_id);
-
-    const { data: acumA } = await sb()
-        .from('acumulados_civil')
-        .select('caso_padre_id')
-        .eq('caso_hijo_id', id);
     data.acumulado_a = acumA && acumA.length > 0 ? acumA[0].caso_padre_id : null;
 
     return data;
@@ -469,7 +507,7 @@ async function obtenerCasosPenal(filtros = {}) {
     if (error) throw error;
 
     const casos = data || [];
-    // Cargar último seguimiento para cada caso
+    // Cargar Ãºltimo seguimiento para cada caso
     for (const caso of casos) {
         const { data: seg } = await sb()
             .from('seguimiento_penal')
@@ -557,4 +595,6 @@ async function agregarSeguimientoPenal(expedienteId, seguimiento) {
 
     return data;
 }
+
+
 

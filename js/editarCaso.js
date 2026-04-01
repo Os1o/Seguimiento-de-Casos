@@ -59,14 +59,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     try {
-        await cargarCatalogos();
+        await Promise.all([
+            cargarCatalogos(),
+            cargarCaso(casoId)
+        ]);
         sincronizarCatalogosCivil();
     } catch (err) {
-        console.error('No se pudieron cargar los catalogos desde Supabase:', err);
+        console.error('No se pudieron cargar los datos iniciales desde Supabase:', err);
         window.catalogos = { delegaciones: [], areas: {}, tribunales: [], prestaciones: [], tiposJuicio: {} };
+        await cargarCaso(casoId);
     }
 
-    await cargarCaso(casoId);
     inicializarFormulario(usuario);
     configurarEventListeners(usuario);
 });
@@ -90,9 +93,7 @@ async function cargarCaso(casoId) {
         return;
     }
 
-    setTimeout(() => {
-        llenarFormulario();
-    }, 200);
+    llenarFormulario();
 }
 
 // =====================================================
