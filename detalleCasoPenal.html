@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Asunto Penal - Sistema de Gestión</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
+    <!-- Header -->
     <header class="header-gob">
         <div class="header-logo">
             <span class="logo-text">Gobierno de México</span>
@@ -14,171 +17,246 @@
         <nav class="header-nav">
             <a href="penal.html" class="btn-header-link">&larr; Asuntos Penales</a>
             <div class="header-user">
-                <span id="nombreUsuario">Usuario</span>
+                <span id="nombreUsuario">Cargando...</span>
             </div>
             <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
         </nav>
     </header>
 
+    <!-- Contenido Principal -->
     <div class="container">
-        <div class="breadcrumb">
-            <a href="penal.html">Asuntos Penales</a>
-            <span class="breadcrumb-separator">></span>
-            <span id="breadcrumbExpediente">Detalle</span>
+        <!-- Breadcrumbs -->
+        <div class="breadcrumbs">
+            <a href="penal.html" class="breadcrumb-link">Asuntos Penales</a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current" id="breadcrumbExpediente">Detalle</span>
         </div>
 
-        <!-- Encabezado -->
-        <div class="page-header">
-            <div>
-                <h1 class="page-title" id="tituloExpediente">Expediente Penal</h1>
-                <p class="page-subtitle">Detalle completo del asunto</p>
-            </div>
-            <div class="page-header-actions" id="botonesAccion">
-                <a id="btnEditar" href="#" class="btn btn-secondary">Editar Datos</a>
-                <a id="btnActualizar" href="#" class="btn btn-primary">Actualizar Seguimiento</a>
-                <button id="btnEliminar" class="btn btn-danger" onclick="eliminarCaso()">Eliminar</button>
-            </div>
-        </div>
-
-        <!-- SECCION 1: INFORMACIÓN GENERAL -->
-        <div class="card">
-            <h3 class="section-title">Información General</h3>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">JSJ / OOAD</span>
-                    <span class="info-value" id="delegacion">---</span>
+        <!-- Tarjeta Principal -->
+        <div class="caso-main-card">
+            <div class="caso-main-header">
+                <div class="caso-info">
+                    <h1 class="caso-expediente">
+                        <span class="expediente-label">Expediente</span>
+                        <span id="numeroExpediente">---</span>
+                    </h1>
+                    <p class="caso-fecha">
+                        Registrado el <span id="fechaCreacion">---</span>
+                        <span id="fechaActualizacionInfo" style="display: none; margin-left: 12px; opacity: 0.8;">
+                            • Última actualización: <span id="fechaActualizacion">---</span>
+                        </span>
+                    </p>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Núm. Expediente</span>
-                    <span class="info-value" id="expediente">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Fecha de Inicio</span>
-                    <span class="info-value" id="fechaInicio">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Delito</span>
-                    <span class="info-value" id="delito">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Estatus</span>
-                    <span class="info-value" id="estatus">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Abogado Responsable</span>
-                    <span class="info-value" id="abogadoResponsable">---</span>
+                <div class="caso-estatus-container">
+                    <span class="badge-estatus" id="badgeEstatus">---</span>
                 </div>
             </div>
         </div>
 
-        <!-- SECCION 2: PARTES -->
-        <div class="card">
-            <h3 class="section-title">Partes</h3>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Denunciante</span>
-                    <span class="info-value" id="denunciante">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Probable Responsable</span>
-                    <span class="info-value" id="probableResponsable">---</span>
-                </div>
+        <!-- SECCIÓN 1: DATOS DEL REGISTRO -->
+        <div class="seccion-card seccion-registro">
+            <div class="seccion-title">
+                <h2>Datos del Registro</h2>
             </div>
-        </div>
-
-        <!-- SECCION 3: ESTATUS INVESTIGACIÓN Y ESTADO PROCESAL -->
-        <div class="card">
-            <h3 class="section-title">Estatus de Investigación y Estado Procesal</h3>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Estatus de las investigaciones en la JSJ</span>
-                    <span class="info-value" id="estatusInvestigacionJSJ">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Estado Procesal</span>
-                    <span class="info-value" id="estadoProcesal">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Fecha Conocimiento AMP</span>
-                    <span class="info-value" id="fechaConocimientoAmp">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Fecha de Judicialización</span>
-                    <span class="info-value" id="fechaJudicializacion">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Determinación Judicial</span>
-                    <span class="info-value" id="determinacionJudicial">---</span>
-                </div>
-            </div>
-            <div class="info-item" style="margin-top: 16px;">
-                <span class="info-label">Acciones Pendientes</span>
-                <div class="info-value" id="accionesPendientes" style="white-space: pre-wrap;">---</div>
-            </div>
-        </div>
-
-        <!-- SECCION 4: SENTENCIA -->
-        <div class="card">
-            <h3 class="section-title">Sentencia y Conclusión</h3>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Sentencia</span>
-                    <span class="info-value" id="sentencia">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Fecha de Sentencia</span>
-                    <span class="info-value" id="fechaSentencia">---</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Fecha de Conclusión</span>
-                    <span class="info-value" id="fechaConclusion">---</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- SECCION 5: DATO RELEVANTE -->
-        <div class="card">
-            <h3 class="section-title">Dato Relevante</h3>
-            <div class="info-value" id="datoRelevante" style="white-space: pre-wrap;">---</div>
-        </div>
-
-        <!-- SECCION 6: SEGUIMIENTO -->
-        <div class="card">
-            <h3 class="section-title">Seguimiento del Asunto</h3>
-
-            <!-- Última Actuación -->
-            <div class="grupo-detalle" style="margin-bottom: 24px;">
-                <span class="grupo-detalle-titulo">Última Actuación</span>
-                <div class="actuacion-card">
-                    <div class="actuacion-header">
-                        <div class="actuacion-campo">
-                            <span class="actuacion-label">Fecha</span>
-                            <span class="actuacion-valor" id="fechaActuacion">---</span>
+            <div class="seccion-body">
+                <!-- Ubicación -->
+                <div class="info-group">
+                    <h4 class="group-title">Ubicación</h4>
+                    <div class="info-grid info-grid-2">
+                        <div class="info-item">
+                            <span class="info-label">Jefatura de Servicios Jurídicos / OOAD</span>
+                            <span class="info-value" id="delegacion">---</span>
                         </div>
-                        <div class="actuacion-campo">
-                            <span class="actuacion-label">Tipo de Actuación</span>
-                            <span class="actuacion-valor actuacion-tipo" id="tipoActuacion">---</span>
+                        <div class="info-item">
+                            <span class="info-label">Fecha de Inicio</span>
+                            <span class="info-value" id="fechaInicio">---</span>
                         </div>
                     </div>
-                    <div class="actuacion-desc-grupo">
-                        <span class="actuacion-label">Descripción</span>
-                        <div class="actuacion-desc" id="descripcionActuacion">---</div>
+                </div>
+
+                <!-- Información del Delito -->
+                <div class="info-group">
+                    <h4 class="group-title">Información del Delito</h4>
+                    <div class="info-grid info-grid-2">
+                        <div class="info-item">
+                            <span class="info-label">Delito</span>
+                            <span class="info-value" id="delito">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Abogado Responsable</span>
+                            <span class="info-value" id="abogadoResponsable">
+                                <span class="info-vacio">Sin asignar</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Partes Involucradas -->
+                <div class="info-group">
+                    <h4 class="group-title">Partes Involucradas</h4>
+                    <div class="info-grid info-grid-2">
+                        <div class="info-item">
+                            <span class="info-label">Denunciante</span>
+                            <span class="info-value" id="denunciante">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Probable Responsable</span>
+                            <span class="info-value" id="probableResponsable">---</span>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Timeline -->
-            <div class="grupo-detalle">
-                <span class="grupo-detalle-titulo">Historial de Actuaciones</span>
-                <div id="timeline" class="timeline"></div>
+        <!-- SECCIÓN 2: ESTATUS DE INVESTIGACIÓN Y ESTADO PROCESAL -->
+        <div class="seccion-card">
+            <div class="seccion-title">
+                <h2>Estatus de Investigación y Estado Procesal</h2>
             </div>
+            <div class="seccion-body">
+                <!-- Estatus investigación -->
+                <div class="info-group">
+                    <h4 class="group-title">Investigación</h4>
+                    <div class="info-grid info-grid-3">
+                        <div class="info-item">
+                            <span class="info-label">Estatus de las investigaciones en la JSJ</span>
+                            <span class="info-value" id="estatusInvestigacionJSJ">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Estado Procesal</span>
+                            <span class="info-value" id="estadoProcesal">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fecha Conocimiento AMP</span>
+                            <span class="info-value" id="fechaConocimientoAmp">---</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Judicialización -->
+                <div class="info-group">
+                    <h4 class="group-title">Judicialización</h4>
+                    <div class="info-grid info-grid-2">
+                        <div class="info-item">
+                            <span class="info-label">Fecha de Judicialización</span>
+                            <span class="info-value" id="fechaJudicializacion">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Determinación Judicial</span>
+                            <span class="info-value" id="determinacionJudicial">---</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones Pendientes -->
+                <div class="info-group">
+                    <h4 class="group-title">Acciones Pendientes</h4>
+                    <div class="info-item">
+                        <div class="info-value" id="accionesPendientes" style="white-space: pre-wrap;">
+                            <span class="info-vacio">Sin acciones pendientes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: SENTENCIA Y CONCLUSIÓN -->
+        <div class="seccion-card">
+            <div class="seccion-title">
+                <h2>Sentencia y Conclusión</h2>
+            </div>
+            <div class="seccion-body">
+                <div class="info-group">
+                    <div class="info-grid info-grid-3">
+                        <div class="info-item">
+                            <span class="info-label">Sentencia</span>
+                            <span class="info-value" id="sentencia">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fecha de Sentencia</span>
+                            <span class="info-value" id="fechaSentencia">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fecha de Conclusión</span>
+                            <span class="info-value" id="fechaConclusion">---</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dato Relevante -->
+                <div class="info-group">
+                    <h4 class="group-title">Dato Relevante</h4>
+                    <div class="info-item">
+                        <div class="info-value" id="datoRelevante" style="white-space: pre-wrap;">
+                            <span class="info-vacio">Sin información</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 4: SEGUIMIENTO DEL ASUNTO -->
+        <div class="seccion-card seccion-seguimiento">
+            <div class="seccion-title">
+                <h2>Seguimiento del Asunto</h2>
+            </div>
+            <div class="seccion-body">
+                <!-- Última Actuación -->
+                <div class="info-group">
+                    <h4 class="group-title">Última Actuación</h4>
+                    <div class="actuacion-card">
+                        <div class="actuacion-header">
+                            <div class="actuacion-campo">
+                                <span class="actuacion-label">Fecha</span>
+                                <span class="actuacion-valor" id="fechaActuacion">
+                                    <span class="info-vacio">Sin información</span>
+                                </span>
+                            </div>
+                            <div class="actuacion-campo">
+                                <span class="actuacion-label">Tipo de Actuación</span>
+                                <span class="actuacion-valor actuacion-tipo" id="tipoActuacion">
+                                    <span class="info-vacio">Sin información</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="actuacion-desc-grupo">
+                            <span class="actuacion-label">Descripción</span>
+                            <div class="actuacion-desc" id="descripcionActuacion">
+                                <span class="info-vacio">Sin información</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="info-group">
+                    <h4 class="group-title">Historial de Actuaciones</h4>
+                    <div id="timeline" class="timeline"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="botones-accion">
+            <button class="btn btn-volver" onclick="window.location.href='penal.html'">
+                <span class="btn-icon">&larr;</span> Volver a la lista
+            </button>
+            <button class="btn btn-editar" id="btnEditar" onclick="editarDatos()">
+                <span class="btn-icon">&#9998;</span> Editar Datos
+            </button>
+            <button class="btn btn-actualizar" id="btnActualizar" onclick="abrirActualizacion()">
+                <span class="btn-icon">&#8635;</span> Actualizar Seguimiento
+            </button>
+            <button class="btn btn-danger" id="btnEliminar" onclick="eliminarCaso()">
+                Eliminar
+            </button>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabaseClient.js"></script>
     <script src="js/supabaseService.js"></script>
-    <script src="js/datosFake.js"></script>
     <script src="js/detalleCasoPenal.js"></script>
 </body>
+
 </html>

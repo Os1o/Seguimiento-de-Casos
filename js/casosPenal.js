@@ -123,7 +123,7 @@ function cargarCasos() {
         todosLosCasosSinFiltro = JSON.parse(casosGuardados);
     } else {
         // Datos dummy iniciales para funcionar sin Supabase
-        todosLosCasosSinFiltro = (typeof casosPenalFake !== 'undefined' ? [...casosPenalFake] : []);
+        todosLosCasosSinFiltro = [];
     }
 
     todosLosCasosSinFiltro.forEach(caso => {
@@ -287,7 +287,8 @@ let filtroAbierto = null;
 
 function llenarFiltros() {
     opcionesFiltros.filtroDelegacion = [];
-    catalogos.delegaciones.forEach(deleg => {
+    const delegaciones = catalogosCargados ? catalogosDB.delegaciones : [];
+    delegaciones.forEach(deleg => {
         opcionesFiltros.filtroDelegacion.push({ valor: deleg.id, etiqueta: deleg.nombre });
     });
 

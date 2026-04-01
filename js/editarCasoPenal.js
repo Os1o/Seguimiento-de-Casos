@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 function cargarDelegaciones() {
     const select = document.getElementById('delegacion');
-    const delegaciones = catalogosCargados ? catalogosDB.delegaciones : catalogos.delegaciones;
+    const delegaciones = catalogosCargados ? catalogosDB.delegaciones : [];
     delegaciones.forEach(d => {
         const opt = document.createElement('option');
         opt.value = d.id;

@@ -46,15 +46,12 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Botones de acción según rol
     if (usuarioActual.rol === 'consulta') {
-        document.getElementById('botonesAccion').style.display = 'none';
-    } else {
-        document.getElementById('btnEditar').href = `editarCasoPenal.html?id=${casoId}`;
-        document.getElementById('btnActualizar').href = `actualizarCasoPenal.html?id=${casoId}`;
-
-        if (usuarioActual.rol !== 'admin') {
-            document.getElementById('btnEditar').style.display = 'none';
-            document.getElementById('btnEliminar').style.display = 'none';
-        }
+        document.getElementById('btnEditar').style.display = 'none';
+        document.getElementById('btnActualizar').style.display = 'none';
+        document.getElementById('btnEliminar').style.display = 'none';
+    } else if (usuarioActual.rol !== 'admin') {
+        document.getElementById('btnEditar').style.display = 'none';
+        document.getElementById('btnEliminar').style.display = 'none';
     }
 
     renderizarDetalle();
@@ -63,57 +60,74 @@ document.addEventListener('DOMContentLoaded', async function () {
 function renderizarDetalle() {
     const caso = casoActual;
 
-    // Breadcrumb y título
+    // Breadcrumb y tarjeta principal
     document.getElementById('breadcrumbExpediente').textContent = caso.numero_expediente;
-    document.getElementById('tituloExpediente').textContent = caso.numero_expediente;
+    document.getElementById('numeroExpediente').textContent = caso.numero_expediente;
 
-    // Información general
+    // Fechas de registro
+    document.getElementById('fechaCreacion').textContent = formatearFecha(caso.fecha_creacion || caso.fecha_inicio);
+    if (caso.fecha_actualizacion) {
+        document.getElementById('fechaActualizacionInfo').style.display = '';
+        document.getElementById('fechaActualizacion').textContent = formatearFecha(caso.fecha_actualizacion);
+    }
+
+    // Badge estatus
+    const badgeEstatus = document.getElementById('badgeEstatus');
+    if (caso.estatus === 'TRAMITE') {
+        badgeEstatus.textContent = 'En Trámite';
+        badgeEstatus.className = 'badge-estatus badge-warning';
+    } else {
+        badgeEstatus.textContent = 'Concluido';
+        badgeEstatus.className = 'badge-estatus badge-success';
+    }
+
+    // Sección 1: Datos del registro
     const delegacion = obtenerDelegacion(caso.delegacion_id);
     document.getElementById('delegacion').textContent = delegacion ? delegacion.nombre : '---';
-    document.getElementById('expediente').textContent = caso.numero_expediente;
     document.getElementById('fechaInicio').textContent = formatearFecha(caso.fecha_inicio);
 
     const delitoNombre = obtenerNombreDelitoLocal(caso.delito_id);
     document.getElementById('delito').textContent = delitoNombre || '---';
 
-    const badgeEstatus = caso.estatus === 'TRAMITE'
-        ? '<span class="badge badge-warning">En Trámite</span>'
-        : '<span class="badge badge-success">Concluido</span>';
-    document.getElementById('estatus').innerHTML = badgeEstatus;
-
-    document.getElementById('abogadoResponsable').textContent = caso.abogado_responsable || '---';
+    document.getElementById('abogadoResponsable').textContent = caso.abogado_responsable || '';
+    if (!caso.abogado_responsable) {
+        document.getElementById('abogadoResponsable').innerHTML = '<span class="info-vacio">Sin asignar</span>';
+    }
 
     // Partes
     document.getElementById('denunciante').textContent = getPersonaNombreLocal(caso.denunciante);
     document.getElementById('probableResponsable').textContent = getPersonaNombreLocal(caso.probable_responsable);
 
-    // Estatus investigación JSJ
+    // Sección 2: Estatus investigación y estado procesal
     document.getElementById('estatusInvestigacionJSJ').textContent = caso.estatus_investigacion_jsj || '---';
 
-    // Estado procesal
     const estadoProcesal = obtenerNombreEstadoProcesalLocal(caso.estado_procesal_id);
     document.getElementById('estadoProcesal').textContent = estadoProcesal || '---';
     document.getElementById('fechaConocimientoAmp').textContent = formatearFecha(caso.fecha_conocimiento_amp);
     document.getElementById('fechaJudicializacion').textContent = formatearFecha(caso.fecha_judicializacion);
     document.getElementById('determinacionJudicial').textContent = caso.determinacion_judicial || '---';
-    document.getElementById('accionesPendientes').textContent = caso.acciones_pendientes || '---';
 
-    // Sentencia
+    if (caso.acciones_pendientes) {
+        document.getElementById('accionesPendientes').textContent = caso.acciones_pendientes;
+    }
+
+    // Sección 3: Sentencia y conclusión
     if (caso.sentencia) {
         const badgeSentencia = caso.sentencia === 'FAVORABLE'
             ? '<span class="badge badge-success">Favorable</span>'
             : '<span class="badge badge-danger">Desfavorable</span>';
         document.getElementById('sentencia').innerHTML = badgeSentencia;
     } else {
-        document.getElementById('sentencia').textContent = 'Sin sentencia';
+        document.getElementById('sentencia').innerHTML = '<span class="info-vacio">Sin sentencia</span>';
     }
     document.getElementById('fechaSentencia').textContent = formatearFecha(caso.fecha_sentencia);
     document.getElementById('fechaConclusion').textContent = formatearFecha(caso.fecha_conclusion);
 
-    // Dato relevante
-    document.getElementById('datoRelevante').textContent = caso.dato_relevante || '---';
+    if (caso.dato_relevante) {
+        document.getElementById('datoRelevante').textContent = caso.dato_relevante;
+    }
 
-    // Última actuación
+    // Sección 4: Seguimiento
     const seg = caso.seguimiento;
     if (seg && seg.fecha_actuacion) {
         document.getElementById('fechaActuacion').textContent = formatearFecha(seg.fecha_actuacion);
@@ -121,13 +135,11 @@ function renderizarDetalle() {
         document.getElementById('descripcionActuacion').textContent = seg.descripcion || '---';
     }
 
-    // Timeline
     renderizarTimeline();
 }
 
 function renderizarTimeline() {
     const container = document.getElementById('timeline');
-    // Los seguimientos pueden estar como array en caso.seguimientos o como objeto único en caso.seguimiento
     let seguimientos = casoActual.seguimientos || [];
     if (seguimientos.length === 0 && casoActual.seguimiento && casoActual.seguimiento.fecha_actuacion) {
         seguimientos = [casoActual.seguimiento];
@@ -138,7 +150,6 @@ function renderizarTimeline() {
         return;
     }
 
-    // Ordenar por fecha descendente
     seguimientos.sort((a, b) => new Date(b.fecha_actuacion) - new Date(a.fecha_actuacion));
 
     container.innerHTML = seguimientos.map(seg => `
@@ -155,8 +166,20 @@ function renderizarTimeline() {
     `).join('');
 }
 
+// =====================================================
+// ACCIONES
+// =====================================================
+
+function editarDatos() {
+    window.location.href = `editarCasoPenal.html?id=${casoActual.id}`;
+}
+
+function abrirActualizacion() {
+    window.location.href = `actualizarCasoPenal.html?id=${casoActual.id}`;
+}
+
 function eliminarCaso() {
-    if (!confirm('¿Estás seguro de que deseas eliminar este asunto?')) return;
+    if (!confirm('¿Estás seguro de que deseas eliminar este asunto? Esta acción no se puede deshacer.')) return;
 
     const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
     const nuevos = casos.filter(c => c.id !== casoActual.id);
@@ -166,7 +189,10 @@ function eliminarCaso() {
     window.location.href = 'penal.html';
 }
 
-// Helpers locales (sin depender de supabaseService)
+// =====================================================
+// HELPERS
+// =====================================================
+
 function getPersonaNombreLocal(persona) {
     if (!persona) return '---';
     if (typeof persona === 'string') {
