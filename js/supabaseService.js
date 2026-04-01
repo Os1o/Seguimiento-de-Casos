@@ -319,6 +319,11 @@ async function guardarCasoCivil(caso) {
     // Separar seguimiento y acumulados del caso principal
     const { seguimiento, seguimientos, juicios_acumulados, acumulado_a, ...casoDB } = caso;
 
+    if (!casoDB.anio && casoDB.ano) {
+        casoDB.anio = casoDB.ano;
+    }
+    delete casoDB.ano;
+
     if (casoDB.id) {
         // Actualizar
         casoDB.fecha_actualizacion = new Date().toISOString();

@@ -263,7 +263,7 @@ function llenarFormulario() {
         document.getElementById('numeroLocal').value = casoActual.numero_juicio_local || casoActual.numero_expediente;
     } else {
         document.getElementById('numeroFederal').value = casoActual.numero_juicio || '';
-        document.getElementById('anoFederal').value = casoActual.ano || casoActual['año'] || '';
+        document.getElementById('anoFederal').value = casoActual.anio || casoActual.ano || casoActual['año'] || '';
     }
 
     // 4. TIPO Y SUBTIPO DE JUICIO (habilitar porque ya tiene jurisdicción)
@@ -1144,3 +1144,4 @@ async function guardarCambios(e) {
         alert('No se pudo actualizar el asunto: ' + err.message);
     }
 }
+
