@@ -1,29 +1,25 @@
 // =====================================================
-// LOGIN.JS - Funcionalidad de inicio de sesión
+// LOGIN.JS - Funcionalidad de inicio de sesion
 // =====================================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const loginForm = document.getElementById('loginForm');
     const errorMsg = document.getElementById('loginError');
 
-    // Verificar si ya hay sesión activa
     const sesionActiva = sessionStorage.getItem('usuario');
     if (sesionActiva) {
         window.location.href = 'casos.html';
         return;
     }
 
-    // Manejar submit del formulario
-    loginForm.addEventListener('submit', function(e) {
+    loginForm.addEventListener('submit', function (e) {
         e.preventDefault();
 
         const usuario = document.getElementById('usuario').value.trim();
         const password = document.getElementById('password').value;
 
-        // Ocultar error previo
         if (errorMsg) errorMsg.style.display = 'none';
 
-        // Validar campos
         if (!usuario || !password) {
             mostrarError('Por favor completa todos los campos');
             return;
@@ -33,37 +29,36 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function realizarLogin(usuario, password) {
+async function realizarLogin(usuario, password) {
     const btnSubmit = document.querySelector('button[type="submit"]');
     btnSubmit.disabled = true;
-    btnSubmit.textContent = 'Iniciando sesión...';
+    btnSubmit.textContent = 'Iniciando sesion...';
 
-    setTimeout(() => {
-        // Obtener usuarios del localStorage
-        const usuariosStr = localStorage.getItem('usuarios');
-        const usuarios = usuariosStr ? JSON.parse(usuariosStr) : [];
+    try {
+        let usuarioEncontrado = null;
 
-        // Buscar usuario por nombre de usuario
-        const usuarioEncontrado = usuarios.find(u =>
-            u.usuario === usuario && u.password === password
-        );
+        if (typeof buscarUsuario === 'function') {
+            usuarioEncontrado = await buscarUsuario(usuario, password);
+        }
 
         if (!usuarioEncontrado) {
-            btnSubmit.disabled = false;
-            btnSubmit.textContent = 'Acceder';
-            mostrarError('Usuario o contraseña incorrectos');
+            const usuariosStr = localStorage.getItem('usuarios');
+            const usuarios = usuariosStr ? JSON.parse(usuariosStr) : [];
+            usuarioEncontrado = usuarios.find(u =>
+                u.usuario === usuario && u.password === password
+            );
+        }
+
+        if (!usuarioEncontrado) {
+            mostrarError('Usuario o contrasena incorrectos');
             return;
         }
 
-        // Verificar que esté activo
         if (!usuarioEncontrado.activo) {
-            btnSubmit.disabled = false;
-            btnSubmit.textContent = 'Acceder';
             mostrarError('Esta cuenta se encuentra desactivada. Contacta al administrador.');
             return;
         }
 
-        // Guardar en sessionStorage (sin password por seguridad)
         const usuarioSesion = {
             id: usuarioEncontrado.id,
             usuario: usuarioEncontrado.usuario,
@@ -75,10 +70,14 @@ function realizarLogin(usuario, password) {
         };
 
         sessionStorage.setItem('usuario', JSON.stringify(usuarioSesion));
-
-        // Redirigir a la página de casos
         window.location.href = 'casos.html';
-    }, 500);
+    } catch (error) {
+        console.error('Error durante login:', error);
+        mostrarError('No fue posible iniciar sesion. Revisa la conexion con Supabase.');
+    } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Acceder';
+    }
 }
 
 function mostrarError(mensaje) {
@@ -91,7 +90,6 @@ function mostrarError(mensaje) {
     }
 }
 
-// Función para cerrar sesión (se usa en otras páginas)
 function cerrarSesion() {
     sessionStorage.removeItem('usuario');
     window.location.href = 'login.html';
