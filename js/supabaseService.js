@@ -3,6 +3,8 @@
 // Reemplaza el acceso directo a localStorage/datosFake
 // =====================================================
 
+const db = () => window.supabaseClient;
+
 // Cache de catálogos (se cargan una vez y se reutilizan)
 const catalogosDB = {
     delegaciones: [],
@@ -40,16 +42,16 @@ async function cargarCatalogos() {
             { data: estadosProcesales },
             { data: estatusInvestigacion }
         ] = await Promise.all([
-            supabase.from('delegaciones').select('*').order('id'),
-            supabase.from('areas').select('*').order('delegacion_id, id'),
-            supabase.from('tribunales').select('*').order('id'),
-            supabase.from('prestaciones').select('*').order('id'),
-            supabase.from('tipos_actuacion').select('*').order('id'),
-            supabase.from('tipos_juicio').select('*').order('id'),
-            supabase.from('subtipos_juicio').select('*').order('id'),
-            supabase.from('delitos').select('*').order('nombre'),
-            supabase.from('estados_procesales').select('*').order('orden'),
-            supabase.from('estatus_investigacion').select('*').order('id')
+            db().from('delegaciones').select('*').order('id'),
+            db().from('areas').select('*').order('delegacion_id, id'),
+            db().from('tribunales').select('*').order('id'),
+            db().from('prestaciones').select('*').order('id'),
+            db().from('tipos_actuacion').select('*').order('id'),
+            db().from('tipos_juicio').select('*').order('id'),
+            db().from('subtipos_juicio').select('*').order('id'),
+            db().from('delitos').select('*').order('nombre'),
+            db().from('estados_procesales').select('*').order('orden'),
+            db().from('estatus_investigacion').select('*').order('id')
         ]);
 
         catalogosDB.delegaciones = delegaciones || [];
@@ -494,3 +496,4 @@ async function agregarSeguimientoPenal(expedienteId, seguimiento) {
 
     return data;
 }
+
