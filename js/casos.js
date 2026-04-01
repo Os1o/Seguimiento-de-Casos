@@ -25,7 +25,19 @@ function cerrarSesion() {
     window.location.href = 'login.html';
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+function sincronizarCatalogos() {
+    if (!catalogosCargados) return;
+    window.catalogos = {
+        delegaciones: catalogosDB.delegaciones || [],
+        areas: catalogosDB.areas || {},
+        tribunales: catalogosDB.tribunales || [],
+        prestaciones: catalogosDB.prestaciones || [],
+        tiposJuicio: catalogosDB.tiposJuicio || {},
+        subtiposJuicio: catalogosDB.subtiposJuicio || {}
+    };
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
     // Verificar sesión
     const usuario = verificarSesion();
     if (!usuario) return;
@@ -78,8 +90,25 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Cargar casos (fake o localStorage)
-    cargarCasos();
+    try {
+        await cargarCatalogos();
+        sincronizarCatalogos();
+    } catch (err) {
+        console.warn('No se pudo conectar a Supabase, usando datos locales');
+        if (typeof window.catalogos === 'undefined') {
+            window.catalogos = {
+                delegaciones: [],
+                areas: {},
+                tribunales: [],
+                prestaciones: [],
+                tiposJuicio: {},
+                subtiposJuicio: {}
+            };
+        }
+    }
+
+    // Cargar casos
+    await cargarCasos();
 
     // Inicializar click en dona
     inicializarClickDona();
@@ -113,14 +142,20 @@ function limpiarFiltros() {
 }
 
 
-function cargarCasos() {
-    const casosGuardados = localStorage.getItem('casos');
-    let todosLosCasosSinFiltro;
+async function cargarCasos() {
+    let todosLosCasosSinFiltro = [];
 
-    if (casosGuardados) {
-        todosLosCasosSinFiltro = JSON.parse(casosGuardados);
-    } else {
-        todosLosCasosSinFiltro = (typeof casosFake !== 'undefined' ? [...casosFake] : []);
+    try {
+        const filtros = {};
+        if (usuarioActual && usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
+            filtros.delegacion_id = usuarioActual.delegacion_id;
+        }
+        todosLosCasosSinFiltro = await obtenerCasosCivil(filtros);
+        localStorage.setItem('casos', JSON.stringify(todosLosCasosSinFiltro));
+    } catch (err) {
+        console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
+        const casosGuardados = localStorage.getItem('casos');
+        todosLosCasosSinFiltro = casosGuardados ? JSON.parse(casosGuardados) : [];
     }
 
     // Asegurar que todos los casos tengan fecha_actualizacion
@@ -129,9 +164,6 @@ function cargarCasos() {
             caso.fecha_actualizacion = caso.fecha_creacion || new Date().toISOString();
         }
     });
-
-    // Guardar en localStorage con las fechas asignadas
-    localStorage.setItem('casos', JSON.stringify(todosLosCasosSinFiltro));
 
     // Filtrar por JSJ del usuario (si no es admin)
     if (usuarioActual && usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
@@ -142,6 +174,9 @@ function cargarCasos() {
 
     // Ordenar por fecha_actualizacion descendente (más reciente primero)
     todosLosCasos.sort((a, b) => new Date(b.fecha_actualizacion) - new Date(a.fecha_actualizacion));
+
+    opcionesFiltros.filtroDelegacion = [];
+    llenarFiltros();
 
     // Renderizar actividad reciente y tabla
     renderizarActividadReciente();
@@ -1413,7 +1448,7 @@ function actualizarContadores() {
 
     // Validamos que existan los elementos antes de asignarles valor para evitar errores
     const elTotal = document.getElementById('totalCasos');
-    const elActivos = document.getElementById('casosActivos');
+    const elActivos = document.getElementById('casosTramite');
     const elConcluidos = document.getElementById('casosConcluidos');
 
     if (elTotal) elTotal.textContent = total;
