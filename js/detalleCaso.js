@@ -4,8 +4,17 @@
 
 let casoActual = null;
 
+function sincronizarCatalogosCivilDetalle() {
+    window.catalogos = {
+        delegaciones: catalogosDB.delegaciones || [],
+        areas: catalogosDB.areas || {},
+        tribunales: catalogosDB.tribunales || [],
+        prestaciones: catalogosDB.prestaciones || []
+    };
+}
+
 // Verificar sesion
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     const usuarioStr = sessionStorage.getItem('usuario');
 
     if (!usuarioStr) {
@@ -27,7 +36,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btnEditar) btnEditar.style.display = 'none';
     }
 
-    cargarDetalleCaso();
+    try {
+        await cargarCatalogos();
+        sincronizarCatalogosCivilDetalle();
+    } catch (err) {
+        console.warn('No se pudieron cargar catalogos desde Supabase:', err);
+        window.catalogos = { delegaciones: [], areas: {}, tribunales: [], prestaciones: [] };
+    }
+
+    await cargarDetalleCaso();
 });
 
 function cerrarSesion() {
@@ -35,7 +52,7 @@ function cerrarSesion() {
     window.location.href = 'login.html';
 }
 
-function cargarDetalleCaso() {
+async function cargarDetalleCaso() {
     const urlParams = new URLSearchParams(window.location.search);
     const casoId = parseInt(urlParams.get('id'));
 
@@ -45,10 +62,14 @@ function cargarDetalleCaso() {
         return;
     }
 
-    const casosGuardados = localStorage.getItem('casos');
-    const casos = casosGuardados ? JSON.parse(casosGuardados) : casosFake;
-
-    casoActual = casos.find(c => c.id === casoId);
+    try {
+        casoActual = await obtenerCasoCivil(casoId);
+    } catch (err) {
+        console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
+        const casosGuardados = localStorage.getItem('casos');
+        const casos = casosGuardados ? JSON.parse(casosGuardados) : (typeof casosFake !== 'undefined' ? casosFake : []);
+        casoActual = casos.find(c => c.id === casoId);
+    }
 
     if (!casoActual) {
         alert('Asunto no encontrado');
