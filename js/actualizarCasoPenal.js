@@ -31,16 +31,21 @@ document.addEventListener('DOMContentLoaded', async function () {
     const params = new URLSearchParams(window.location.search);
     const casoId = parseInt(params.get('id'));
     if (!casoId) {
-        alert('No se especificó un asunto.');
+        alert('No se especifico un asunto.');
         window.location.href = 'penal.html';
         return;
     }
 
     try { await cargarCatalogos(); } catch (e) { console.warn('Supabase no disponible'); }
 
-    // Cargar caso
-    const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-    casoActual = casos.find(c => c.id === casoId);
+    // Cargar caso desde Supabase
+    try {
+        casoActual = await obtenerCasoPenal(casoId);
+    } catch (err) {
+        console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
+        const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
+        casoActual = casos.find(c => c.id === casoId);
+    }
     if (!casoActual) {
         alert('Asunto no encontrado.');
         window.location.href = 'penal.html';
@@ -75,7 +80,7 @@ function cargarResumen() {
     document.getElementById('resumenEstadoProcesal').textContent = estadoProcesal || '---';
 
     const badgeEstatus = casoActual.estatus === 'TRAMITE'
-        ? '<span class="badge badge-warning">En Trámite</span>'
+        ? '<span class="badge badge-warning">En Tramite</span>'
         : '<span class="badge badge-success">Concluido</span>';
     document.getElementById('resumenEstatus').innerHTML = badgeEstatus;
 }
@@ -89,11 +94,11 @@ function cargarTiposActuacion() {
     } else {
         tipos = [
             'Acuerdo', 'Amparo', 'Archivo', 'Audiencia', 'Desahogo',
-            'Ejecución', 'Notificación', 'Pericial', 'Promoción', 'Pruebas',
-            'Recurso', 'Sentencia', 'Sobreseimiento', 'Suspensión', 'Vista',
-            'Denuncia', 'Querella', 'Investigación', 'Vinculación a proceso',
+            'Ejecucion', 'Notificacion', 'Pericial', 'Promocion', 'Pruebas',
+            'Recurso', 'Sentencia', 'Sobreseimiento', 'Suspension', 'Vista',
+            'Denuncia', 'Querella', 'Investigacion', 'Vinculacion a proceso',
             'Medida cautelar', 'Auto de apertura a juicio oral', 'Juicio oral',
-            'Reparación del daño', 'Acuerdo reparatorio', 'Criterio de oportunidad'
+            'Reparacion del dano', 'Acuerdo reparatorio', 'Criterio de oportunidad'
         ].map((nombre, i) => ({ id: i + 1, nombre }));
     }
 
@@ -113,8 +118,8 @@ function cargarEstadosProcesales() {
         estados = catalogosDB.estadosProcesales;
     } else {
         estados = [
-            { id: 1, nombre: 'Etapa de investigación' },
-            { id: 2, nombre: 'Etapa intermedia o etapa de preparación a juicio' },
+            { id: 1, nombre: 'Etapa de investigacion' },
+            { id: 2, nombre: 'Etapa intermedia o etapa de preparacion a juicio' },
             { id: 3, nombre: 'Etapa de juicio oral' }
         ];
     }
@@ -137,11 +142,11 @@ function cargarEstatusInvestigacion() {
     } else {
         estatus = [
             { id: 1, nombre: 'ACUERDO REPARATORIO' },
-            { id: 2, nombre: 'EN TRÁMITE' },
+            { id: 2, nombre: 'EN TRAMITE' },
             { id: 3, nombre: 'CONCLUIDO' },
             { id: 4, nombre: 'INCOMPETENCIA' },
-            { id: 5, nombre: 'NO EJERCICIO DE LA ACCIÓN PENAL' },
-            { id: 6, nombre: 'SE SEÑALA NUEVA FECHA PARA AUDIENCIA DE JUICIO ORAL' },
+            { id: 5, nombre: 'NO EJERCICIO DE LA ACCION PENAL' },
+            { id: 6, nombre: 'SE SENALA NUEVA FECHA PARA AUDIENCIA DE JUICIO ORAL' },
             { id: 7, nombre: 'CAUSA PENAL' }
         ];
     }
@@ -154,7 +159,7 @@ function cargarEstatusInvestigacion() {
     });
 }
 
-function guardarActuacion() {
+async function guardarActuacion() {
     const fechaActuacion = document.getElementById('fechaActuacion').value;
     const tipoActuacion = document.getElementById('tipoActuacion').value;
     const descripcion = document.getElementById('descripcion').value.trim();
@@ -170,41 +175,35 @@ function guardarActuacion() {
         descripcion: descripcion
     };
 
-    // Actualizar caso en localStorage
-    const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-    const idx = casos.findIndex(c => c.id === casoActual.id);
-    if (idx === -1) { alert('Error: caso no encontrado.'); return; }
+    try {
+        await agregarSeguimientoPenal(casoActual.id, nuevaActuacion);
 
-    // Agregar al array de seguimientos
-    if (!casos[idx].seguimientos) casos[idx].seguimientos = [];
-    casos[idx].seguimientos.push(nuevaActuacion);
+        const actualizaciones = {};
+        const nuevoEstatusJSJ = document.getElementById('nuevoEstatusJSJ').value;
+        if (nuevoEstatusJSJ) actualizaciones.estatus_investigacion_jsj = nuevoEstatusJSJ;
 
-    // Actualizar seguimiento (último)
-    casos[idx].seguimiento = nuevaActuacion;
-    casos[idx].fecha_actualizacion = new Date().toISOString();
+        const nuevoEstadoProcesal = document.getElementById('nuevoEstadoProcesal').value;
+        if (nuevoEstadoProcesal) actualizaciones.estado_procesal_id = parseInt(nuevoEstadoProcesal);
 
-    // Actualizar estatus inv. JSJ si se seleccionó
-    const nuevoEstatusJSJ = document.getElementById('nuevoEstatusJSJ').value;
-    if (nuevoEstatusJSJ) {
-        casos[idx].estatus_investigacion_jsj = nuevoEstatusJSJ;
+        const nuevoEstatus = document.getElementById('nuevoEstatus').value;
+        if (nuevoEstatus) actualizaciones.estatus = nuevoEstatus;
+
+        if (Object.keys(actualizaciones).length > 0) {
+            casoActual = { ...casoActual, ...actualizaciones };
+            const casoGuardado = await guardarCasoPenal(casoActual);
+            upsertCacheCasoPenal({ ...casoActual, ...casoGuardado });
+        }
+
+        casoActual.seguimiento = nuevaActuacion;
+        casoActual.seguimientos = [nuevaActuacion, ...(casoActual.seguimientos || [])];
+        upsertCacheCasoPenal(casoActual);
+
+        alert('Actuacion guardada correctamente.');
+        window.location.href = `detalleCasoPenal.html?id=${casoActual.id}`;
+    } catch (err) {
+        console.error('Error al guardar actuacion:', err);
+        alert('Error al guardar la actuacion: ' + err.message);
     }
-
-    // Actualizar estado procesal si se seleccionó
-    const nuevoEstadoProcesal = document.getElementById('nuevoEstadoProcesal').value;
-    if (nuevoEstadoProcesal) {
-        casos[idx].estado_procesal_id = parseInt(nuevoEstadoProcesal);
-    }
-
-    // Actualizar estatus si se seleccionó
-    const nuevoEstatus = document.getElementById('nuevoEstatus').value;
-    if (nuevoEstatus) {
-        casos[idx].estatus = nuevoEstatus;
-    }
-
-    localStorage.setItem('casosPenal', JSON.stringify(casos));
-
-    alert('Actuación guardada correctamente.');
-    window.location.href = `detalleCasoPenal.html?id=${casoActual.id}`;
 }
 
 function renderizarTimeline() {
@@ -243,8 +242,8 @@ function obtenerNombreDelitoLocal(id) {
         return d ? d.nombre : null;
     }
     const delitos = {
-        1: 'ABUSO DE CONFIANZA', 5: 'COHECHO', 7: 'DAÑOS', 13: 'FALSIFICACIÓN DE DOCUMENTOS',
-        17: 'FRAUDE', 20: 'HOMICIDIO POR OMISIÓN EN AGRAVIO', 22: 'LESIONES', 27: 'ROBO',
+        1: 'ABUSO DE CONFIANZA', 5: 'COHECHO', 7: 'DANOS', 13: 'FALSIFICACION DE DOCUMENTOS',
+        17: 'FRAUDE', 20: 'HOMICIDIO POR OMISION EN AGRAVIO', 22: 'LESIONES', 27: 'ROBO',
         35: 'SUPLANTACION DE IDENTIDAD'
     };
     return delitos[id] || null;
@@ -257,8 +256,8 @@ function obtenerNombreEstadoProcesalLocal(id) {
         return e ? e.nombre : null;
     }
     const estados = {
-        1: 'Etapa de investigación',
-        2: 'Etapa intermedia o etapa de preparación a juicio',
+        1: 'Etapa de investigacion',
+        2: 'Etapa intermedia o etapa de preparacion a juicio',
         3: 'Etapa de juicio oral'
     };
     return estados[id] || null;

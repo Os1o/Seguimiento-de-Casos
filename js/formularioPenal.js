@@ -198,7 +198,7 @@ function obtenerNumeroExpediente() {
 // GUARDAR
 // =====================================================
 
-function guardarCaso() {
+async function guardarCaso() {
     const delegacionId = parseInt(document.getElementById('delegacion').value);
     const numeroExpediente = obtenerNumeroExpediente();
     const fechaInicio = document.getElementById('fechaInicio').value;
@@ -244,14 +244,7 @@ function guardarCaso() {
         };
     }
 
-    // Cargar casos existentes
-    const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-    const maxId = casos.reduce((max, c) => Math.max(max, c.id || 0), 0);
-    const maxNumero = casos.reduce((max, c) => Math.max(max, c.numero || 0), 0);
-
     const nuevoCaso = {
-        id: maxId + 1,
-        numero: maxNumero + 1,
         delegacion_id: delegacionId,
         numero_expediente: numeroExpediente,
         fecha_inicio: fechaInicio,
@@ -269,15 +262,16 @@ function guardarCaso() {
         fecha_conclusion: document.getElementById('fechaConclusion').value || null,
         dato_relevante: document.getElementById('datoRelevante').value.trim() || null,
         estatus: document.getElementById('fechaConclusion').value ? 'CONCLUIDO' : 'TRAMITE',
-        abogado_responsable: document.getElementById('abogadoResponsable').value.trim() || null,
-        fecha_creacion: new Date().toISOString(),
-        fecha_actualizacion: new Date().toISOString(),
-        seguimiento: {}
+        abogado_responsable: document.getElementById('abogadoResponsable').value.trim() || null
     };
 
-    casos.push(nuevoCaso);
-    localStorage.setItem('casosPenal', JSON.stringify(casos));
-
-    alert('Asunto penal guardado correctamente.');
-    window.location.href = 'penal.html';
+    try {
+        const casoGuardado = await guardarCasoPenal(nuevoCaso);
+        upsertCacheCasoPenal({ ...nuevoCaso, ...casoGuardado });
+        alert('Asunto penal guardado correctamente.');
+        window.location.href = 'penal.html';
+    } catch (err) {
+        console.error('Error al guardar:', err);
+        alert('Error al guardar el asunto: ' + err.message);
+    }
 }

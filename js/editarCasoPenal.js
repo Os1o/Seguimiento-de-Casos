@@ -38,9 +38,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     try { await cargarCatalogos(); } catch (e) { console.warn('Supabase no disponible'); }
 
-    // Cargar caso
-    const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-    casoActual = casos.find(c => c.id === casoId);
+    // Cargar caso desde Supabase
+    try {
+        casoActual = await obtenerCasoPenal(casoId);
+    } catch (err) {
+        console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
+        const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
+        casoActual = casos.find(c => c.id === casoId);
+    }
     if (!casoActual) {
         alert('Asunto no encontrado.');
         window.location.href = 'penal.html';
@@ -272,7 +277,7 @@ function llenarFormulario() {
     }
 }
 
-function guardarCambios() {
+async function guardarCambios() {
     const delegacionId = parseInt(document.getElementById('delegacion').value);
     const numeroExpediente = obtenerNumeroExpediente();
     const fechaInicio = document.getElementById('fechaInicio').value;
@@ -313,12 +318,8 @@ function guardarCambios() {
     }
 
     // Actualizar caso
-    const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-    const idx = casos.findIndex(c => c.id === casoActual.id);
-    if (idx === -1) { alert('Error: caso no encontrado.'); return; }
-
-    casos[idx] = {
-        ...casos[idx],
+    const casoActualizado = {
+        ...casoActual,
         delegacion_id: delegacionId,
         numero_expediente: numeroExpediente,
         fecha_inicio: fechaInicio,
@@ -336,11 +337,16 @@ function guardarCambios() {
         fecha_conclusion: document.getElementById('fechaConclusion').value || null,
         dato_relevante: document.getElementById('datoRelevante').value.trim() || null,
         abogado_responsable: document.getElementById('abogadoResponsable').value.trim() || null,
-        estatus: document.getElementById('fechaConclusion').value ? 'CONCLUIDO' : casos[idx].estatus,
-        fecha_actualizacion: new Date().toISOString()
+        estatus: document.getElementById('fechaConclusion').value ? 'CONCLUIDO' : casoActual.estatus
     };
 
-    localStorage.setItem('casosPenal', JSON.stringify(casos));
-    alert('Cambios guardados correctamente.');
-    window.location.href = `detalleCasoPenal.html?id=${casoActual.id}`;
+    try {
+        const casoGuardado = await guardarCasoPenal(casoActualizado);
+        upsertCacheCasoPenal({ ...casoActualizado, ...casoGuardado });
+        alert('Cambios guardados correctamente.');
+        window.location.href = `detalleCasoPenal.html?id=${casoActual.id}`;
+    } catch (err) {
+        console.error('Error al guardar:', err);
+        alert('Error al guardar los cambios: ' + err.message);
+    }
 }

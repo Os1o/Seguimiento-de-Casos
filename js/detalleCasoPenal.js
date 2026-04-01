@@ -34,9 +34,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     try { await cargarCatalogos(); } catch (e) { console.warn('Supabase no disponible'); }
 
-    // Cargar caso
-    const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-    casoActual = casos.find(c => c.id === casoId);
+    // Cargar caso desde Supabase
+    try {
+        casoActual = await obtenerCasoPenal(casoId);
+    } catch (err) {
+        console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
+        const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
+        casoActual = casos.find(c => c.id === casoId);
+    }
 
     if (!casoActual) {
         alert('Asunto no encontrado.');
@@ -178,15 +183,18 @@ function abrirActualizacion() {
     window.location.href = `actualizarCasoPenal.html?id=${casoActual.id}`;
 }
 
-function eliminarCaso() {
+async function eliminarCaso() {
     if (!confirm('¿Estás seguro de que deseas eliminar este asunto? Esta acción no se puede deshacer.')) return;
 
-    const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-    const nuevos = casos.filter(c => c.id !== casoActual.id);
-    localStorage.setItem('casosPenal', JSON.stringify(nuevos));
-
-    alert('Asunto eliminado.');
-    window.location.href = 'penal.html';
+    try {
+        await eliminarCasoPenal(casoActual.id);
+        eliminarCacheCasoPenal(casoActual.id);
+        alert('Asunto eliminado.');
+        window.location.href = 'penal.html';
+    } catch (err) {
+        console.error('Error al eliminar:', err);
+        alert('Error al eliminar el asunto: ' + err.message);
+    }
 }
 
 // =====================================================

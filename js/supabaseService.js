@@ -97,6 +97,11 @@ function obtenerDelegacionDB(id) {
     return catalogosDB.delegaciones.find(d => d.id === id);
 }
 
+function obtenerDelegacion(id) {
+    if (!id) return null;
+    return obtenerDelegacionDB(parseInt(id));
+}
+
 function obtenerAreaDB(delegacionId, areaId) {
     const areas = catalogosDB.areas[delegacionId] || [];
     return areas.find(a => a.id === areaId);
@@ -131,6 +136,52 @@ function obtenerTribunalesPorDelegacion(delegacionId) {
 function obtenerTiposActuacionPorModulo(modulo) {
     // modulo: 'CIVIL' o 'PENAL'
     return catalogosDB.tiposActuacion.filter(t => t.modulo === 'AMBOS' || t.modulo === modulo);
+}
+
+function formatearFecha(fecha) {
+    if (!fecha) return '---';
+
+    const soloFecha = typeof fecha === 'string' ? fecha.split('T')[0] : null;
+    let d;
+
+    if (soloFecha && /^\d{4}-\d{2}-\d{2}$/.test(soloFecha)) {
+        const [anio, mes, dia] = soloFecha.split('-').map(Number);
+        d = new Date(anio, mes - 1, dia);
+    } else {
+        d = new Date(fecha);
+    }
+
+    if (isNaN(d.getTime())) return fecha;
+
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+}
+
+function obtenerCacheCasosPenal() {
+    return JSON.parse(localStorage.getItem('casosPenal') || '[]');
+}
+
+function guardarCacheCasosPenal(casos) {
+    localStorage.setItem('casosPenal', JSON.stringify(casos || []));
+}
+
+function upsertCacheCasoPenal(caso) {
+    if (!caso || !caso.id) return;
+    const casos = obtenerCacheCasosPenal();
+    const index = casos.findIndex(c => c.id === caso.id);
+    if (index >= 0) {
+        casos[index] = { ...casos[index], ...caso };
+    } else {
+        casos.unshift(caso);
+    }
+    guardarCacheCasosPenal(casos);
+}
+
+function eliminarCacheCasoPenal(id) {
+    const casos = obtenerCacheCasosPenal().filter(c => c.id !== id);
+    guardarCacheCasosPenal(casos);
 }
 
 // =====================================================

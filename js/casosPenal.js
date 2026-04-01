@@ -79,8 +79,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.warn('No se pudo conectar a Supabase, usando datos locales');
     }
 
-    cargarCasos();
-    llenarFiltros();
+    await cargarCasos();
 
     // Búsqueda
     const searchInput = document.getElementById('searchInput');
@@ -114,16 +113,22 @@ document.addEventListener('DOMContentLoaded', async function () {
 // CARGAR CASOS
 // =====================================================
 
-function cargarCasos() {
-    // Intentar cargar de localStorage (para funcionar sin Supabase)
-    const casosGuardados = localStorage.getItem('casosPenal');
-    let todosLosCasosSinFiltro;
+async function cargarCasos() {
+    let todosLosCasosSinFiltro = [];
 
-    if (casosGuardados) {
-        todosLosCasosSinFiltro = JSON.parse(casosGuardados);
-    } else {
-        // Datos dummy iniciales para funcionar sin Supabase
-        todosLosCasosSinFiltro = [];
+    try {
+        // Intentar cargar desde Supabase
+        const filtros = {};
+        if (usuarioActual && usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
+            filtros.delegacion_id = usuarioActual.delegacion_id;
+        }
+        todosLosCasosSinFiltro = await obtenerCasosPenal(filtros);
+        // Guardar en localStorage como cache
+        localStorage.setItem('casosPenal', JSON.stringify(todosLosCasosSinFiltro));
+    } catch (err) {
+        console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
+        const casosGuardados = localStorage.getItem('casosPenal');
+        todosLosCasosSinFiltro = casosGuardados ? JSON.parse(casosGuardados) : [];
     }
 
     todosLosCasosSinFiltro.forEach(caso => {
@@ -132,9 +137,7 @@ function cargarCasos() {
         }
     });
 
-    localStorage.setItem('casosPenal', JSON.stringify(todosLosCasosSinFiltro));
-
-    // Filtrar por JSJ del usuario
+    // Filtrar por JSJ del usuario (si ya no se filtró en la query)
     if (usuarioActual && usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
         todosLosCasos = todosLosCasosSinFiltro.filter(c => c.delegacion_id === usuarioActual.delegacion_id);
     } else {
@@ -143,6 +146,7 @@ function cargarCasos() {
 
     todosLosCasos.sort((a, b) => new Date(b.fecha_actualizacion) - new Date(a.fecha_actualizacion));
 
+    llenarFiltros();
     aplicarFiltros();
     actualizarContadores();
 }
@@ -649,12 +653,16 @@ function actualizarSeguimiento(id) {
     window.location.href = `actualizarCasoPenal.html?id=${id}`;
 }
 
-function confirmarEliminar(id) {
+async function confirmarEliminar(id) {
     if (confirm('¿Estás seguro de que deseas eliminar este asunto? Esta acción no se puede deshacer.')) {
-        const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-        const nuevos = casos.filter(c => c.id !== id);
-        localStorage.setItem('casosPenal', JSON.stringify(nuevos));
-        cargarCasos();
+        try {
+            await eliminarCasoPenal(id);
+            eliminarCacheCasoPenal(id);
+            await cargarCasos();
+        } catch (err) {
+            console.error('Error al eliminar:', err);
+            alert('Error al eliminar el asunto: ' + err.message);
+        }
     }
 }
 
