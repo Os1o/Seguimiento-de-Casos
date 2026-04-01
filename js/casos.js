@@ -299,10 +299,8 @@ function calcularOpcionesDisponibles(filtroActual) {
 
         let cumplePronostico = true;
         if (filtroPronosticoDona) {
-            const pron = caso.pronostico || (caso.seguimiento && caso.seguimiento.pronostico) || null;
-            if (filtroPronosticoDona === 'FAVORABLE') cumplePronostico = pron === 'FAVORABLE';
-            else if (filtroPronosticoDona === 'DESFAVORABLE') cumplePronostico = pron === 'DESFAVORABLE';
-            else if (filtroPronosticoDona === 'SIN_PRONOSTICO') cumplePronostico = !pron;
+            const pron = normalizarPronostico(caso.pronostico || (caso.seguimiento && caso.seguimiento.pronostico));
+            cumplePronostico = pron === filtroPronosticoDona;
         }
 
         return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleJurisdiccion && cumplePosicionIMSS && cumplePronostico;
@@ -420,10 +418,8 @@ function filtrarCasos() {
         // Filtro de pronóstico (desde click en dona)
         let cumplePronostico = true;
         if (filtroPronosticoDona) {
-            const pron = caso.pronostico || (caso.seguimiento && caso.seguimiento.pronostico) || null;
-            if (filtroPronosticoDona === 'FAVORABLE') cumplePronostico = pron === 'FAVORABLE';
-            else if (filtroPronosticoDona === 'DESFAVORABLE') cumplePronostico = pron === 'DESFAVORABLE';
-            else if (filtroPronosticoDona === 'SIN_PRONOSTICO') cumplePronostico = !pron;
+            const pron = normalizarPronostico(caso.pronostico || (caso.seguimiento && caso.seguimiento.pronostico));
+            cumplePronostico = pron === filtroPronosticoDona;
         }
 
         return cumpleBusqueda && cumpleDelegacion && cumpleEstatus && cumpleTipo && cumpleJurisdiccion && cumplePosicionIMSS && cumplePronostico;
@@ -614,6 +610,20 @@ function getActorNombre(actorOrCaso) {
         }
         return a.empresa || '';
     }).join(', ');
+}
+
+function normalizarPronostico(valor) {
+    const pronostico = (valor || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toUpperCase();
+
+    if (!pronostico || pronostico === 'SIN PRONOSTICO') return 'SIN_PRONOSTICO';
+    if (pronostico === 'FAVORABLE') return 'FAVORABLE';
+    if (pronostico === 'DESFAVORABLE') return 'DESFAVORABLE';
+    return pronostico;
 }
 
 function getActorNombreConTipo(caso) {
@@ -1154,7 +1164,7 @@ function renderizarGraficaPronostico() {
     let sinPronostico = 0;
 
     tramites.forEach(c => {
-        const pron = c.pronostico || (c.seguimiento && c.seguimiento.pronostico) || null;
+        const pron = normalizarPronostico(c.pronostico || (c.seguimiento && c.seguimiento.pronostico));
         if (pron === 'FAVORABLE') favorable++;
         else if (pron === 'DESFAVORABLE') desfavorable++;
         else sinPronostico++;
