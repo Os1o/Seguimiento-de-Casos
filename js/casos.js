@@ -6,6 +6,8 @@ let casosFiltrados = [];
 let todosLosCasos = [];
 let paginaActual = 1;
 const REGISTROS_POR_PAGINA = 10;
+const RESUMIR_PERSONAS_EN_LISTADOS = true;
+const MAX_PERSONAS_EN_LISTADOS = 2;
 let usuarioActual = null;
 let filtroPronosticoDona = ''; // Filtro activo desde click en la dona
 let estatusAutoSetByDona = false; // Indica si el filtro de estatus fue auto-asignado por click en la dona
@@ -590,9 +592,11 @@ function getActorNombre(actorOrCaso) {
     if (actorOrCaso && actorOrCaso.imss_es) {
         // Es un caso
         if (actorOrCaso.imss_es === 'ACTOR') return 'IMSS';
-        actores = actorOrCaso.actores || (actorOrCaso.actor ? [actorOrCaso.actor] : []);
+        actores = obtenerActoresNormalizados(actorOrCaso);
     } else if (actorOrCaso && actorOrCaso.tipo_persona) {
         actores = [actorOrCaso];
+    } else if (Array.isArray(actorOrCaso)) {
+        actores = actorOrCaso;
     } else {
         return 'IMSS';
     }
@@ -610,16 +614,12 @@ function getActorNombre(actorOrCaso) {
 function getActorNombreConTipo(caso) {
     if (caso.imss_es === 'ACTOR') return 'IMSS';
 
-    const actores = caso.actores || (caso.actor ? [caso.actor] : []);
-    if (actores.length === 0) return 'N/A';
+    return resumirPersonasConTipo(obtenerActoresNormalizados(caso));
+}
 
-    return actores.map(a => {
-        const nombre = a.tipo_persona === 'FISICA'
-            ? `${a.nombres} ${a.apellido_paterno}`
-            : a.empresa;
-        const tipo = a.tipo_persona === 'FISICA' ? 'F' : 'M';
-        return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
-    }).join('<br>');
+function getActorNombreResumen(caso) {
+    if (caso.imss_es === 'ACTOR') return 'IMSS';
+    return resumirPersonasTexto(obtenerActoresNormalizados(caso));
 }
 
 function getDemandadosNombres(caso) {
@@ -638,27 +638,84 @@ function getDemandadosNombres(caso) {
 function getDemandadosNombresConTipo(caso) {
     if (caso.imss_es === 'DEMANDADO') return 'IMSS';
 
-    if (!caso.demandados || caso.demandados.length === 0) return 'N/A';
-
-    return caso.demandados.map(d => {
-        const nombre = d.tipo_persona === 'FISICA'
-            ? `${d.nombres} ${d.apellido_paterno}`
-            : d.empresa;
-        const tipo = d.tipo_persona === 'FISICA' ? 'F' : 'M';
-        return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
-    }).join('<br>');
+    return resumirPersonasConTipo(caso.demandados || []);
 }
 
 function getCodemandadosNombresConTipo(caso) {
-    if (!caso.codemandados || caso.codemandados.length === 0) return 'N/A';
+    return resumirPersonasConTipo(caso.codemandados || []);
+}
 
-    return caso.codemandados.map(c => {
-        const nombre = c.tipo_persona === 'FISICA'
-            ? `${c.nombres} ${c.apellido_paterno}`
-            : c.empresa;
-        const tipo = c.tipo_persona === 'FISICA' ? 'F' : 'M';
-        return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
-    }).join('<br>');
+function getDemandadosNombresResumen(caso) {
+    if (caso.imss_es === 'DEMANDADO') return 'IMSS';
+    return resumirPersonasTexto(caso.demandados || []);
+}
+
+function getCodemandadosNombresResumen(caso) {
+    return resumirPersonasTexto(caso.codemandados || []);
+}
+
+function obtenerActoresNormalizados(caso) {
+    if (!caso) return [];
+    if (Array.isArray(caso.actores)) return caso.actores;
+    if (Array.isArray(caso.actor)) return caso.actor;
+    if (caso.actor && caso.actor.tipo_persona) return [caso.actor];
+    return [];
+}
+
+function obtenerNombreCortoPersona(persona) {
+    if (!persona) return '';
+    if (persona.tipo_persona === 'FISICA') {
+        return `${persona.nombres || ''} ${persona.apellido_paterno || ''}`.trim();
+    }
+    return (persona.empresa || persona.nombre || '').trim();
+}
+
+function resumirPersonasTexto(personas) {
+    if (!personas || personas.length === 0) return 'N/A';
+
+    if (!RESUMIR_PERSONAS_EN_LISTADOS) {
+        return personas.map(persona => obtenerNombreCortoPersona(persona) || 'N/A').join(', ');
+    }
+
+    const visibles = personas
+        .slice(0, MAX_PERSONAS_EN_LISTADOS)
+        .map(persona => obtenerNombreCortoPersona(persona) || 'N/A');
+
+    const extras = personas.length - visibles.length;
+    if (extras > 0) {
+        visibles.push(`+${extras}`);
+    }
+
+    return visibles.join(', ');
+}
+
+function resumirPersonasConTipo(personas) {
+    if (!personas || personas.length === 0) return 'N/A';
+
+    if (!RESUMIR_PERSONAS_EN_LISTADOS) {
+        return personas
+            .map(persona => {
+                const nombre = obtenerNombreCortoPersona(persona) || 'N/A';
+                const tipo = persona.tipo_persona === 'FISICA' ? 'F' : 'M';
+                return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
+            })
+            .join('<br>');
+    }
+
+    const visibles = personas
+        .slice(0, MAX_PERSONAS_EN_LISTADOS)
+        .map(persona => {
+            const nombre = obtenerNombreCortoPersona(persona) || 'N/A';
+            const tipo = persona.tipo_persona === 'FISICA' ? 'F' : 'M';
+            return `${nombre} <small style="color: var(--color-text-light);">(${tipo})</small>`;
+        });
+
+    const extras = personas.length - visibles.length;
+    if (extras > 0) {
+        visibles.push(`<small style="color: var(--color-text-light); font-weight: 600;">+${extras}</small>`);
+    }
+
+    return visibles.join('<br>');
 }
 
 function getCodemandadosNombres(caso) {
@@ -729,7 +786,7 @@ function verAcumulados(casoId) {
                 <span class="badge-mini badge-mini-concluido" title="Concluido">C</span>
             </div>
             <div style="font-size: 13px; color: var(--color-text-light);">
-                <div>Actor: ${getActorNombre(c)}</div>
+                <div>Actor: ${getActorNombreResumen(c)}</div>
                 <div>Fecha: ${formatearFecha(c.fecha_inicio)}</div>
                 <div>Importe: ${c.importe_demandado > 0 ? formatearMoneda(c.importe_demandado) : '-'}</div>
             </div>
@@ -843,7 +900,7 @@ function buscarExpedientesAcumular() {
     const seleccionadoActual = hiddenInput.value;
 
     contenedor.innerHTML = resultados.slice(0, 10).map(c => {
-        const actorNombre = getActorNombre(c) || 'N/A';
+        const actorNombre = getActorNombreResumen(c) || 'N/A';
         const delegNombre = obtenerDelegacion(c.delegacion_id);
         const isSelected = parseInt(seleccionadoActual) === c.id;
         return `
@@ -1535,7 +1592,7 @@ function renderizarActividadReciente() {
         const iconoActividad = editado ? '' : '';
         const claseActividad = editado ? 'actividad-editado' : 'actividad-nuevo';
         const fechaRelativa = formatearFechaRelativa(caso.fecha_actualizacion || caso.fecha_creacion);
-        const actorNombre = getActorNombre(caso) || 'IMSS';
+        const actorNombre = getActorNombreResumen(caso) || 'IMSS';
 
         const badgeEstatus = caso.estatus === 'TRAMITE'
             ? '<span class="badge-mini badge-mini-tramite" title="En Trámite">T</span>'
