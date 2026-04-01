@@ -4,6 +4,7 @@
 // =====================================================
 
 const db = () => window.supabaseClient;
+const supabase = db();
 
 // Cache de catálogos (se cargan una vez y se reutilizan)
 const catalogosDB = {
