@@ -719,7 +719,7 @@ function construirObjetoCaso() {
         tribunal_id: parseInt(document.getElementById('tribunal').value),
         fecha_inicio: document.getElementById('fechaInicio').value,
         imss_es: imssEs,
-        actor: actores[0] || null,
+        actor: actores.length > 0 ? actores : null,
         demandados: demandados,
         codemandados: codemandados,
         prestacion_principal: prestacionPrincipal,
@@ -796,7 +796,7 @@ function validarCasoSupabase(caso) {
         return false;
     }
 
-    if (caso.imss_es !== 'ACTOR' && !caso.actor) {
+    if (caso.imss_es !== 'ACTOR' && (!caso.actor || caso.actor.length === 0)) {
         alert('Debe capturar al menos un actor');
         return false;
     }

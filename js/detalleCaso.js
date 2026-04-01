@@ -454,6 +454,9 @@ function obtenerActoresDelCaso() {
     if (casoActual.actores && Array.isArray(casoActual.actores)) {
         return casoActual.actores;
     }
+    if (Array.isArray(casoActual.actor)) {
+        return casoActual.actor;
+    }
     if (casoActual.actor && casoActual.actor.tipo_persona) {
         return [casoActual.actor];
     }

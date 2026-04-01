@@ -319,6 +319,11 @@ async function guardarCasoCivil(caso) {
     // Separar seguimiento y acumulados del caso principal
     const { seguimiento, seguimientos, juicios_acumulados, acumulado_a, ...casoDB } = caso;
 
+    if (!casoDB.actor && Array.isArray(casoDB.actores) && casoDB.actores.length > 0) {
+        casoDB.actor = casoDB.actores;
+    }
+    delete casoDB.actores;
+
     const columnasPermitidas = [
         'id',
         'numero',

@@ -433,6 +433,9 @@ function obtenerActoresDelCaso() {
     if (casoActual.actores && Array.isArray(casoActual.actores)) {
         return casoActual.actores;
     }
+    if (Array.isArray(casoActual.actor)) {
+        return casoActual.actor;
+    }
     if (casoActual.actor && casoActual.actor.tipo_persona) {
         return [casoActual.actor];
     }
@@ -1024,7 +1027,7 @@ function validarCasoEditSupabase(caso) {
         return false;
     }
 
-    if (caso.imss_es !== 'ACTOR' && !caso.actor) {
+    if (caso.imss_es !== 'ACTOR' && (!caso.actor || caso.actor.length === 0)) {
         alert('Debe capturar al menos un actor');
         return false;
     }
@@ -1088,7 +1091,7 @@ function construirObjetoCaso() {
         tribunal_id: parseInt(document.getElementById('tribunal').value),
         fecha_inicio: document.getElementById('fechaInicio').value,
         imss_es: imssEs,
-        actor: actores[0] || null,
+        actor: actores.length > 0 ? actores : null,
         demandados,
         codemandados,
         prestacion_principal: prestacionPrincipal,
