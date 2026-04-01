@@ -5,6 +5,7 @@
 let contadorActores = 0;
 let contadorDemandados = 0;
 let contadorCodemandados = 0;
+let usuarioActual = null;
 
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -20,9 +21,29 @@ function cerrarSesion() {
     window.location.href = 'login.html';
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+function sincronizarCatalogosCivil() {
+    const tiposJuicio = {};
+
+    Object.entries(catalogosDB.tiposJuicio || {}).forEach(([materia, tipos]) => {
+        tiposJuicio[materia] = (tipos || []).map(tipo => ({
+            ...tipo,
+            subtipos: catalogosDB.subtiposJuicio[tipo.id] || []
+        }));
+    });
+
+    window.catalogos = {
+        delegaciones: catalogosDB.delegaciones || [],
+        areas: catalogosDB.areas || {},
+        tribunales: catalogosDB.tribunales || [],
+        prestaciones: catalogosDB.prestaciones || [],
+        tiposJuicio
+    };
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
     const usuario = verificarSesion();
     if (!usuario) return;
+    usuarioActual = usuario;
 
     // Proteger ruta: consulta no puede crear
     if (usuario.rol === 'consulta') {
@@ -31,6 +52,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
+
+    try {
+        await cargarCatalogos();
+        sincronizarCatalogosCivil();
+    } catch (err) {
+        console.error('No se pudieron cargar los catalogos desde Supabase:', err);
+        window.catalogos = { delegaciones: [], areas: {}, tribunales: [], prestaciones: [], tiposJuicio: {} };
+    }
 
     configurarEventListeners(usuario);
     inicializarFormulario(usuario);
@@ -603,38 +632,26 @@ function cambiarTipoCodemandado(id, tipo) {
 // =====================================================
 // GUARDAR CASO
 // =====================================================
-function guardarCaso(e) {
+async function guardarCaso(e) {
     e.preventDefault();
 
     const caso = construirObjetoCaso();
 
-    if (!validarCaso(caso)) {
+    if (!validarCasoSupabase(caso)) {
         return;
     }
 
-    const casosStr = localStorage.getItem('casos');
-    let casos = casosStr ? JSON.parse(casosStr) : [];
-
-    // MODO CREACION
-    caso.id = casos.length > 0 ? Math.max(...casos.map(c => c.id)) + 1 : 1;
-    caso.numero = casos.length + 1;
-    caso.fecha_creacion = new Date().toISOString();
-    caso.fecha_actualizacion = new Date().toISOString();
-
-    // Campos de seguimiento vacios (se llenan en actualizarCaso)
-    caso.seguimiento = {
-        sentencia: null,
-        importe_sentencia: null,
-        observaciones: null,
-        fecha_estado_procesal: null,
-        ultimo_estado_procesal: null
-    };
-
-    casos.push(caso);
-    localStorage.setItem('casos', JSON.stringify(casos));
-    alert('Asunto guardado exitosamente');
-
-    window.location.href = 'casos.html';
+    try {
+        const casoGuardado = await guardarCasoCivil(caso);
+        const casos = JSON.parse(localStorage.getItem('casos') || '[]');
+        casos.unshift({ ...caso, ...casoGuardado, seguimiento: {} });
+        localStorage.setItem('casos', JSON.stringify(casos));
+        alert('Asunto guardado exitosamente');
+        window.location.href = 'casos.html';
+    } catch (err) {
+        console.error('Error al guardar asunto civil:', err);
+        alert('No se pudo guardar el asunto: ' + err.message);
+    }
 }
 
 function construirObjetoCaso() {
@@ -702,7 +719,7 @@ function construirObjetoCaso() {
         tribunal_id: parseInt(document.getElementById('tribunal').value),
         fecha_inicio: document.getElementById('fechaInicio').value,
         imss_es: imssEs,
-        actores: actores,
+        actor: actores[0] || null,
         demandados: demandados,
         codemandados: codemandados,
         prestacion_principal: prestacionPrincipal,
@@ -712,15 +729,16 @@ function construirObjetoCaso() {
         abogado_responsable: (document.getElementById('abogadoResponsable').value || '').toUpperCase() || null,
         pronostico: document.getElementById('pronostico').value || null,
         estatus: 'TRAMITE',
-        juicios_acumulados: [],
         fecha_vencimiento: null
     };
 
     if (esLocal) {
-        caso.numero_juicio_local = document.getElementById('numeroLocal').value;
+        caso.numero_juicio = document.getElementById('numeroLocal').value;
+        const partesExpediente = caso.numero_expediente.split('/');
+        caso.anio = partesExpediente.length > 1 ? partesExpediente[partesExpediente.length - 1] : null;
     } else {
         caso.numero_juicio = document.getElementById('numeroFederal').value;
-        caso.ano = document.getElementById('anoFederal').value;
+        caso.anio = document.getElementById('anoFederal').value;
     }
 
     return caso;
@@ -762,6 +780,34 @@ function obtenerPersonasDinamicas(prefijo) {
 function validarCaso(caso) {
     if (!caso.prestacion_principal) {
         alert('Debe seleccionar una prestación principal');
+        return false;
+    }
+
+    return true;
+}
+function validarCasoSupabase(caso) {
+    if (!caso.delegacion_id || !caso.area_generadora_id || !caso.tribunal_id || !caso.fecha_inicio) {
+        alert('Completa todos los campos obligatorios');
+        return false;
+    }
+
+    if (!caso.numero_expediente) {
+        alert('Debe capturar el numero de expediente');
+        return false;
+    }
+
+    if (caso.imss_es !== 'ACTOR' && !caso.actor) {
+        alert('Debe capturar al menos un actor');
+        return false;
+    }
+
+    if (caso.imss_es !== 'DEMANDADO' && (!caso.demandados || caso.demandados.length === 0)) {
+        alert('Debe capturar al menos un demandado');
+        return false;
+    }
+
+    if (!caso.prestacion_principal) {
+        alert('Debe seleccionar una prestacion principal');
         return false;
     }
 
