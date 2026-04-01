@@ -4,7 +4,7 @@
 // =====================================================
 
 const db = () => window.supabaseClient;
-const supabase = db();
+const sb = () => window.supabaseClient;
 
 // Cache de catálogos (se cargan una vez y se reutilizan)
 const catalogosDB = {
@@ -192,7 +192,7 @@ function eliminarCacheCasoPenal(id) {
 // =====================================================
 
 async function buscarUsuario(usuario, password) {
-    const { data, error } = await supabase
+    const { data, error } = await sb()
         .from('usuarios')
         .select('*')
         .eq('usuario', usuario)
@@ -204,7 +204,7 @@ async function buscarUsuario(usuario, password) {
 }
 
 async function obtenerUsuarios() {
-    const { data, error } = await supabase
+    const { data, error } = await sb()
         .from('usuarios')
         .select('*')
         .order('id');
@@ -214,7 +214,7 @@ async function obtenerUsuarios() {
 
 async function guardarUsuario(usuario) {
     if (usuario.id) {
-        const { data, error } = await supabase
+        const { data, error } = await sb()
             .from('usuarios')
             .update(usuario)
             .eq('id', usuario.id)
@@ -223,7 +223,7 @@ async function guardarUsuario(usuario) {
         if (error) throw error;
         return data;
     } else {
-        const { data, error } = await supabase
+        const { data, error } = await sb()
             .from('usuarios')
             .insert(usuario)
             .select()
@@ -238,7 +238,7 @@ async function guardarUsuario(usuario) {
 // =====================================================
 
 async function obtenerCasosCivil(filtros = {}) {
-    let query = supabase
+    let query = sb()
         .from('expedientes_civil')
         .select('*')
         .order('id', { ascending: true });
@@ -256,7 +256,7 @@ async function obtenerCasosCivil(filtros = {}) {
     // Cargar seguimiento más reciente para cada caso
     const casos = data || [];
     for (const caso of casos) {
-        const { data: seg } = await supabase
+        const { data: seg } = await sb()
             .from('seguimiento_civil')
             .select('*')
             .eq('expediente_id', caso.id)
@@ -265,14 +265,14 @@ async function obtenerCasosCivil(filtros = {}) {
         caso.seguimiento = seg && seg.length > 0 ? seg[0] : {};
 
         // Cargar acumulados
-        const { data: acum } = await supabase
+        const { data: acum } = await sb()
             .from('acumulados_civil')
             .select('caso_hijo_id')
             .eq('caso_padre_id', caso.id);
         caso.juicios_acumulados = (acum || []).map(a => a.caso_hijo_id);
 
         // Cargar si está acumulado a otro
-        const { data: acumA } = await supabase
+        const { data: acumA } = await sb()
             .from('acumulados_civil')
             .select('caso_padre_id')
             .eq('caso_hijo_id', caso.id);
@@ -283,7 +283,7 @@ async function obtenerCasosCivil(filtros = {}) {
 }
 
 async function obtenerCasoCivil(id) {
-    const { data, error } = await supabase
+    const { data, error } = await sb()
         .from('expedientes_civil')
         .select('*')
         .eq('id', id)
@@ -291,7 +291,7 @@ async function obtenerCasoCivil(id) {
     if (error) throw error;
 
     // Seguimiento completo (timeline)
-    const { data: seguimientos } = await supabase
+    const { data: seguimientos } = await sb()
         .from('seguimiento_civil')
         .select('*')
         .eq('expediente_id', id)
@@ -300,13 +300,13 @@ async function obtenerCasoCivil(id) {
     data.seguimiento = seguimientos && seguimientos.length > 0 ? seguimientos[0] : {};
 
     // Acumulados
-    const { data: acum } = await supabase
+    const { data: acum } = await sb()
         .from('acumulados_civil')
         .select('caso_hijo_id')
         .eq('caso_padre_id', id);
     data.juicios_acumulados = (acum || []).map(a => a.caso_hijo_id);
 
-    const { data: acumA } = await supabase
+    const { data: acumA } = await sb()
         .from('acumulados_civil')
         .select('caso_padre_id')
         .eq('caso_hijo_id', id);
@@ -322,7 +322,7 @@ async function guardarCasoCivil(caso) {
     if (casoDB.id) {
         // Actualizar
         casoDB.fecha_actualizacion = new Date().toISOString();
-        const { data, error } = await supabase
+        const { data, error } = await sb()
             .from('expedientes_civil')
             .update(casoDB)
             .eq('id', casoDB.id)
@@ -334,7 +334,7 @@ async function guardarCasoCivil(caso) {
         // Insertar nuevo
         casoDB.fecha_creacion = new Date().toISOString();
         casoDB.fecha_actualizacion = new Date().toISOString();
-        const { data, error } = await supabase
+        const { data, error } = await sb()
             .from('expedientes_civil')
             .insert(casoDB)
             .select()
@@ -345,7 +345,7 @@ async function guardarCasoCivil(caso) {
 }
 
 async function eliminarCasoCivil(id) {
-    const { error } = await supabase
+    const { error } = await sb()
         .from('expedientes_civil')
         .delete()
         .eq('id', id);
@@ -353,7 +353,7 @@ async function eliminarCasoCivil(id) {
 }
 
 async function agregarSeguimientoCivil(expedienteId, seguimiento) {
-    const { data, error } = await supabase
+    const { data, error } = await sb()
         .from('seguimiento_civil')
         .insert({
             expediente_id: expedienteId,
@@ -367,7 +367,7 @@ async function agregarSeguimientoCivil(expedienteId, seguimiento) {
     if (error) throw error;
 
     // Actualizar fecha_actualizacion del expediente
-    await supabase
+    await sb()
         .from('expedientes_civil')
         .update({ fecha_actualizacion: new Date().toISOString() })
         .eq('id', expedienteId);
@@ -376,13 +376,13 @@ async function agregarSeguimientoCivil(expedienteId, seguimiento) {
 }
 
 async function guardarAcumulacionCivil(casoPadreId, casoHijoId) {
-    const { error } = await supabase
+    const { error } = await sb()
         .from('acumulados_civil')
         .insert({ caso_padre_id: casoPadreId, caso_hijo_id: casoHijoId });
     if (error) throw error;
 
     // Cambiar estatus del hijo a CONCLUIDO
-    await supabase
+    await sb()
         .from('expedientes_civil')
         .update({ estatus: 'CONCLUIDO' })
         .eq('id', casoHijoId);
@@ -393,7 +393,7 @@ async function guardarAcumulacionCivil(casoPadreId, casoHijoId) {
 // =====================================================
 
 async function obtenerCasosPenal(filtros = {}) {
-    let query = supabase
+    let query = sb()
         .from('expedientes_penal')
         .select('*')
         .order('id', { ascending: true });
@@ -411,7 +411,7 @@ async function obtenerCasosPenal(filtros = {}) {
     const casos = data || [];
     // Cargar último seguimiento para cada caso
     for (const caso of casos) {
-        const { data: seg } = await supabase
+        const { data: seg } = await sb()
             .from('seguimiento_penal')
             .select('*')
             .eq('expediente_id', caso.id)
@@ -424,7 +424,7 @@ async function obtenerCasosPenal(filtros = {}) {
 }
 
 async function obtenerCasoPenal(id) {
-    const { data, error } = await supabase
+    const { data, error } = await sb()
         .from('expedientes_penal')
         .select('*')
         .eq('id', id)
@@ -432,7 +432,7 @@ async function obtenerCasoPenal(id) {
     if (error) throw error;
 
     // Timeline completo
-    const { data: seguimientos } = await supabase
+    const { data: seguimientos } = await sb()
         .from('seguimiento_penal')
         .select('*')
         .eq('expediente_id', id)
@@ -448,7 +448,7 @@ async function guardarCasoPenal(caso) {
 
     if (casoDB.id) {
         casoDB.fecha_actualizacion = new Date().toISOString();
-        const { data, error } = await supabase
+        const { data, error } = await sb()
             .from('expedientes_penal')
             .update(casoDB)
             .eq('id', casoDB.id)
@@ -459,7 +459,7 @@ async function guardarCasoPenal(caso) {
     } else {
         casoDB.fecha_creacion = new Date().toISOString();
         casoDB.fecha_actualizacion = new Date().toISOString();
-        const { data, error } = await supabase
+        const { data, error } = await sb()
             .from('expedientes_penal')
             .insert(casoDB)
             .select()
@@ -470,7 +470,7 @@ async function guardarCasoPenal(caso) {
 }
 
 async function eliminarCasoPenal(id) {
-    const { error } = await supabase
+    const { error } = await sb()
         .from('expedientes_penal')
         .delete()
         .eq('id', id);
@@ -478,7 +478,7 @@ async function eliminarCasoPenal(id) {
 }
 
 async function agregarSeguimientoPenal(expedienteId, seguimiento) {
-    const { data, error } = await supabase
+    const { data, error } = await sb()
         .from('seguimiento_penal')
         .insert({
             expediente_id: expedienteId,
@@ -490,7 +490,7 @@ async function agregarSeguimientoPenal(expedienteId, seguimiento) {
         .single();
     if (error) throw error;
 
-    await supabase
+    await sb()
         .from('expedientes_penal')
         .update({ fecha_actualizacion: new Date().toISOString() })
         .eq('id', expedienteId);
