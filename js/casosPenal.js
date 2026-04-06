@@ -1,5 +1,5 @@
-﻿// =====================================================
-// CASOS PENAL - GestiÃ³n de lista de casos penales
+// =====================================================
+// CASOS PENAL - Gestion de lista de casos penales
 // =====================================================
 
 let casosFiltrados = [];
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Verificar permiso penal
     if (!usuario.permiso_penal && usuario.rol !== 'admin') {
-        alert('No tienes permiso para acceder al mÃ³dulo penal.');
+        alert('No tienes permiso para acceder al modulo penal.');
         window.location.href = 'casos.html';
         return;
     }
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (btnNuevo) btnNuevo.style.display = 'none';
     }
 
-    // Ocultar filtro de delegaciÃ³n para usuarios con JSJ fija
+    // Ocultar filtro de delegacion para usuarios con JSJ fija
     if (usuario.rol !== 'admin' && usuario.delegacion_id) {
         const btnFiltroDelegacion = document.getElementById('btn_filtroDelegacion');
         if (btnFiltroDelegacion) {
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         console.warn('La carga principal de casos penales termino con fallback local:', casosResult.reason);
     }
 
-    // BÃºsqueda
+    // Busqueda
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', () => {
@@ -121,13 +121,11 @@ async function cargarCasos() {
     let todosLosCasosSinFiltro = [];
 
     try {
-        // Intentar cargar desde Supabase
         const filtros = {};
         if (usuarioActual && usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
             filtros.delegacion_id = usuarioActual.delegacion_id;
         }
         todosLosCasosSinFiltro = await obtenerCasosPenal(filtros);
-        // Guardar en localStorage como cache
         localStorage.setItem('casosPenal', JSON.stringify(todosLosCasosSinFiltro));
     } catch (err) {
         console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
@@ -141,7 +139,6 @@ async function cargarCasos() {
         }
     });
 
-    // Filtrar por JSJ del usuario (si ya no se filtrÃ³ en la query)
     if (usuarioActual && usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
         todosLosCasos = todosLosCasosSinFiltro.filter(c => c.delegacion_id === usuarioActual.delegacion_id);
     } else {
@@ -156,7 +153,7 @@ async function cargarCasos() {
 }
 
 // =====================================================
-// CONTADORES Y GRÃFICA
+// CONTADORES Y GRAFICA
 // =====================================================
 
 function actualizarContadores() {
@@ -180,7 +177,6 @@ function dibujarGraficaEstadoProcesal(casosEnTramite) {
     const radius = size / 2 - growMax - 2;
     const innerRadius = radius * 0.55;
 
-    // Contar por estado procesal
     const conteo = {};
     casosEnTramite.forEach(c => {
         const estado = c.estado_procesal_nombre || obtenerNombreEstadoProcesal(c.estado_procesal_id) || 'Sin estado';
@@ -192,7 +188,6 @@ function dibujarGraficaEstadoProcesal(casosEnTramite) {
     const valores = Object.values(conteo);
     const total = valores.reduce((a, b) => a + b, 0);
 
-    // Limpiar canvas
     ctx.clearRect(0, 0, size, size);
 
     if (total === 0) {
@@ -210,7 +205,6 @@ function dibujarGraficaEstadoProcesal(casosEnTramite) {
         return;
     }
 
-    // Dibujar segmentos
     let startAngle = -Math.PI / 2;
     etiquetas.forEach((etiqueta, i) => {
         const sliceAngle = (valores[i] / total) * Math.PI * 2;
@@ -226,7 +220,6 @@ function dibujarGraficaEstadoProcesal(casosEnTramite) {
         startAngle = endAngle;
     });
 
-    // Centro
     ctx.beginPath();
     ctx.arc(center, center, innerRadius - 1, 0, Math.PI * 2);
     ctx.fillStyle = '#fff';
@@ -239,9 +232,8 @@ function dibujarGraficaEstadoProcesal(casosEnTramite) {
     ctx.fillText(total, center, center - 6);
     ctx.font = '9px Montserrat, sans-serif';
     ctx.fillStyle = '#6b7280';
-    ctx.fillText('En trÃ¡mite', center, center + 8);
+    ctx.fillText('En tramite', center, center + 8);
 
-    // Leyenda
     const leyendaContainer = document.getElementById('leyendaEstadoProcesal');
     if (leyendaContainer) {
         leyendaContainer.innerHTML = etiquetas.map((etiqueta, i) =>
@@ -255,14 +247,13 @@ function dibujarGraficaEstadoProcesal(casosEnTramite) {
 
 function obtenerNombreEstadoProcesal(id) {
     if (!id) return null;
-    // Intentar de catÃ¡logos cargados
     if (catalogosCargados && catalogosDB.estadosProcesales.length > 0) {
         const ep = catalogosDB.estadosProcesales.find(e => e.id === id);
         return ep ? ep.nombre : null;
     }
     const estados = {
-        1: 'Etapa de investigaciÃ³n',
-        2: 'Etapa intermedia o etapa de preparaciÃ³n a juicio',
+        1: 'Etapa de investigacion',
+        2: 'Etapa intermedia o etapa de preparacion a juicio',
         3: 'Etapa de juicio oral'
     };
     return estados[id] || null;
@@ -283,7 +274,7 @@ const estadoFiltros = {
 const opcionesFiltros = {
     filtroDelegacion: [],
     filtroEstatus: [
-        { valor: 'TRAMITE', etiqueta: 'TrÃ¡mite' },
+        { valor: 'TRAMITE', etiqueta: 'En Tramite' },
         { valor: 'CONCLUIDO', etiqueta: 'Concluido' }
     ],
     filtroDelito: [],
@@ -300,7 +291,6 @@ function llenarFiltros() {
         opcionesFiltros.filtroDelegacion.push({ valor: deleg.id, etiqueta: deleg.nombre });
     });
 
-    // Delitos - extraer de los casos existentes
     opcionesFiltros.filtroDelito = [];
     const delitosVistos = new Set();
     todosLosCasos.forEach(c => {
@@ -311,7 +301,6 @@ function llenarFiltros() {
         }
     });
 
-    // Estatus InvestigaciÃ³n JSJ
     opcionesFiltros.filtroEstatusJSJ = [];
     const estatusJSJVistos = new Set();
     todosLosCasos.forEach(c => {
@@ -322,7 +311,6 @@ function llenarFiltros() {
         }
     });
 
-    // Estados procesales
     opcionesFiltros.filtroEstadoProcesal = [];
     const estadosVistos = new Set();
     todosLosCasos.forEach(c => {
@@ -340,15 +328,9 @@ function obtenerNombreDelito(id) {
         const d = catalogosDB.delitos.find(d => d.id === id);
         return d ? d.nombre : null;
     }
-    // Fallback datos locales
     const delitos = {
-        1: 'Robo', 2: 'Robo calificado', 3: 'Fraude', 4: 'Abuso de confianza',
-        5: 'DaÃ±o en propiedad ajena', 6: 'Lesiones', 7: 'Homicidio culposo',
-        8: 'Amenazas', 9: 'UsurpaciÃ³n de funciones', 10: 'FalsificaciÃ³n de documentos',
-        11: 'Uso de documento falso', 12: 'Despojo', 13: 'ExtorsiÃ³n',
-        14: 'Delitos contra la salud', 15: 'Delitos contra el patrimonio institucional',
-        16: 'Peculado', 17: 'Cohecho', 18: 'Ejercicio indebido del servicio pÃºblico',
-        19: 'Uso indebido de atribuciones y facultades', 20: 'ViolaciÃ³n de sellos'
+        1: 'ABUSO DE CONFIANZA', 5: 'COHECHO', 7: 'DANOS',
+        13: 'FALSIFICACION DE DOCUMENTOS', 17: 'FRAUDE', 22: 'LESIONES', 27: 'ROBO'
     };
     return delitos[id] || null;
 }
@@ -372,7 +354,6 @@ function toggleFiltro(id, boton) {
     panel.style.top = (rect.bottom + 4) + 'px';
     panel.style.left = rect.left + 'px';
 
-    // Calcular opciones con conteo
     const opciones = opcionesFiltros[id] || [];
     const opcionesConConteo = opciones.map(op => {
         const count = todosLosCasos.filter(c => {
@@ -416,7 +397,6 @@ function toggleFiltro(id, boton) {
 function seleccionarFiltro(id, valor, etiqueta) {
     estadoFiltros[id] = valor;
 
-    // Actualizar badge del botÃ³n
     const btn = document.getElementById('btn_' + id);
     if (btn) {
         const nombreColumna = btn.dataset.nombre;
@@ -436,28 +416,21 @@ function aplicarFiltros() {
     const busqueda = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
 
     casosFiltrados = todosLosCasos.filter(caso => {
-        // Filtro delegaciÃ³n
         if (estadoFiltros.filtroDelegacion && caso.delegacion_id != estadoFiltros.filtroDelegacion) return false;
-
-        // Filtro estatus
         if (estadoFiltros.filtroEstatus && caso.estatus !== estadoFiltros.filtroEstatus) return false;
 
-        // Filtro delito
         if (estadoFiltros.filtroDelito) {
             const nombre = caso.delito_nombre || obtenerNombreDelito(caso.delito_id);
             if (nombre !== estadoFiltros.filtroDelito) return false;
         }
 
-        // Filtro estatus investigaciÃ³n JSJ
         if (estadoFiltros.filtroEstatusJSJ && caso.estatus_investigacion_jsj !== estadoFiltros.filtroEstatusJSJ) return false;
 
-        // Filtro estado procesal
         if (estadoFiltros.filtroEstadoProcesal) {
             const nombre = caso.estado_procesal_nombre || obtenerNombreEstadoProcesal(caso.estado_procesal_id);
             if (nombre !== estadoFiltros.filtroEstadoProcesal) return false;
         }
 
-        // BÃºsqueda
         if (busqueda) {
             const expediente = (caso.numero_expediente || '').toLowerCase();
             const denunciante = getPersonaNombre(caso.denunciante).toLowerCase();
@@ -478,7 +451,6 @@ function limpiarFiltros() {
     const searchInput = document.getElementById('searchInput');
     if (searchInput) searchInput.value = '';
 
-    // Resetear botones
     Object.keys(estadoFiltros).forEach(id => {
         const btn = document.getElementById('btn_' + id);
         if (btn) {
@@ -522,7 +494,7 @@ function renderizarTabla() {
         const responsable = getPersonaNombre(caso.probable_responsable);
 
         const badgeEstatus = caso.estatus === 'TRAMITE'
-            ? '<span class="badge-mini badge-mini-tramite" title="En TrÃ¡mite">T</span>'
+            ? '<span class="badge-mini badge-mini-tramite" title="En Tramite">T</span>'
             : '<span class="badge-mini badge-mini-concluido" title="Concluido">C</span>';
 
         const badgeSentencia = caso.sentencia
@@ -549,7 +521,7 @@ function renderizarTabla() {
                 <td class="td-sticky-right">
                     <div class="menu-container" id="menu-container-${caso.id}">
                         <button class="menu-trigger" onclick="toggleMenu(${caso.id})" id="menu-trigger-${caso.id}">
-                            â‹®
+                            &#8942;
                         </button>
                         <div class="menu-dropdown" id="menu-${caso.id}">
                             <div class="menu-item" onclick="verDetalle(${caso.id})">
@@ -589,13 +561,13 @@ function renderizarPaginacion(totalPaginas) {
 
     contenedor.style.display = 'flex';
     contenedor.innerHTML = `
-        <span class="paginacion-info">Mostrando ${inicio}â€“${fin} de ${casosFiltrados.length} registros</span>
+        <span class="paginacion-info">Mostrando ${inicio}-${fin} de ${casosFiltrados.length} registros</span>
         <div class="paginacion-controles">
-            <button class="paginacion-btn" onclick="irAPagina(1)" ${paginaActual === 1 ? 'disabled' : ''}>Â«</button>
-            <button class="paginacion-btn" onclick="irAPagina(${paginaActual - 1})" ${paginaActual === 1 ? 'disabled' : ''}>â€¹ Anterior</button>
-            <span class="paginacion-pagina">PÃ¡gina ${paginaActual} de ${totalPaginas}</span>
-            <button class="paginacion-btn" onclick="irAPagina(${paginaActual + 1})" ${paginaActual === totalPaginas ? 'disabled' : ''}>Siguiente â€º</button>
-            <button class="paginacion-btn" onclick="irAPagina(${totalPaginas})" ${paginaActual === totalPaginas ? 'disabled' : ''}>Â»</button>
+            <button class="paginacion-btn" onclick="irAPagina(1)" ${paginaActual === 1 ? 'disabled' : ''}>&#171;</button>
+            <button class="paginacion-btn" onclick="irAPagina(${paginaActual - 1})" ${paginaActual === 1 ? 'disabled' : ''}>&#8249; Anterior</button>
+            <span class="paginacion-pagina">Pagina ${paginaActual} de ${totalPaginas}</span>
+            <button class="paginacion-btn" onclick="irAPagina(${paginaActual + 1})" ${paginaActual === totalPaginas ? 'disabled' : ''}>Siguiente &#8250;</button>
+            <button class="paginacion-btn" onclick="irAPagina(${totalPaginas})" ${paginaActual === totalPaginas ? 'disabled' : ''}>&#187;</button>
         </div>
     `;
 }
@@ -620,7 +592,6 @@ function getPersonaNombre(persona) {
     if (persona.tipo_persona === 'MORAL') {
         return persona.empresa || '---';
     }
-    // Try to extract from JSONB string
     if (typeof persona === 'string') {
         try { return getPersonaNombre(JSON.parse(persona)); } catch (e) { return '---'; }
     }
@@ -636,7 +607,7 @@ function formatearFechaRelativa(fecha) {
     const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
     if (dias === 0) return 'Hoy';
     if (dias === 1) return 'Ayer';
-    if (dias < 7) return `Hace ${dias} dÃ­as`;
+    if (dias < 7) return `Hace ${dias} dias`;
     if (dias < 30) return `Hace ${Math.floor(dias / 7)} sem`;
     return formatearFecha(fecha);
 }
@@ -658,7 +629,7 @@ function actualizarSeguimiento(id) {
 }
 
 async function confirmarEliminar(id) {
-    if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar este asunto? Esta acciÃ³n no se puede deshacer.')) {
+    if (confirm('Estas seguro de que deseas eliminar este asunto? Esta accion no se puede deshacer.')) {
         try {
             await eliminarCasoPenal(id);
             eliminarCacheCasoPenal(id);
@@ -674,11 +645,9 @@ function toggleMenu(id) {
     const menu = document.getElementById('menu-' + id);
     const wasOpen = menu.classList.contains('show');
 
-    // Cerrar todos los menÃºs
     document.querySelectorAll('.menu-dropdown').forEach(m => m.classList.remove('show'));
 
     if (!wasOpen) {
         menu.classList.add('show');
     }
 }
-
