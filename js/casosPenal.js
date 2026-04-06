@@ -104,12 +104,31 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Click fuera cierra menu
     document.addEventListener('click', function (e) {
-        if (!e.target.closest('.menu-container') && !e.target.closest('.menu-trigger')) {
-            document.querySelectorAll('.menu-dropdown').forEach(m => m.classList.remove('show'));
+        if (!e.target.closest('.menu-container') && !e.target.closest('.menu-dropdown')) {
+            document.querySelectorAll('.menu-dropdown.show').forEach(m => {
+                m.classList.remove('show');
+                const id = m.id.replace('menu-', '');
+                const origContainer = document.getElementById(`menu-container-${id}`);
+                if (origContainer && m.parentElement === document.body) {
+                    origContainer.appendChild(m);
+                }
+            });
         }
         if (filtroAbierto && !e.target.closest('#filtroPanel') && !e.target.closest('.filtro-btn-custom')) {
             cerrarTodosLosFiltros();
         }
+    });
+
+    // Cerrar menus al hacer scroll (position: fixed)
+    document.querySelector('.table-container')?.addEventListener('scroll', function () {
+        document.querySelectorAll('.menu-dropdown.show').forEach(m => {
+            m.classList.remove('show');
+            const id = m.id.replace('menu-', '');
+            const origContainer = document.getElementById(`menu-container-${id}`);
+            if (origContainer && m.parentElement === document.body) {
+                origContainer.appendChild(m);
+            }
+        });
     });
 });
 
@@ -641,13 +660,51 @@ async function confirmarEliminar(id) {
     }
 }
 
-function toggleMenu(id) {
-    const menu = document.getElementById('menu-' + id);
-    const wasOpen = menu.classList.contains('show');
+function toggleMenu(casoId) {
+    // Cerrar todos los demas menus y regresarlos a su contenedor
+    document.querySelectorAll('.menu-dropdown.show').forEach(m => {
+        if (m.id !== `menu-${casoId}`) {
+            m.classList.remove('show');
+            const origContainer = document.getElementById(`menu-container-${m.id.replace('menu-', '')}`);
+            if (origContainer && m.parentElement === document.body) {
+                origContainer.appendChild(m);
+            }
+        }
+    });
 
-    document.querySelectorAll('.menu-dropdown').forEach(m => m.classList.remove('show'));
+    const menu = document.getElementById(`menu-${casoId}`);
+    const boton = document.getElementById(`menu-trigger-${casoId}`);
+    const isOpen = menu.classList.contains('show');
 
-    if (!wasOpen) {
-        menu.classList.add('show');
+    if (isOpen) {
+        menu.classList.remove('show');
+        const origContainer = document.getElementById(`menu-container-${casoId}`);
+        if (origContainer && menu.parentElement === document.body) {
+            origContainer.appendChild(menu);
+        }
+        return;
     }
+
+    // Mover al body para escapar del stacking context del sticky
+    document.body.appendChild(menu);
+    menu.classList.add('show');
+
+    const rectBtn = boton.getBoundingClientRect();
+
+    menu.style.position = 'fixed';
+    menu.style.zIndex = '9999';
+
+    const menuLeft = rectBtn.right - 150 - 10;
+    menu.style.left = `${menuLeft}px`;
+    menu.style.top = `${rectBtn.bottom + 4}px`;
+    menu.style.bottom = '';
+
+    requestAnimationFrame(() => {
+        const rectMenu = menu.getBoundingClientRect();
+        const espacioAbajo = window.innerHeight - rectBtn.bottom;
+
+        if (espacioAbajo < rectMenu.height + 8) {
+            menu.style.top = `${rectBtn.top - rectMenu.height - 4}px`;
+        }
+    });
 }
