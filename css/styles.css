@@ -2541,6 +2541,29 @@ body {
     background: #fafbfc;
 }
 
+.timeline-actions {
+    display: flex;
+    justify-content: center;
+    padding-top: 2px;
+}
+
+.timeline-toggle-btn {
+    border: 0;
+    background: transparent;
+    color: #7a1f3d;
+    font-weight: 700;
+    font-size: 0.92rem;
+    padding: 10px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.timeline-toggle-btn:hover {
+    background: rgba(122, 31, 61, 0.08);
+    color: #621132;
+}
+
 /* Card compacta de Última Actuación */
 .actuacion-card {
     background: #f9fafb;

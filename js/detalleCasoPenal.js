@@ -4,6 +4,8 @@
 
 let usuarioActual = null;
 let casoActual = null;
+let historialExpandido = false;
+const MAX_ACTUACIONES_VISIBLES = 5;
 
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -163,9 +165,11 @@ function renderizarTimeline() {
     }
 
     seguimientos.sort((a, b) => new Date(b.fecha_actuacion) - new Date(a.fecha_actuacion));
+    const visibles = historialExpandido ? seguimientos : seguimientos.slice(0, MAX_ACTUACIONES_VISIBLES);
+    const restantes = seguimientos.length - visibles.length;
 
-    container.innerHTML = seguimientos.map((seg, index) => `
-        <div class="timeline-item ${index === seguimientos.length - 1 ? 'is-last' : ''}">
+    container.innerHTML = visibles.map((seg, index) => `
+        <div class="timeline-item ${index === visibles.length - 1 ? 'is-last' : ''}">
             <div class="timeline-rail" aria-hidden="true">
                 <span class="timeline-dot"></span>
             </div>
@@ -181,6 +185,21 @@ function renderizarTimeline() {
             </div>
         </div>
     `).join('');
+
+    if (seguimientos.length > MAX_ACTUACIONES_VISIBLES) {
+        container.innerHTML += `
+            <div class="timeline-actions">
+                <button type="button" class="timeline-toggle-btn" onclick="toggleHistorialPenal()">
+                    ${historialExpandido ? 'Mostrar menos' : `Mostrar ${restantes} mas`}
+                </button>
+            </div>
+        `;
+    }
+}
+
+function toggleHistorialPenal() {
+    historialExpandido = !historialExpandido;
+    renderizarTimeline();
 }
 
 // =====================================================
