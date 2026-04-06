@@ -40,7 +40,10 @@ function renderizarHeaderApp(header) {
         <div class="app-header-inner">
             <div class="header-side header-side-left">
                 <a href="${homeHref}" class="header-icon-button header-home-button" aria-label="Inicio">SJ</a>
-                <span class="header-brand-name">Seguimiento</span>
+                <div class="header-brand-block">
+                    <span class="header-brand-kicker">Direccion Juridica</span>
+                    <span class="header-brand-name">Gobierno de Mexico</span>
+                </div>
             </div>
             <div class="header-center">
                 <span class="header-module-link is-active">${moduleLabel}</span>
