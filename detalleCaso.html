@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle del Asunto - Sistema de Gestion de Juicios</title>
+    <title>Detalle del Asunto - Sistema de Gestión de Juicios</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
@@ -31,9 +31,9 @@
                     </h1>
                     <p class="caso-fecha">
                         Registrado el <span id="fechaCreacion">---</span>
-                        <!-- âœ… ESTOS SON LOS QUE TU JS NECESITA -->
+                        <!-- ✅ ESTOS SON LOS QUE TU JS NECESITA -->
                         <span id="fechaActualizacionInfo" style="display: none; margin-left: 12px; opacity: 0.8;">
-                            â€¢ Ãšltima actualizaciÃ³n: <span id="fechaActualizacion">---</span>
+                            • Última actualización: <span id="fechaActualizacion">---</span>
                         </span>
                     </p>
                 </div>
@@ -43,34 +43,34 @@
             </div>
         </div>
 
-        <!-- SECCIÃ“N 1: DATOS DEL REGISTRO -->
+        <!-- SECCIÓN 1: DATOS DEL REGISTRO -->
         <div class="seccion-card seccion-registro">
             <div class="seccion-title">
                 <h2>Datos del Registro</h2>
             </div>
             <div class="seccion-body">
-                <!-- UbicaciÃ³n -->
+                <!-- Ubicación -->
                 <div class="info-group">
-                    <h4 class="group-title">UbicaciÃ³n</h4>
+                    <h4 class="group-title">Ubicación</h4>
                     <div class="info-grid info-grid-3">
                         <div class="info-item">
-                            <span class="info-label">Jefatura de Servicios JurÃ­dicos</span>
+                            <span class="info-label">Jefatura de Servicios Jurídicos</span>
                             <span class="info-value" id="delegacion">---</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Ãrea Generadora</span>
+                            <span class="info-label">Área Generadora</span>
                             <span class="info-value" id="area">---</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">JurisdicciÃ³n</span>
+                            <span class="info-label">Jurisdicción</span>
                             <span class="info-value" id="jurisdiccion">---</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- InformaciÃ³n Legal -->
+                <!-- Información Legal -->
                 <div class="info-group">
-                    <h4 class="group-title">InformaciÃ³n Legal</h4>
+                    <h4 class="group-title">Información Legal</h4>
                     <div class="info-grid info-grid-3">
                         <div class="info-item">
                             <span class="info-label">Tipo de Juicio</span>
@@ -106,7 +106,7 @@
                             <tr>
                                 <th style="width: 50px;">#</th>
                                 <th style="width: 120px;">Tipo</th>
-                                <th>DescripciÃ³n</th>
+                                <th>Descripción</th>
                             </tr>
                         </thead>
                         <tbody id="prestacionesBody">
@@ -127,7 +127,7 @@
                     </div>
                 </div>
 
-                <!-- Responsable y PronÃ³stico -->
+                <!-- Responsable y Pronóstico -->
                 <div class="info-group">
                     <h4 class="group-title">Responsable</h4>
                     <div class="info-grid info-grid-2">
@@ -138,9 +138,9 @@
                             </div>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">PronÃ³stico</span>
+                            <span class="info-label">Pronóstico</span>
                             <div class="info-value" id="pronostico">
-                                <span class="info-vacio">Sin informaciÃ³n</span>
+                                <span class="info-vacio">Sin información</span>
                             </div>
                         </div>
                     </div>
@@ -212,47 +212,47 @@
             </div>
         </div>
 
-        <!-- SECCIÃ“N 2: SEGUIMIENTO DEL ASUNTO -->
+        <!-- SECCIÓN 2: SEGUIMIENTO DEL ASUNTO -->
         <div class="seccion-card seccion-seguimiento">
             <div class="seccion-title">
                 <h2>Seguimiento del Asunto</h2>
             </div>
             <div class="seccion-body">
-                <!-- Ãšltima ActuaciÃ³n -->
+                <!-- Última Actuación -->
                 <div class="info-group">
-                    <h4 class="group-title">Ãšltima ActuaciÃ³n</h4>
+                    <h4 class="group-title">Última Actuación</h4>
                     <div class="actuacion-card">
                         <div class="actuacion-header">
                             <div class="actuacion-campo">
                                 <span class="actuacion-label">Fecha</span>
                                 <span class="actuacion-valor" id="fechaActuacion">
-                                    <span class="info-vacio">Sin informaciÃ³n</span>
+                                    <span class="info-vacio">Sin información</span>
                                 </span>
                             </div>
                             <div class="actuacion-campo">
-                                <span class="actuacion-label">Tipo de ActuaciÃ³n</span>
+                                <span class="actuacion-label">Tipo de Actuación</span>
                                 <span class="actuacion-valor actuacion-tipo" id="tipoActuacion">
-                                    <span class="info-vacio">Sin informaciÃ³n</span>
+                                    <span class="info-vacio">Sin información</span>
                                 </span>
                             </div>
                         </div>
                         <div class="actuacion-desc-grupo">
-                            <span class="actuacion-label">DescripciÃ³n</span>
+                            <span class="actuacion-label">Descripción</span>
                             <div class="actuacion-desc" id="descripcionActuacion">
-                                <span class="info-vacio">Sin informaciÃ³n</span>
+                                <span class="info-vacio">Sin información</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- PrÃ³ximos Vencimientos -->
+                <!-- Próximos Vencimientos -->
                 <div class="info-group">
-                    <h4 class="group-title">PrÃ³ximos Vencimientos</h4>
+                    <h4 class="group-title">Próximos Vencimientos</h4>
                     <div class="vencimientos-box">
                         <div class="vencimiento-item">
-                            <span class="vencimiento-label">Fecha LÃ­mite</span>
+                            <span class="vencimiento-label">Fecha Límite</span>
                             <span class="vencimiento-value" id="fechaVencimiento">
-                                <span class="info-vacio">Sin informaciÃ³n</span>
+                                <span class="info-vacio">Sin información</span>
                             </span>
                         </div>
                     </div>
@@ -268,7 +268,7 @@
             </div>
         </div>
 
-        <!-- Botones de AcciÃ³n -->
+        <!-- Botones de Acción -->
         <div class="botones-accion">
             <button class="btn btn-volver" onclick="volver()">
                 <span class="btn-icon">&larr;</span> Volver a la lista

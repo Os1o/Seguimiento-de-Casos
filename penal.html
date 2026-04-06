@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asuntos Penales - Sistema de GestiÃ³n</title>
+    <title>Asuntos Penales - Sistema de Gestión</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
@@ -14,24 +14,24 @@
 
     <!-- Contenido Principal -->
     <div class="container">
-        <!-- MÃ³dulo switcher -->
+        <!-- Módulo switcher -->
         <div class="modulo-switcher">
             <a href="casos.html" class="modulo-tab">Civil / Mercantil</a>
             <a href="penal.html" class="modulo-tab modulo-tab-active">Penal</a>
         </div>
 
-        <!-- Encabezado de PÃ¡gina -->
+        <!-- Encabezado de Página -->
         <div class="page-header">
             <div>
                 <h1 class="page-title">Asuntos Penales</h1>
-                <p class="page-subtitle">GestiÃ³n y seguimiento de asuntos penales</p>
+                <p class="page-subtitle">Gestión y seguimiento de asuntos penales</p>
             </div>
             <a href="nuevoCasoPenal.html" class="btn btn-primary" id="btnNuevoRegistro">
                 + Nuevo Registro
             </a>
         </div>
 
-        <!-- Dashboard: Contadores + GrÃ¡fica -->
+        <!-- Dashboard: Contadores + Gráfica -->
         <div class="dashboard-row">
             <div class="contador-card">
                 <div class="contador-numero" id="totalCasos" style="color: var(--color-secondary);">0</div>
@@ -57,7 +57,7 @@
         <!-- Indicador de filtro de dona -->
         <div id="indicadorFiltroDona" style="display:none; background: #fff3cd; padding: 8px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; color: #856404;"></div>
 
-        <!-- BÃºsqueda -->
+        <!-- Búsqueda -->
         <div class="toolbar">
             <div class="toolbar-left">
                 <input type="text" id="searchInput" class="search-input"
@@ -92,7 +92,7 @@
                         </th>
                         <th class="th-filtrable">
                             <button id="btn_filtroEstatusJSJ" class="filtro-btn-custom" data-nombre="Estatus Inv."
-                                onclick="toggleFiltro('filtroEstatusJSJ', this)"><span class="filtro-btn-nombre">Estatus InvestigaciÃ³n <span class="filtro-flecha">&#9660;</span></span></button>
+                                onclick="toggleFiltro('filtroEstatusJSJ', this)"><span class="filtro-btn-nombre">Estatus Investigación <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
                         <th>Num. asunto</th>
                         <th class="th-filtrable">
@@ -120,7 +120,7 @@
             <div id="filtroPanelLista" class="filtro-panel-lista"></div>
         </div>
 
-        <!-- PaginaciÃ³n -->
+        <!-- Paginación -->
         <div id="paginacion" class="paginacion" style="display:none;"></div>
 
         <!-- Mensaje si no hay asuntos -->

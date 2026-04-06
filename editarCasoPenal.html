@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Asunto Penal - Sistema de GestiÃ³n</title>
+    <title>Editar Asunto Penal - Sistema de Gestión</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -24,12 +24,12 @@
         </div>
 
         <form id="formEditarCaso" class="card">
-            <!-- SECCION 1: InformaciÃ³n General -->
+            <!-- SECCION 1: Información General -->
             <div class="form-section">
-                <h3 class="form-section-title">InformaciÃ³n General</h3>
+                <h3 class="form-section-title">Información General</h3>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label required">Jefatura de Servicios JurÃ­dicos</label>
+                        <label class="form-label required">Jefatura de Servicios Jurídicos</label>
                         <select id="delegacion" class="form-select" required>
                             <option value="">Seleccione...</option>
                         </select>
@@ -40,13 +40,13 @@
                     </div>
                 </div>
 
-                <!-- NÃºmero de Expediente compuesto -->
+                <!-- Número de Expediente compuesto -->
                 <div class="form-group">
-                    <label class="form-label required">NÃºmero de Expediente</label>
-                    <p class="form-hint">Formato: JURISDICCIÃ“N / ENTIDAD / OOAD / NÃšMERO / AÃ‘O</p>
+                    <label class="form-label required">Número de Expediente</label>
+                    <p class="form-hint">Formato: JURISDICCIÓN / ENTIDAD / OOAD / NÚMERO / AÑO</p>
                     <div class="expediente-compuesto">
                         <select id="expJurisdiccion" class="form-select" required>
-                            <option value="">JurisdicciÃ³n</option>
+                            <option value="">Jurisdicción</option>
                             <option value="FED">FED</option>
                             <option value="LOC">LOC</option>
                         </select>
@@ -55,9 +55,9 @@
                         <span class="exp-separador">/</span>
                         <input type="text" id="expOoad" class="form-input" placeholder="OOAD" maxlength="10" required>
                         <span class="exp-separador">/</span>
-                        <input type="text" id="expNumero" class="form-input" placeholder="NÃºm." maxlength="10" required>
+                        <input type="text" id="expNumero" class="form-input" placeholder="Núm." maxlength="10" required>
                         <span class="exp-separador">/</span>
-                        <input type="text" id="expAnio" class="form-input" placeholder="AÃ±o" maxlength="4" required>
+                        <input type="text" id="expAnio" class="form-input" placeholder="Año" maxlength="4" required>
                     </div>
                     <small class="form-preview" id="previewExpediente">Vista previa: ---</small>
                 </div>
@@ -82,7 +82,7 @@
                         <div class="form-radio-group">
                             <div class="form-radio">
                                 <input type="radio" id="denuncianteFisica" name="denuncianteTipo" value="FISICA" required>
-                                <label for="denuncianteFisica">FÃ­sica</label>
+                                <label for="denuncianteFisica">Física</label>
                             </div>
                             <div class="form-radio">
                                 <input type="radio" id="denuncianteMoral" name="denuncianteTipo" value="MORAL">
@@ -108,7 +108,7 @@
                     </div>
                     <div id="denuncianteMoralCampos" style="display:none;">
                         <div class="form-group">
-                            <label class="form-label required">RazÃ³n Social / Empresa</label>
+                            <label class="form-label required">Razón Social / Empresa</label>
                             <input type="text" id="denuncianteEmpresa" class="form-input">
                         </div>
                     </div>
@@ -121,7 +121,7 @@
                         <div class="form-radio-group">
                             <div class="form-radio">
                                 <input type="radio" id="responsableFisica" name="responsableTipo" value="FISICA" required>
-                                <label for="responsableFisica">FÃ­sica</label>
+                                <label for="responsableFisica">Física</label>
                             </div>
                             <div class="form-radio">
                                 <input type="radio" id="responsableMoral" name="responsableTipo" value="MORAL">
@@ -147,16 +147,16 @@
                     </div>
                     <div id="responsableMoralCampos" style="display:none;">
                         <div class="form-group">
-                            <label class="form-label required">RazÃ³n Social / Empresa</label>
+                            <label class="form-label required">Razón Social / Empresa</label>
                             <input type="text" id="responsableEmpresa" class="form-input">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- SECCION 3: Estatus de InvestigaciÃ³n y Estado Procesal -->
+            <!-- SECCION 3: Estatus de Investigación y Estado Procesal -->
             <div class="form-section">
-                <h3 class="form-section-title">Estatus de InvestigaciÃ³n y Estado Procesal</h3>
+                <h3 class="form-section-title">Estatus de Investigación y Estado Procesal</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Estatus de las investigaciones en la JSJ</label>
@@ -183,11 +183,11 @@
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Fecha de JudicializaciÃ³n</label>
+                        <label class="form-label">Fecha de Judicialización</label>
                         <input type="date" id="fechaJudicializacion" class="form-input">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">DeterminaciÃ³n Judicial</label>
+                        <label class="form-label">Determinación Judicial</label>
                         <input type="text" id="determinacionJudicial" class="form-input">
                     </div>
                 </div>
@@ -195,7 +195,7 @@
 
             <!-- SECCION 4: Sentencia -->
             <div class="form-section">
-                <h3 class="form-section-title">Sentencia y ConclusiÃ³n</h3>
+                <h3 class="form-section-title">Sentencia y Conclusión</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Sentencia</label>
@@ -212,7 +212,7 @@
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Fecha de ConclusiÃ³n</label>
+                        <label class="form-label">Fecha de Conclusión</label>
                         <input type="date" id="fechaConclusion" class="form-input">
                     </div>
                     <div class="form-group">
@@ -224,7 +224,7 @@
 
             <!-- SECCION 5: Dato Relevante -->
             <div class="form-section">
-                <h3 class="form-section-title">InformaciÃ³n Adicional</h3>
+                <h3 class="form-section-title">Información Adicional</h3>
                 <div class="form-group">
                     <label class="form-label">Dato Relevante</label>
                     <textarea id="datoRelevante" class="form-textarea"></textarea>
