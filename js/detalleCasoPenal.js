@@ -158,21 +158,26 @@ function renderizarTimeline() {
     }
 
     if (seguimientos.length === 0) {
-        container.innerHTML = '<p style="color: var(--color-text-light); text-align: center; padding: 20px;">Sin actuaciones registradas</p>';
+        container.innerHTML = '<div class="timeline-empty">Sin actuaciones registradas</div>';
         return;
     }
 
     seguimientos.sort((a, b) => new Date(b.fecha_actuacion) - new Date(a.fecha_actuacion));
 
-    container.innerHTML = seguimientos.map(seg => `
-        <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-content">
-                <div class="timeline-header">
-                    <span class="timeline-date">${formatearFecha(seg.fecha_actuacion)}</span>
-                    <span class="timeline-type">${seg.tipo_actuacion || ''}</span>
+    container.innerHTML = seguimientos.map((seg, index) => `
+        <div class="timeline-item ${index === seguimientos.length - 1 ? 'is-last' : ''}">
+            <div class="timeline-rail" aria-hidden="true">
+                <span class="timeline-dot"></span>
+            </div>
+            <div class="timeline-card">
+                <div class="timeline-top">
+                    <div class="timeline-meta">
+                        <span class="timeline-date-pill">${formatearFecha(seg.fecha_actuacion)}</span>
+                        <span class="timeline-step">Actuacion ${index + 1}</span>
+                    </div>
+                    <span class="timeline-type-chip">${seg.tipo_actuacion || 'Sin tipo'}</span>
                 </div>
-                <div class="timeline-desc">${seg.descripcion || ''}</div>
+                <div class="timeline-desc">${seg.descripcion || 'Sin descripcion registrada.'}</div>
             </div>
         </div>
     `).join('');
