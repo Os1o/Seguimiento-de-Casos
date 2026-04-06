@@ -48,21 +48,21 @@
         <div class="dashboard-row">
             <div class="contador-card">
                 <div class="contador-numero" id="totalCasos" style="color: var(--color-secondary);">0</div>
-                <div class="contador-label">Total Registros</div>
+                <div class="contador-label">Total Asuntos</div>
             </div>
             <div class="contador-card">
-                <div class="contador-numero" id="casosTramite" style="color: var(--color-warning);">0</div>
-                <div class="contador-label">En Trámite</div>
+                <div class="contador-numero" id="casosFavorables" style="color: var(--color-success);">0</div>
+                <div class="contador-label">Favorable</div>
             </div>
             <div class="contador-card">
-                <div class="contador-numero" id="casosConcluidos" style="color: var(--color-success);">0</div>
-                <div class="contador-label">Concluidos</div>
+                <div class="contador-numero" id="casosDesfavorables" style="color: var(--color-danger, #dc2626);">0</div>
+                <div class="contador-label">Desfavorable</div>
             </div>
             <div class="contador-card grafica-card">
-                <div class="grafica-label">Estado Procesal de Asuntos en Trámite</div>
+                <div class="grafica-label">Sentencia de Asuntos</div>
                 <div class="grafica-dona-row">
-                    <canvas id="chartEstadoProcesal" width="110" height="110"></canvas>
-                    <div class="grafica-leyenda" id="leyendaEstadoProcesal"></div>
+                    <canvas id="chartSentencia" width="110" height="110"></canvas>
+                    <div class="grafica-leyenda" id="leyendaSentencia"></div>
                 </div>
             </div>
         </div>

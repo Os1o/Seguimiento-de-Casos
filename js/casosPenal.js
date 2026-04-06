@@ -176,18 +176,18 @@ async function cargarCasos() {
 // =====================================================
 
 function actualizarContadores() {
-    const enTramite = todosLosCasos.filter(c => c.estatus === 'TRAMITE');
-    const concluidos = todosLosCasos.filter(c => c.estatus === 'CONCLUIDO');
+    const favorables = todosLosCasos.filter(c => c.sentencia === 'FAVORABLE');
+    const desfavorables = todosLosCasos.filter(c => c.sentencia === 'DESFAVORABLE');
 
     document.getElementById('totalCasos').textContent = todosLosCasos.length;
-    document.getElementById('casosTramite').textContent = enTramite.length;
-    document.getElementById('casosConcluidos').textContent = concluidos.length;
+    document.getElementById('casosFavorables').textContent = favorables.length;
+    document.getElementById('casosDesfavorables').textContent = desfavorables.length;
 
-    dibujarGraficaEstadoProcesal(enTramite);
+    dibujarGraficaSentencia();
 }
 
-function dibujarGraficaEstadoProcesal(casosEnTramite) {
-    const canvas = document.getElementById('chartEstadoProcesal');
+function dibujarGraficaSentencia() {
+    const canvas = document.getElementById('chartSentencia');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const size = canvas.width;
@@ -196,15 +196,18 @@ function dibujarGraficaEstadoProcesal(casosEnTramite) {
     const radius = size / 2 - growMax - 2;
     const innerRadius = radius * 0.55;
 
-    const conteo = {};
-    casosEnTramite.forEach(c => {
-        const estado = c.estado_procesal_nombre || obtenerNombreEstadoProcesal(c.estado_procesal_id) || 'Sin estado';
-        conteo[estado] = (conteo[estado] || 0) + 1;
-    });
+    const favorables = todosLosCasos.filter(c => c.sentencia === 'FAVORABLE').length;
+    const desfavorables = todosLosCasos.filter(c => c.sentencia === 'DESFAVORABLE').length;
+    const sinSentencia = todosLosCasos.filter(c => !c.sentencia).length;
 
-    const colores = ['#991b1b', '#b45309', '#065f46', '#1e40af', '#6b21a8', '#be185d', '#0f766e', '#854d0e', '#374151'];
-    const etiquetas = Object.keys(conteo);
-    const valores = Object.values(conteo);
+    const etiquetas = [];
+    const valores = [];
+    const colores = [];
+
+    if (favorables > 0) { etiquetas.push('Favorable'); valores.push(favorables); colores.push('#065f46'); }
+    if (desfavorables > 0) { etiquetas.push('Desfavorable'); valores.push(desfavorables); colores.push('#991b1b'); }
+    if (sinSentencia > 0) { etiquetas.push('Sin sentencia'); valores.push(sinSentencia); colores.push('#9ca3af'); }
+
     const total = valores.reduce((a, b) => a + b, 0);
 
     ctx.clearRect(0, 0, size, size);
@@ -233,7 +236,7 @@ function dibujarGraficaEstadoProcesal(casosEnTramite) {
         ctx.arc(center, center, radius, startAngle, endAngle);
         ctx.arc(center, center, innerRadius, endAngle, startAngle, true);
         ctx.closePath();
-        ctx.fillStyle = colores[i % colores.length];
+        ctx.fillStyle = colores[i];
         ctx.fill();
 
         startAngle = endAngle;
@@ -251,13 +254,13 @@ function dibujarGraficaEstadoProcesal(casosEnTramite) {
     ctx.fillText(total, center, center - 6);
     ctx.font = '9px Montserrat, sans-serif';
     ctx.fillStyle = '#6b7280';
-    ctx.fillText('En tramite', center, center + 8);
+    ctx.fillText('Asuntos', center, center + 8);
 
-    const leyendaContainer = document.getElementById('leyendaEstadoProcesal');
+    const leyendaContainer = document.getElementById('leyendaSentencia');
     if (leyendaContainer) {
         leyendaContainer.innerHTML = etiquetas.map((etiqueta, i) =>
             `<div class="leyenda-item">
-                <span class="leyenda-color" style="background:${colores[i % colores.length]};"></span>
+                <span class="leyenda-color" style="background:${colores[i]};"></span>
                 <span class="leyenda-texto">${etiqueta} (${valores[i]})</span>
             </div>`
         ).join('');
