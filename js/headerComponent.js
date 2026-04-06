@@ -24,6 +24,7 @@ function renderizarHeaderApp(header) {
 
     const bloqueSesion = showSession ? `
         <div class="header-user">
+            <span class="header-user-avatar" aria-hidden="true">U</span>
             <div class="header-user-main">
                 <span id="nombreUsuario" class="header-user-name">Usuario</span>
                 <div class="header-user-meta">
@@ -32,18 +33,17 @@ function renderizarHeaderApp(header) {
                 </div>
             </div>
         </div>
-        <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesion</button>
+        <button class="btn-logout" onclick="cerrarSesion()">Salir</button>
     ` : '';
 
     header.innerHTML = `
         <div class="app-header-inner">
-            <div class="header-logo">
-                <a href="${homeHref}" class="header-brand-badge" aria-label="Inicio">SJ</a>
-                <div class="header-brand-copy">
-                    <span class="header-kicker">Direccion Juridica</span>
-                    <span class="logo-text">Gobierno de Mexico</span>
-                </div>
-                <span class="header-module-badge">${moduleLabel}</span>
+            <div class="header-side header-side-left">
+                <a href="${homeHref}" class="header-icon-button header-home-button" aria-label="Inicio">SJ</a>
+                <span class="header-brand-name">Seguimiento</span>
+            </div>
+            <div class="header-center">
+                <span class="header-module-link is-active">${moduleLabel}</span>
             </div>
             <nav class="header-nav">
                 <div class="header-actions">
