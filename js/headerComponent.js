@@ -16,7 +16,7 @@ function renderizarHeaderApp(header) {
 
     const acciones = [];
     if (backHref) {
-        acciones.push(`<a href="${backHref}" class="btn-header-link">${backLabel}</a>`);
+        acciones.push(`<a href="${backHref}" class="btn-header-link btn-header-link-back">${backLabel}</a>`);
     }
     if (showAdminLink) {
         acciones.push('<a href="adminUsuarios.html" id="linkAdmin" class="btn-header-link btn-header-link-ghost" style="display:none;">Administrar Usuarios</a>');
