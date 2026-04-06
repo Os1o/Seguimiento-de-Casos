@@ -1,24 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Actualizar Seguimiento Penal - Sistema de Gestión</title>
+    <title>Actualizar Seguimiento Penal - Sistema de GestiÃ³n</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <header class="header-gob">
-        <div class="header-logo">
-            <span class="logo-text">Gobierno de México</span>
-        </div>
-        <nav class="header-nav">
-            <a href="penal.html" class="btn-header-link">&larr; Asuntos Penales</a>
-            <div class="header-user">
-                <span id="nombreUsuario">Usuario</span>
-            </div>
-            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
-        </nav>
-    </header>
+    <header class="header-gob app-header" data-home-href="penal.html" data-module="Penal" data-back-href="penal.html" data-back-label="Volver a penal"></header>
 
     <div class="container">
         <div class="breadcrumb">
@@ -30,7 +19,7 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title">Actualizar Seguimiento</h1>
-                <p class="page-subtitle" id="subtituloExpediente">Agregar nueva actuación al expediente</p>
+                <p class="page-subtitle" id="subtituloExpediente">Agregar nueva actuaciÃ³n al expediente</p>
             </div>
         </div>
 
@@ -57,19 +46,19 @@
             </div>
         </div>
 
-        <!-- Formulario de actualización -->
+        <!-- Formulario de actualizaciÃ³n -->
         <form id="formActualizar" class="card">
             <div class="form-section">
-                <h3 class="form-section-title">Nueva Actuación</h3>
+                <h3 class="form-section-title">Nueva ActuaciÃ³n</h3>
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label required">Fecha de Actuación</label>
+                        <label class="form-label required">Fecha de ActuaciÃ³n</label>
                         <input type="date" id="fechaActuacion" class="form-input" required>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label required">Tipo de Actuación</label>
+                        <label class="form-label required">Tipo de ActuaciÃ³n</label>
                         <select id="tipoActuacion" class="form-select" required>
                             <option value="">Seleccione...</option>
                         </select>
@@ -77,8 +66,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label required">Descripción</label>
-                    <textarea id="descripcion" class="form-textarea" placeholder="Describa la actuación realizada..." required></textarea>
+                    <label class="form-label required">DescripciÃ³n</label>
+                    <textarea id="descripcion" class="form-textarea" placeholder="Describa la actuaciÃ³n realizada..." required></textarea>
                 </div>
             </div>
 
@@ -107,7 +96,7 @@
             <!-- Botones -->
             <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px;">
                 <a href="penal.html" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-success">Guardar Actuación</button>
+                <button type="submit" class="btn btn-success">Guardar ActuaciÃ³n</button>
             </div>
         </form>
 
@@ -122,6 +111,8 @@
     <script src="js/supabaseClient.js"></script>
     <script src="js/supabaseService.js"></script>
 
+    <script src="js/headerComponent.js"></script>
     <script src="js/actualizarCasoPenal.js"></script>
 </body>
 </html>
+

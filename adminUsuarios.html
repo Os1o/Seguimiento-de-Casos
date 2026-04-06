@@ -1,36 +1,24 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administrar Usuarios - Sistema de Gestión</title>
+    <title>Administrar Usuarios - Sistema de GestiÃ³n</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
     <!-- Header -->
-    <header class="header-gob">
-        <div class="header-logo">
-            <span class="logo-text">Gobierno de México</span>
-        </div>
-        <nav class="header-nav">
-            <a href="casos.html" class="btn-header-link">&larr; Volver a Asuntos</a>
-            <div class="header-user">
-                <span id="nombreUsuario">Usuario</span>
-                <span id="badgeRol" class="badge-rol badge-rol-admin">Admin</span>
-            </div>
-            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
-        </nav>
-    </header>
+    <header class="header-gob app-header" data-home-href="casos.html" data-module="Administracion" data-back-href="casos.html" data-back-label="Volver a asuntos"></header>
 
     <!-- Contenido Principal -->
     <div class="container">
-        <!-- Encabezado de Página -->
+        <!-- Encabezado de PÃ¡gina -->
         <div class="page-header">
             <div>
                 <h1 class="page-title">Administrar Usuarios</h1>
-                <p class="page-subtitle">Gestión de cuentas y permisos del sistema</p>
+                <p class="page-subtitle">GestiÃ³n de cuentas y permisos del sistema</p>
             </div>
             <button class="btn btn-primary" onclick="abrirModal()">
                 + Nuevo Usuario
@@ -81,8 +69,8 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label required">Contraseña</label>
-                        <input type="text" id="inputPassword" class="form-input" required placeholder="Contraseña">
+                        <label class="form-label required">ContraseÃ±a</label>
+                        <input type="text" id="inputPassword" class="form-input" required placeholder="ContraseÃ±a">
                     </div>
                     <div class="form-group">
                         <label class="form-label required">Rol</label>
@@ -104,7 +92,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Permisos de módulo</label>
+                    <label class="form-label">Permisos de mÃ³dulo</label>
                     <div style="display: flex; gap: 32px; margin-top: 8px; flex-wrap: wrap;">
                         <div class="form-checkbox">
                             <input type="checkbox" id="inputPermisoCivil" checked>
@@ -129,7 +117,9 @@
         </div>
     </div>
 
+    <script src="js/headerComponent.js"></script>
     <script src="js/adminUsuarios.js"></script>
 </body>
 
 </html>
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -7,18 +7,7 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <header class="header-gob">
-        <div class="header-logo">
-            <span class="logo-text">Gobierno de México</span>
-        </div>
-        <nav class="header-nav">
-            <a href="casos.html" class="btn-header-link">&larr; Inicio</a>
-            <div class="header-user">
-                <span id="nombreUsuario">Usuario</span>
-            </div>
-            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
-        </nav>
-    </header>
+    <header class="header-gob app-header" data-home-href="casos.html" data-module="Civil / Mercantil" data-back-href="casos.html" data-back-label="Volver a asuntos"></header>
 
     <div class="container">
         <div class="breadcrumb">
@@ -45,16 +34,16 @@
                 </div>
             </div>
 
-            <!-- Fecha de actuación, Tipo de actuación y Próximo vencimiento -->
+            <!-- Fecha de actuaciÃ³n, Tipo de actuaciÃ³n y PrÃ³ximo vencimiento -->
             <div class="form-section">
                 <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
                     <div class="form-group">
-                        <label class="form-label required">Fecha de actuación</label>
+                        <label class="form-label required">Fecha de actuaciÃ³n</label>
                         <input type="date" id="fechaActuacion" class="form-input" required>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label required">Tipo de actuación</label>
+                        <label class="form-label required">Tipo de actuaciÃ³n</label>
                         <select id="tipoActuacion" class="form-select" required>
                             <option value="">Seleccione...</option>
                             <option value="Acuerdo">Acuerdo</option>
@@ -63,34 +52,34 @@
                             <option value="Archivo">Archivo</option>
                             <option value="Audiencia">Audiencia</option>
                             <option value="Caducidad">Caducidad</option>
-                            <option value="Conciliación">Conciliación</option>
-                            <option value="Contestación">Contestación</option>
+                            <option value="ConciliaciÃ³n">ConciliaciÃ³n</option>
+                            <option value="ContestaciÃ³n">ContestaciÃ³n</option>
                             <option value="Demanda">Demanda</option>
                             <option value="Desahogo">Desahogo</option>
-                            <option value="Ejecución">Ejecución</option>
-                            <option value="Notificación">Notificación</option>
+                            <option value="EjecuciÃ³n">EjecuciÃ³n</option>
+                            <option value="NotificaciÃ³n">NotificaciÃ³n</option>
                             <option value="Pericial">Pericial</option>
-                            <option value="Promoción">Promoción</option>
+                            <option value="PromociÃ³n">PromociÃ³n</option>
                             <option value="Pruebas">Pruebas</option>
                             <option value="Recurso">Recurso</option>
                             <option value="Sentencia">Sentencia</option>
                             <option value="Sobreseimiento">Sobreseimiento</option>
-                            <option value="Suspensión">Suspensión</option>
+                            <option value="SuspensiÃ³n">SuspensiÃ³n</option>
                             <option value="Vista">Vista</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Fecha de Próximo vencimiento <small style="color: var(--color-text-light);">(opcional)</small></label>
+                        <label class="form-label">Fecha de PrÃ³ximo vencimiento <small style="color: var(--color-text-light);">(opcional)</small></label>
                         <input type="date" id="fechaVencimiento" class="form-input">
                     </div>
                 </div>
             </div>
 
-            <!-- Descripción -->
+            <!-- DescripciÃ³n -->
             <div class="form-section">
                 <div class="form-group">
-                    <label class="form-label required">Descripción de lo sucedido en esta actuación</label>
+                    <label class="form-label required">DescripciÃ³n de lo sucedido en esta actuaciÃ³n</label>
                     <textarea id="descripcionActuacion" class="form-textarea" placeholder="Describe lo sucedido..." rows="5" required></textarea>
                 </div>
             </div>
@@ -102,7 +91,7 @@
                 <div class="form-group">
                     <label class="form-label">Adjuntar PDF</label>
                     <input type="file" id="inputPDF" class="form-input" accept=".pdf" style="padding: 8px;">
-                    <small style="color: var(--color-text-light);">Solo archivos PDF. Tamaño máximo recomendado: 500 KB</small>
+                    <small style="color: var(--color-text-light);">Solo archivos PDF. TamaÃ±o mÃ¡ximo recomendado: 500 KB</small>
                     <div id="errorPDF" style="display:none; color: var(--color-danger); font-size: 13px; margin-top: 4px;"></div>
                 </div>
 
@@ -121,6 +110,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabaseClient.js"></script>
     <script src="js/supabaseService.js"></script>
+    <script src="js/headerComponent.js"></script>
     <script src="js/actualizarCaso.js"></script>
 </body>
 </html>
+

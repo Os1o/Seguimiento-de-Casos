@@ -1,27 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle de Asunto Penal - Sistema de Gestión</title>
+    <title>Detalle de Asunto Penal - Sistema de GestiÃ³n</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
     <!-- Header -->
-    <header class="header-gob">
-        <div class="header-logo">
-            <span class="logo-text">Gobierno de México</span>
-        </div>
-        <nav class="header-nav">
-            <a href="penal.html" class="btn-header-link">&larr; Asuntos Penales</a>
-            <div class="header-user">
-                <span id="nombreUsuario">Cargando...</span>
-            </div>
-            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
-        </nav>
-    </header>
+    <header class="header-gob app-header" data-home-href="penal.html" data-module="Penal" data-back-href="penal.html" data-back-label="Volver a penal"></header>
 
     <!-- Contenido Principal -->
     <div class="container">
@@ -43,7 +32,7 @@
                     <p class="caso-fecha">
                         Registrado el <span id="fechaCreacion">---</span>
                         <span id="fechaActualizacionInfo" style="display: none; margin-left: 12px; opacity: 0.8;">
-                            • Última actualización: <span id="fechaActualizacion">---</span>
+                            â€¢ Ãšltima actualizaciÃ³n: <span id="fechaActualizacion">---</span>
                         </span>
                     </p>
                 </div>
@@ -53,18 +42,18 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 1: DATOS DEL REGISTRO -->
+        <!-- SECCIÃ“N 1: DATOS DEL REGISTRO -->
         <div class="seccion-card seccion-registro">
             <div class="seccion-title">
                 <h2>Datos del Registro</h2>
             </div>
             <div class="seccion-body">
-                <!-- Ubicación -->
+                <!-- UbicaciÃ³n -->
                 <div class="info-group">
-                    <h4 class="group-title">Ubicación</h4>
+                    <h4 class="group-title">UbicaciÃ³n</h4>
                     <div class="info-grid info-grid-2">
                         <div class="info-item">
-                            <span class="info-label">Jefatura de Servicios Jurídicos / OOAD</span>
+                            <span class="info-label">Jefatura de Servicios JurÃ­dicos / OOAD</span>
                             <span class="info-value" id="delegacion">---</span>
                         </div>
                         <div class="info-item">
@@ -74,9 +63,9 @@
                     </div>
                 </div>
 
-                <!-- Información del Delito -->
+                <!-- InformaciÃ³n del Delito -->
                 <div class="info-group">
-                    <h4 class="group-title">Información del Delito</h4>
+                    <h4 class="group-title">InformaciÃ³n del Delito</h4>
                     <div class="info-grid info-grid-2">
                         <div class="info-item">
                             <span class="info-label">Delito</span>
@@ -108,15 +97,15 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 2: ESTATUS DE INVESTIGACIÓN Y ESTADO PROCESAL -->
+        <!-- SECCIÃ“N 2: ESTATUS DE INVESTIGACIÃ“N Y ESTADO PROCESAL -->
         <div class="seccion-card">
             <div class="seccion-title">
-                <h2>Estatus de Investigación y Estado Procesal</h2>
+                <h2>Estatus de InvestigaciÃ³n y Estado Procesal</h2>
             </div>
             <div class="seccion-body">
-                <!-- Estatus investigación -->
+                <!-- Estatus investigaciÃ³n -->
                 <div class="info-group">
-                    <h4 class="group-title">Investigación</h4>
+                    <h4 class="group-title">InvestigaciÃ³n</h4>
                     <div class="info-grid info-grid-3">
                         <div class="info-item">
                             <span class="info-label">Estatus de las investigaciones en la JSJ</span>
@@ -133,16 +122,16 @@
                     </div>
                 </div>
 
-                <!-- Judicialización -->
+                <!-- JudicializaciÃ³n -->
                 <div class="info-group">
-                    <h4 class="group-title">Judicialización</h4>
+                    <h4 class="group-title">JudicializaciÃ³n</h4>
                     <div class="info-grid info-grid-2">
                         <div class="info-item">
-                            <span class="info-label">Fecha de Judicialización</span>
+                            <span class="info-label">Fecha de JudicializaciÃ³n</span>
                             <span class="info-value" id="fechaJudicializacion">---</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Determinación Judicial</span>
+                            <span class="info-label">DeterminaciÃ³n Judicial</span>
                             <span class="info-value" id="determinacionJudicial">---</span>
                         </div>
                     </div>
@@ -160,10 +149,10 @@
             </div>
         </div>
 
-        <!-- SECCIÓN 3: SENTENCIA Y CONCLUSIÓN -->
+        <!-- SECCIÃ“N 3: SENTENCIA Y CONCLUSIÃ“N -->
         <div class="seccion-card">
             <div class="seccion-title">
-                <h2>Sentencia y Conclusión</h2>
+                <h2>Sentencia y ConclusiÃ³n</h2>
             </div>
             <div class="seccion-body">
                 <div class="info-group">
@@ -177,7 +166,7 @@
                             <span class="info-value" id="fechaSentencia">---</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Fecha de Conclusión</span>
+                            <span class="info-label">Fecha de ConclusiÃ³n</span>
                             <span class="info-value" id="fechaConclusion">---</span>
                         </div>
                     </div>
@@ -188,41 +177,41 @@
                     <h4 class="group-title">Dato Relevante</h4>
                     <div class="info-item">
                         <div class="info-value" id="datoRelevante" style="white-space: pre-wrap;">
-                            <span class="info-vacio">Sin información</span>
+                            <span class="info-vacio">Sin informaciÃ³n</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- SECCIÓN 4: SEGUIMIENTO DEL ASUNTO -->
+        <!-- SECCIÃ“N 4: SEGUIMIENTO DEL ASUNTO -->
         <div class="seccion-card seccion-seguimiento">
             <div class="seccion-title">
                 <h2>Seguimiento del Asunto</h2>
             </div>
             <div class="seccion-body">
-                <!-- Última Actuación -->
+                <!-- Ãšltima ActuaciÃ³n -->
                 <div class="info-group">
-                    <h4 class="group-title">Última Actuación</h4>
+                    <h4 class="group-title">Ãšltima ActuaciÃ³n</h4>
                     <div class="actuacion-card">
                         <div class="actuacion-header">
                             <div class="actuacion-campo">
                                 <span class="actuacion-label">Fecha</span>
                                 <span class="actuacion-valor" id="fechaActuacion">
-                                    <span class="info-vacio">Sin información</span>
+                                    <span class="info-vacio">Sin informaciÃ³n</span>
                                 </span>
                             </div>
                             <div class="actuacion-campo">
-                                <span class="actuacion-label">Tipo de Actuación</span>
+                                <span class="actuacion-label">Tipo de ActuaciÃ³n</span>
                                 <span class="actuacion-valor actuacion-tipo" id="tipoActuacion">
-                                    <span class="info-vacio">Sin información</span>
+                                    <span class="info-vacio">Sin informaciÃ³n</span>
                                 </span>
                             </div>
                         </div>
                         <div class="actuacion-desc-grupo">
-                            <span class="actuacion-label">Descripción</span>
+                            <span class="actuacion-label">DescripciÃ³n</span>
                             <div class="actuacion-desc" id="descripcionActuacion">
-                                <span class="info-vacio">Sin información</span>
+                                <span class="info-vacio">Sin informaciÃ³n</span>
                             </div>
                         </div>
                     </div>
@@ -236,7 +225,7 @@
             </div>
         </div>
 
-        <!-- Botones de Acción -->
+        <!-- Botones de AcciÃ³n -->
         <div class="botones-accion">
             <button class="btn btn-volver" onclick="window.location.href='penal.html'">
                 <span class="btn-icon">&larr;</span> Volver a la lista
@@ -256,7 +245,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabaseClient.js"></script>
     <script src="js/supabaseService.js"></script>
+    <script src="js/headerComponent.js"></script>
     <script src="js/detalleCasoPenal.js"></script>
 </body>
 
 </html>
+

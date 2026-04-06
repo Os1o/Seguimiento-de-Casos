@@ -1,50 +1,37 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asuntos Civiles, Mercantiles y Procedimientos Especiales - Sistema de Gestión</title>
+    <title>Asuntos Civiles, Mercantiles y Procedimientos Especiales - Sistema de GestiÃ³n</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
     <!-- Header -->
-    <header class="header-gob">
-        <div class="header-logo">
-            <span class="logo-text">Gobierno de México</span>
-        </div>
-        <nav class="header-nav">
-            <a href="adminUsuarios.html" id="linkAdmin" class="btn-header-link" style="display:none;">Administrar Usuarios</a>
-            <div class="header-user">
-                <span id="nombreUsuario">Usuario</span>
-                <span id="badgeRol" class="badge-rol"></span>
-                <small id="infoOOAD" class="info-ooad"></small>
-            </div>
-            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
-        </nav>
-    </header>
+    <header class="header-gob app-header" data-home-href="casos.html" data-module="Civil / Mercantil" data-admin-link="true"></header>
 
     <!-- Contenido Principal -->
     <div class="container">
-        <!-- Módulo switcher -->
+        <!-- MÃ³dulo switcher -->
         <div class="modulo-switcher">
             <a href="casos.html" class="modulo-tab modulo-tab-active">Civil / Mercantil</a>
             <a href="penal.html" class="modulo-tab" id="linkPenal">Penal</a>
         </div>
 
-        <!-- Encabezado de Página -->
+        <!-- Encabezado de PÃ¡gina -->
         <div class="page-header">
             <div>
                 <h1 class="page-title">Asuntos Civiles, Mercantiles y Procedimientos Especiales</h1>
-                <p class="page-subtitle">Gestión y seguimiento de asuntos</p>
+                <p class="page-subtitle">GestiÃ³n y seguimiento de asuntos</p>
             </div>
             <a href="nuevoCaso.html" class="btn btn-primary" id="btnNuevoRegistro">
                 + Nuevo Registro
             </a>
         </div>
 
-        <!-- Dashboard: Contadores + Gráfica -->
+        <!-- Dashboard: Contadores + GrÃ¡fica -->
         <div class="dashboard-row">
             <div class="contador-card">
                 <div class="contador-numero" id="totalCasos" style="color: var(--color-secondary);">0</div>
@@ -52,14 +39,14 @@
             </div>
             <div class="contador-card">
                 <div class="contador-numero" id="casosTramite" style="color: var(--color-warning);">0</div>
-                <div class="contador-label">En Trámite</div>
+                <div class="contador-label">En TrÃ¡mite</div>
             </div>
             <div class="contador-card">
                 <div class="contador-numero" id="casosConcluidos" style="color: var(--color-success);">0</div>
                 <div class="contador-label">Concluidos</div>
             </div>
             <div class="contador-card grafica-card">
-                <div class="grafica-label">Pronóstico de Asuntos en Trámite</div>
+                <div class="grafica-label">PronÃ³stico de Asuntos en TrÃ¡mite</div>
                 <div class="grafica-dona-row">
                     <canvas id="chartPronostico" width="110" height="110"></canvas>
                     <div class="grafica-leyenda" id="leyendaPronostico"></div>
@@ -70,7 +57,7 @@
         <!-- Indicador de filtro de dona -->
         <div id="indicadorFiltroDona" style="display:none; background: #fff3cd; padding: 8px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; color: #856404;"></div>
 
-        <!-- Búsqueda -->
+        <!-- BÃºsqueda -->
         <div class="toolbar">
             <div class="toolbar-left">
                 <input type="text" id="searchInput" class="search-input"
@@ -116,7 +103,7 @@
                             <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus"
                                 onclick="toggleFiltro('filtroEstatus', this)"><span class="filtro-btn-nombre">Estatus <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
-                        <th>Núm. asunto</th>
+                        <th>NÃºm. asunto</th>
                         <th class="th-filtrable">
                             <button id="btn_filtroTipo" class="filtro-btn-custom" data-nombre="Tipo"
                                 onclick="toggleFiltro('filtroTipo', this)"><span class="filtro-btn-nombre">Tipo <span class="filtro-flecha">&#9660;</span></span></button>
@@ -130,14 +117,14 @@
                         <th>Actor</th>
                         <th>Demandado</th>
                         <th>Codemandado</th>
-                        <th>Prestación Principal</th>
+                        <th>PrestaciÃ³n Principal</th>
                         <th>Importe</th>
                         <th class="th-filtrable">
                             <button id="btn_filtroPosicionIMSS" class="filtro-btn-custom" data-nombre="Calidad IMSS"
                                 onclick="toggleFiltro('filtroPosicionIMSS', this)"><span class="filtro-btn-nombre">Calidad IMSS <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
                         <th>Acumulados</th>
-                        <th>Últ. actualización</th>
+                        <th>Ãšlt. actualizaciÃ³n</th>
                         <th class="th-sticky-right"></th>
                     </tr>
                 </thead>
@@ -150,7 +137,7 @@
             <div id="filtroPanelLista" class="filtro-panel-lista"></div>
         </div>
 
-        <!-- Paginación -->
+        <!-- PaginaciÃ³n -->
         <div id="paginacion" class="paginacion" style="display:none;"></div>
 
         <!-- Mensaje si no hay asuntos -->
@@ -161,11 +148,11 @@
         </div>
 
 
-        <!-- Actividad Reciente ESTO PARA OTRA SECCIÓN, SE DEJARÁ PARA FUTURA IMPLEMENTACIÓN 
+        <!-- Actividad Reciente ESTO PARA OTRA SECCIÃ“N, SE DEJARÃ PARA FUTURA IMPLEMENTACIÃ“N 
         <div class="seccion-actividad">
             <h3 class="seccion-actividad-titulo">Actividad Reciente</h3>
             <div id="actividadReciente" class="actividad-lista">
-                 //Se llena dinámicamente desde casos.js 
+                 //Se llena dinÃ¡micamente desde casos.js 
             </div>
         </div>-->
 
@@ -177,7 +164,7 @@
         <div class="card" style="max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h3 style="margin: 0; color: var(--color-primary);">Asuntos Acumulados</h3>
-                <button onclick="cerrarModalAcumulados()" class="btn-secondary" style="padding: 8px 16px;">✕</button>
+                <button onclick="cerrarModalAcumulados()" class="btn-secondary" style="padding: 8px 16px;">âœ•</button>
             </div>
             <div id="listaAcumulados"></div>
         </div>
@@ -189,7 +176,7 @@
         <div class="card" style="max-width: 500px; width: 90%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h3 style="margin: 0; color: var(--color-primary);">Acumular Asunto</h3>
-                <button onclick="cerrarModalAcumular()" class="btn-secondary" style="padding: 8px 16px;">✕</button>
+                <button onclick="cerrarModalAcumular()" class="btn-secondary" style="padding: 8px 16px;">âœ•</button>
             </div>
             <p style="margin-bottom: 8px;">Asunto: <strong id="acumularExpediente">-</strong></p>
             <p style="margin-bottom: 12px; font-size: 13px; color: var(--color-text-light);">Materia: <strong id="acumularMateria">-</strong> | JSJ: <strong id="acumularJSJ">-</strong></p>
@@ -201,13 +188,13 @@
             </div>
             <div class="form-group" style="margin-bottom: 8px;">
                 <label class="form-label">Buscar asunto:</label>
-                <input type="text" id="inputBuscarAcumular" class="form-input" placeholder="Escriba número de asunto..." oninput="buscarExpedientesAcumular()">
+                <input type="text" id="inputBuscarAcumular" class="form-input" placeholder="Escriba nÃºmero de asunto..." oninput="buscarExpedientesAcumular()">
             </div>
             <div id="resultadosAcumular" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px; margin-bottom: 8px;">
                 <div style="padding: 12px; color: var(--color-text-light); text-align: center; font-size: 13px;">Escriba para buscar asuntos</div>
             </div>
             <input type="hidden" id="selectAcumularA" value="">
-            <small style="color: var(--color-text-light); display: block; margin-bottom: 12px;">Al acumular, el estatus del asunto cambiará a CONCLUIDO</small>
+            <small style="color: var(--color-text-light); display: block; margin-bottom: 12px;">Al acumular, el estatus del asunto cambiarÃ¡ a CONCLUIDO</small>
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button onclick="cerrarModalAcumular()" class="btn btn-secondary">Cancelar</button>
                 <button onclick="guardarAcumulacion()" class="btn btn-success">Guardar</button>
@@ -218,7 +205,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabaseClient.js"></script>
     <script src="js/supabaseService.js"></script>
+    <script src="js/headerComponent.js"></script>
     <script src="js/casos.js"></script>
 </body>
 
 </html>
+

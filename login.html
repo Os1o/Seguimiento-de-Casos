@@ -1,35 +1,28 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio de Sesión - Sistema de Gestión de Asuntos</title>
+    <title>Inicio de SesiÃ³n - Sistema de GestiÃ³n de Asuntos</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <!-- Header Gubernamental -->
-    <header class="header-gob">
-        <div class="header-logo">
-            <span class="logo-text">Gobierno de México</span>
-        </div>
-        <nav class="header-nav">
-
-        </nav>
-    </header>
+    <header class="header-gob app-header" data-home-href="login.html" data-module="Acceso" data-show-session="false"></header>
 
     <!-- Contenido de Login -->
     <div class="login-page">
         <div class="login-hero">
             <div class="login-content">
-                <!-- Título del Sistema -->
+                <!-- TÃ­tulo del Sistema -->
                 <div class="login-title">
                     <h1>Sistema de Seguimiento de Asuntos</h1>
-                    <p>Dirección Jurídica</p>
+                    <p>DirecciÃ³n JurÃ­dica</p>
                 </div>
 
                 <!-- Card de Login -->
                 <div class="login-card">
-                    <h2>Inicio de Sesión</h2>
+                    <h2>Inicio de SesiÃ³n</h2>
                     <p>Completa los siguientes campos</p>
 
                     <form id="loginForm">
@@ -45,12 +38,12 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="password" class="form-label required">Contraseña</label>
+                            <label for="password" class="form-label required">ContraseÃ±a</label>
                             <input 
                                 type="password" 
                                 id="password" 
                                 class="form-input"
-                                placeholder="Ingresa tu contraseña"
+                                placeholder="Ingresa tu contraseÃ±a"
                                 required
                             >
                         </div>
@@ -67,15 +60,15 @@
                     </form>
 
                     <div style="margin-top: 24px; text-align: center;">
-                        <a href="#" class="btn-link">Recuperar contraseña</a>
+                        <a href="#" class="btn-link">Recuperar contraseÃ±a</a>
                     </div>
 
                     <!-- Mensaje de ayuda para la maqueta -->
                     <div style="margin-top: 32px; padding: 12px; background-color: #e3f2fd; border-radius: 8px; font-size: 12px; color: #0d47a1;">
                         <strong>Usuarios de prueba:</strong><br>
-                        <code>admin</code> / <code>admin123</code> — Administrador (ve todo)<br>
-                        <code>oscar.lopez</code> / <code>1234</code> — Editor (CHIAPAS)<br>
-                        <code>maria.garcia</code> / <code>1234</code> — Consulta (CHIAPAS)
+                        <code>admin</code> / <code>admin123</code> â€” Administrador (ve todo)<br>
+                        <code>oscar.lopez</code> / <code>1234</code> â€” Editor (CHIAPAS)<br>
+                        <code>maria.garcia</code> / <code>1234</code> â€” Consulta (CHIAPAS)
                     </div>
                 </div>
             </div>
@@ -85,6 +78,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabaseClient.js"></script>
     <script src="js/supabaseService.js"></script>
+    <script src="js/headerComponent.js"></script>
     <script src="js/login.js"></script>
 </body>
 </html>
+
