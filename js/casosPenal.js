@@ -507,9 +507,6 @@ function renderizarTabla() {
         const responsable = getPersonaNombre(caso.probable_responsable);
 
         const estatusJSJ = caso.estatus_investigacion_jsj || '---';
-        const badgeEstatus = caso.estatus === 'TRAMITE'
-            ? '<span class="badge-mini badge-mini-tramite" title="En Tramite">T</span>'
-            : '<span class="badge-mini badge-mini-concluido" title="Concluido">C</span>';
 
         const badgeSentencia = caso.sentencia
             ? `<span class="badge ${caso.sentencia === 'FAVORABLE' ? 'badge-success' : 'badge-danger'}">${caso.sentencia}</span>`
@@ -518,7 +515,7 @@ function renderizarTabla() {
         return `
             <tr>
                 <td><small>${delegacion ? delegacion.nombre : 'N/A'}</small></td>
-                <td><small>${estatusJSJ}</small> ${badgeEstatus}</td>
+                <td><small>${estatusJSJ}</small></td>
                 <td>
                     <a href="#" class="expediente-link" onclick="verDetalle(${caso.id}); return false;">
                         <strong>${caso.numero_expediente}</strong>

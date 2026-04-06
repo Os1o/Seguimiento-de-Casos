@@ -192,9 +192,6 @@ async function guardarActuacion() {
         const nuevoEstadoProcesal = document.getElementById('nuevoEstadoProcesal').value;
         if (nuevoEstadoProcesal) actualizaciones.estado_procesal_id = parseInt(nuevoEstadoProcesal);
 
-        const nuevoEstatus = document.getElementById('nuevoEstatus').value;
-        if (nuevoEstatus) actualizaciones.estatus = nuevoEstatus;
-
         if (Object.keys(actualizaciones).length > 0) {
             casoActual = { ...casoActual, ...actualizaciones };
             const casoGuardado = await guardarCasoPenal(casoActual);
