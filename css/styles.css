@@ -538,6 +538,10 @@ body {
   text-transform: none;
 }
 
+#loginForm #usuario {
+  text-transform: none;
+}
+
 /* Expediente compuesto JURISDICCION/ENTIDAD/OOAD/NUM/AÑO */
 .expediente-compuesto {
   display: flex;
