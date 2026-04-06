@@ -36,15 +36,22 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
     }
 
-    try { await cargarCatalogos(); } catch (e) { console.warn('Supabase no disponible'); }
-
-    // Cargar caso desde Supabase
     try {
-        casoActual = await obtenerCasoPenal(casoId);
+        const [, casoCargado] = await Promise.all([
+            cargarCatalogos(),
+            obtenerCasoPenal(casoId)
+        ]);
+        casoActual = casoCargado;
     } catch (err) {
-        console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
-        const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-        casoActual = casos.find(c => c.id === casoId);
+        console.warn('No se pudieron cargar todos los datos desde Supabase, usando fallback:', err);
+        try { await cargarCatalogos(); } catch (e) { console.warn('Supabase no disponible'); }
+        try {
+            casoActual = await obtenerCasoPenal(casoId);
+        } catch (errorCaso) {
+            console.warn('No se pudo cargar desde Supabase, usando cache local:', errorCaso);
+            const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
+            casoActual = casos.find(c => c.id === casoId);
+        }
     }
     if (!casoActual) {
         alert('Asunto no encontrado.');

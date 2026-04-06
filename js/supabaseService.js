@@ -507,16 +507,27 @@ async function obtenerCasosPenal(filtros = {}) {
     if (error) throw error;
 
     const casos = data || [];
-    // Cargar Ãºltimo seguimiento para cada caso
-    for (const caso of casos) {
-        const { data: seg } = await sb()
-            .from('seguimiento_penal')
-            .select('*')
-            .eq('expediente_id', caso.id)
-            .order('fecha_actuacion', { ascending: false })
-            .limit(1);
-        caso.seguimiento = seg && seg.length > 0 ? seg[0] : {};
-    }
+    if (casos.length === 0) return casos;
+
+    const ids = casos.map(caso => caso.id);
+    const { data: seguimientos, error: errorSeguimientos } = await sb()
+        .from('seguimiento_penal')
+        .select('*')
+        .in('expediente_id', ids)
+        .order('expediente_id', { ascending: true })
+        .order('fecha_actuacion', { ascending: false });
+    if (errorSeguimientos) throw errorSeguimientos;
+
+    const seguimientoRecientePorExpediente = {};
+    (seguimientos || []).forEach(seg => {
+        if (!seguimientoRecientePorExpediente[seg.expediente_id]) {
+            seguimientoRecientePorExpediente[seg.expediente_id] = seg;
+        }
+    });
+
+    casos.forEach(caso => {
+        caso.seguimiento = seguimientoRecientePorExpediente[caso.id] || {};
+    });
 
     return casos;
 }
