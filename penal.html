@@ -86,12 +86,11 @@
             <table class="table" id="tablaCasos">
                 <colgroup>
                     <col class="col-delegacion">
-                    <col class="col-estatus">
+                    <col style="width: 150px;">
                     <col class="col-expediente">
                     <col style="width: 120px;">
                     <col style="width: 130px;">
                     <col style="width: 130px;">
-                    <col style="width: 140px;">
                     <col style="width: 130px;">
                     <col style="width: 100px;">
                     <col style="width: 100px;">
@@ -105,10 +104,10 @@
                                 onclick="toggleFiltro('filtroDelegacion', this)"><span class="filtro-btn-nombre">JSJ <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
                         <th class="th-filtrable">
-                            <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus"
-                                onclick="toggleFiltro('filtroEstatus', this)"><span class="filtro-btn-nombre">Estatus <span class="filtro-flecha">&#9660;</span></span></button>
+                            <button id="btn_filtroEstatusJSJ" class="filtro-btn-custom" data-nombre="Estatus Inv."
+                                onclick="toggleFiltro('filtroEstatusJSJ', this)"><span class="filtro-btn-nombre">Estatus Inv. <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
-                        <th>Núm. expediente</th>
+                        <th>Num. expediente</th>
                         <th class="th-filtrable">
                             <button id="btn_filtroDelito" class="filtro-btn-custom" data-nombre="Delito"
                                 onclick="toggleFiltro('filtroDelito', this)"><span class="filtro-btn-nombre">Delito <span class="filtro-flecha">&#9660;</span></span></button>
@@ -116,16 +115,12 @@
                         <th>Denunciante</th>
                         <th>Probable Responsable</th>
                         <th class="th-filtrable">
-                            <button id="btn_filtroEstatusJSJ" class="filtro-btn-custom" data-nombre="Estatus Inv. JSJ"
-                                onclick="toggleFiltro('filtroEstatusJSJ', this)"><span class="filtro-btn-nombre">Estatus Inv. JSJ <span class="filtro-flecha">&#9660;</span></span></button>
-                        </th>
-                        <th class="th-filtrable">
                             <button id="btn_filtroEstadoProcesal" class="filtro-btn-custom" data-nombre="Estado Procesal"
                                 onclick="toggleFiltro('filtroEstadoProcesal', this)"><span class="filtro-btn-nombre">Estado Procesal <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
                         <th>Sentencia</th>
                         <th>Fecha inicio</th>
-                        <th>Últ. actualización</th>
+                        <th>Ult. actualizacion</th>
                         <th class="th-sticky-right"></th>
                     </tr>
                 </thead>

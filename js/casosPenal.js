@@ -284,7 +284,6 @@ function obtenerNombreEstadoProcesal(id) {
 
 const estadoFiltros = {
     filtroDelegacion: '',
-    filtroEstatus: '',
     filtroDelito: '',
     filtroEstatusJSJ: '',
     filtroEstadoProcesal: ''
@@ -292,10 +291,6 @@ const estadoFiltros = {
 
 const opcionesFiltros = {
     filtroDelegacion: [],
-    filtroEstatus: [
-        { valor: 'TRAMITE', etiqueta: 'En Tramite' },
-        { valor: 'CONCLUIDO', etiqueta: 'Concluido' }
-    ],
     filtroDelito: [],
     filtroEstatusJSJ: [],
     filtroEstadoProcesal: []
@@ -436,7 +431,6 @@ function aplicarFiltros() {
 
     casosFiltrados = todosLosCasos.filter(caso => {
         if (estadoFiltros.filtroDelegacion && caso.delegacion_id != estadoFiltros.filtroDelegacion) return false;
-        if (estadoFiltros.filtroEstatus && caso.estatus !== estadoFiltros.filtroEstatus) return false;
 
         if (estadoFiltros.filtroDelito) {
             const nombre = caso.delito_nombre || obtenerNombreDelito(caso.delito_id);
@@ -512,6 +506,7 @@ function renderizarTabla() {
         const denunciante = getPersonaNombre(caso.denunciante);
         const responsable = getPersonaNombre(caso.probable_responsable);
 
+        const estatusJSJ = caso.estatus_investigacion_jsj || '---';
         const badgeEstatus = caso.estatus === 'TRAMITE'
             ? '<span class="badge-mini badge-mini-tramite" title="En Tramite">T</span>'
             : '<span class="badge-mini badge-mini-concluido" title="Concluido">C</span>';
@@ -523,7 +518,7 @@ function renderizarTabla() {
         return `
             <tr>
                 <td><small>${delegacion ? delegacion.nombre : 'N/A'}</small></td>
-                <td>${badgeEstatus}</td>
+                <td><small>${estatusJSJ}</small> ${badgeEstatus}</td>
                 <td>
                     <a href="#" class="expediente-link" onclick="verDetalle(${caso.id}); return false;">
                         <strong>${caso.numero_expediente}</strong>
@@ -532,7 +527,6 @@ function renderizarTabla() {
                 <td><small>${delitoNombre}</small></td>
                 <td><small>${denunciante}</small></td>
                 <td><small>${responsable}</small></td>
-                <td><small>${caso.estatus_investigacion_jsj || '---'}</small></td>
                 <td><small>${estadoProcesal}</small></td>
                 <td>${badgeSentencia}</td>
                 <td>${formatearFecha(caso.fecha_inicio)}</td>
