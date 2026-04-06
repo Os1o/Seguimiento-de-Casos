@@ -6,7 +6,7 @@
 const db = () => window.supabaseClient;
 const sb = () => window.supabaseClient;
 
-// Cache de catÃ¡logos (se cargan una vez y se reutilizan)
+// Cache de catálogos (se cargan una vez y se reutilizan)
 const catalogosDB = {
     delegaciones: [],
     areas: {},        // { delegacion_id: [areas] }
@@ -23,7 +23,7 @@ const catalogosDB = {
 let catalogosCargados = false;
 
 // =====================================================
-// CATÃLOGOS
+// CATÁLOGOS
 // =====================================================
 
 async function cargarCatalogos() {
@@ -57,7 +57,7 @@ async function cargarCatalogos() {
 
         catalogosDB.delegaciones = delegaciones || [];
 
-        // Agrupar Ã¡reas por delegaciÃ³n
+        // Agrupar áreas por delegación
         catalogosDB.areas = {};
         (areas || []).forEach(a => {
             if (!catalogosDB.areas[a.delegacion_id]) catalogosDB.areas[a.delegacion_id] = [];
@@ -87,15 +87,15 @@ async function cargarCatalogos() {
         catalogosDB.estatusInvestigacion = estatusInvestigacion || [];
 
         catalogosCargados = true;
-        console.log('âœ… CatÃ¡logos cargados desde Supabase');
+        console.log('Catalogos cargados desde Supabase');
         return catalogosDB;
     } catch (err) {
-        console.error('Error cargando catÃ¡logos:', err);
+        console.error('Error cargando catalogos:', err);
         throw err;
     }
 }
 
-// Helpers de catÃ¡logos
+// Helpers de catálogos
 function obtenerDelegacionDB(id) {
     return catalogosDB.delegaciones.find(d => d.id === id);
 }
