@@ -7,6 +7,8 @@ let todosLosCasos = [];
 let paginaActual = 1;
 const REGISTROS_POR_PAGINA = 10;
 let usuarioActual = null;
+let filtroSentenciaDona = '';
+window.hoveredDonaSegment = -1;
 
 function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -84,6 +86,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (casosResult.status === 'rejected') {
         console.warn('La carga principal de casos penales termino con fallback local:', casosResult.reason);
     }
+
+    inicializarClickDona();
 
     // Busqueda
     const searchInput = document.getElementById('searchInput');
@@ -200,71 +204,276 @@ function dibujarGraficaSentencia() {
     const desfavorables = todosLosCasos.filter(c => c.sentencia === 'DESFAVORABLE').length;
     const sinSentencia = todosLosCasos.filter(c => !c.sentencia).length;
 
-    const etiquetas = [];
-    const valores = [];
-    const colores = [];
+    // Guardar datos de segmentos para click/hover interactivo
+    window.datosDonaSegmentos = [];
 
-    if (favorables > 0) { etiquetas.push('Favorable'); valores.push(favorables); colores.push('#065f46'); }
-    if (desfavorables > 0) { etiquetas.push('Desfavorable'); valores.push(desfavorables); colores.push('#991b1b'); }
-    if (sinSentencia > 0) { etiquetas.push('Sin sentencia'); valores.push(sinSentencia); colores.push('#9ca3af'); }
+    const datos = [
+        { label: 'Favorable', valor: favorables, color: '#065f46' },
+        { label: 'Desfavorable', valor: desfavorables, color: '#991b1b' },
+        { label: 'Sin sentencia', valor: sinSentencia, color: '#9ca3af' }
+    ];
 
-    const total = valores.reduce((a, b) => a + b, 0);
+    const totalDatos = favorables + desfavorables + sinSentencia;
 
     ctx.clearRect(0, 0, size, size);
 
-    if (total === 0) {
+    if (totalDatos === 0) {
+        ctx.fillStyle = '#e5e7eb';
         ctx.beginPath();
         ctx.arc(center, center, radius, 0, Math.PI * 2);
         ctx.arc(center, center, innerRadius, 0, Math.PI * 2, true);
-        ctx.fillStyle = '#e5e7eb';
         ctx.fill();
 
-        ctx.font = '11px Montserrat, sans-serif';
         ctx.fillStyle = '#9ca3af';
+        ctx.font = '11px Montserrat, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('Sin datos', center, center);
-        return;
-    }
+    } else {
+        let startAngle = -Math.PI / 2;
+        let segIndex = 0;
 
-    let startAngle = -Math.PI / 2;
-    etiquetas.forEach((etiqueta, i) => {
-        const sliceAngle = (valores[i] / total) * Math.PI * 2;
-        const endAngle = startAngle + sliceAngle;
+        const segsToDraw = [];
+        datos.forEach(d => {
+            if (d.valor === 0) return;
+            const sliceAngle = (d.valor / totalDatos) * Math.PI * 2;
+            const filtroValor = d.label === 'Favorable' ? 'FAVORABLE' : d.label === 'Desfavorable' ? 'DESFAVORABLE' : 'SIN_SENTENCIA';
+            const isSelected = filtroSentenciaDona === filtroValor;
+            const isHovered = window.hoveredDonaSegment === segIndex;
 
+            segsToDraw.push({
+                label: d.label, valor: d.valor, color: d.color,
+                startAngle: startAngle, endAngle: startAngle + sliceAngle,
+                sliceAngle: sliceAngle, filtroValor: filtroValor,
+                isSelected: isSelected, isHovered: isHovered, index: segIndex
+            });
+
+            window.datosDonaSegmentos.push({
+                label: d.label, startAngle: startAngle,
+                endAngle: startAngle + sliceAngle, color: d.color, valor: d.valor
+            });
+
+            startAngle += sliceAngle;
+            segIndex++;
+        });
+
+        const haySeleccion = segsToDraw.some(s => s.isSelected);
+
+        segsToDraw.forEach(seg => {
+            let drawRadius = radius;
+            if (seg.isSelected) drawRadius = radius + 5;
+            else if (seg.isHovered) drawRadius = radius + 3;
+
+            ctx.save();
+            if (haySeleccion && !seg.isSelected) ctx.globalAlpha = 0.35;
+            if (seg.isSelected) { ctx.shadowColor = seg.color; ctx.shadowBlur = 6; }
+
+            ctx.fillStyle = seg.color;
+            ctx.beginPath();
+            ctx.moveTo(center, center);
+            ctx.arc(center, center, drawRadius, seg.startAngle, seg.endAngle);
+            ctx.closePath();
+            ctx.fill();
+
+            if (seg.isSelected) {
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, drawRadius, seg.startAngle, seg.endAngle);
+                ctx.closePath();
+                ctx.stroke();
+            }
+            ctx.restore();
+        });
+
+        // Recortar centro (dona)
+        ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(center, center, radius, startAngle, endAngle);
-        ctx.arc(center, center, innerRadius, endAngle, startAngle, true);
-        ctx.closePath();
-        ctx.fillStyle = colores[i];
+        ctx.arc(center, center, innerRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        startAngle = endAngle;
+        // Texto adaptable al centro
+        const maxTextWidth = innerRadius * 1.7;
+        function fitText(text, baseFontSize, bold) {
+            let fontSize = baseFontSize;
+            const prefix = bold ? 'bold ' : '';
+            while (fontSize > 5) {
+                ctx.font = prefix + fontSize + 'px Montserrat, sans-serif';
+                if (ctx.measureText(text).width <= maxTextWidth) break;
+                fontSize--;
+            }
+            return fontSize;
+        }
+
+        const hoveredSeg = segsToDraw.find(s => s.isHovered);
+        const selectedSeg = segsToDraw.find(s => s.isSelected);
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        if (hoveredSeg) {
+            ctx.fillStyle = hoveredSeg.color;
+            fitText(String(hoveredSeg.valor), 16, true);
+            ctx.fillText(hoveredSeg.valor, center, center - 6);
+            ctx.fillStyle = '#555';
+            fitText(hoveredSeg.label, 9, false);
+            ctx.fillText(hoveredSeg.label, center, center + 8);
+        } else if (selectedSeg) {
+            ctx.fillStyle = selectedSeg.color;
+            fitText(String(selectedSeg.valor), 18, true);
+            ctx.fillText(selectedSeg.valor, center, center - 6);
+            ctx.fillStyle = selectedSeg.color;
+            fitText(selectedSeg.label, 9, true);
+            ctx.fillText(selectedSeg.label, center, center + 9);
+        } else {
+            ctx.fillStyle = '#333';
+            fitText(String(totalDatos), 18, true);
+            ctx.fillText(totalDatos, center, center - 3);
+            ctx.fillStyle = '#888';
+            fitText('Asuntos', 9, false);
+            ctx.fillText('Asuntos', center, center + 10);
+        }
+    }
+
+    // Leyenda clickeable con feedback visual
+    const leyenda = document.getElementById('leyendaSentencia');
+    if (leyenda) {
+        const hayFiltroActivo = !!filtroSentenciaDona;
+        leyenda.innerHTML = datos.map(d => {
+            const filtroValor = d.label === 'Favorable' ? 'FAVORABLE' : d.label === 'Desfavorable' ? 'DESFAVORABLE' : 'SIN_SENTENCIA';
+            const activo = filtroSentenciaDona === filtroValor;
+            const inactivo = hayFiltroActivo && !activo;
+
+            let estiloItem = 'cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.2s;';
+            if (activo) {
+                estiloItem += ` font-weight: bold; text-decoration: underline; background: ${d.color}22; border-left: 3px solid ${d.color};`;
+            } else if (inactivo) {
+                estiloItem += ' opacity: 0.4;';
+            }
+
+            const estiloTexto = activo ? `color: ${d.color}; font-weight: bold;` : '';
+            const estiloValor = activo ? `color: ${d.color}; font-weight: bold; font-size: 1.05em;` : '';
+
+            return `
+            <div class="leyenda-item ${activo ? 'leyenda-activa' : ''}" style="${estiloItem}" onclick="clickDonaFiltro('${filtroValor}')">
+                <span class="leyenda-color" style="background: ${d.color}; ${activo ? 'transform: scale(1.3); box-shadow: 0 0 4px ' + d.color + ';' : ''}"></span>
+                <span class="leyenda-texto" style="${estiloTexto}">${d.label}</span>
+                <span class="leyenda-valor" style="${estiloValor}">${d.valor}</span>
+            </div>
+        `;
+        }).join('');
+    }
+
+    // Indicador de filtro activo
+    const indicador = document.getElementById('indicadorFiltroDona');
+    if (filtroSentenciaDona) {
+        const labelFiltro = filtroSentenciaDona === 'FAVORABLE' ? 'Favorable' : filtroSentenciaDona === 'DESFAVORABLE' ? 'Desfavorable' : 'Sin sentencia';
+        if (indicador) {
+            indicador.style.display = 'block';
+            indicador.innerHTML = `Filtrando: <strong>${labelFiltro}</strong> <button onclick="limpiarFiltroDona()" style="border:none;background:none;color:var(--color-danger);cursor:pointer;font-weight:bold;">&#10005;</button>`;
+        }
+    } else {
+        if (indicador) indicador.style.display = 'none';
+    }
+}
+
+// Click en la dona (canvas)
+function inicializarClickDona() {
+    const canvas = document.getElementById('chartSentencia');
+    if (!canvas) return;
+
+    canvas.style.cursor = 'pointer';
+    canvas.addEventListener('click', function (e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        const ctr = canvas.width / 2;
+        const dx = x - ctr;
+        const dy = y - ctr;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const r = canvas.width / 2 - 7;
+        const ir = r * 0.55;
+
+        if (dist < ir || dist > r + 5) return;
+
+        let angle = Math.atan2(dy, dx);
+        if (angle < -Math.PI / 2) angle += Math.PI * 2;
+
+        const segmentos = window.datosDonaSegmentos || [];
+        for (const seg of segmentos) {
+            if (angle >= seg.startAngle && angle < seg.endAngle) {
+                const filtroValor = seg.label === 'Favorable' ? 'FAVORABLE' : seg.label === 'Desfavorable' ? 'DESFAVORABLE' : 'SIN_SENTENCIA';
+                clickDonaFiltro(filtroValor);
+                break;
+            }
+        }
     });
 
-    ctx.beginPath();
-    ctx.arc(center, center, innerRadius - 1, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
-    ctx.fill();
+    canvas.addEventListener('mousemove', function (e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
 
-    ctx.font = 'bold 18px Montserrat, sans-serif';
-    ctx.fillStyle = '#1a1a2e';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(total, center, center - 6);
-    ctx.font = '9px Montserrat, sans-serif';
-    ctx.fillStyle = '#6b7280';
-    ctx.fillText('Asuntos', center, center + 8);
+        const ctr = canvas.width / 2;
+        const dx = x - ctr;
+        const dy = y - ctr;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const r = canvas.width / 2 - 7;
+        const ir = r * 0.55;
 
-    const leyendaContainer = document.getElementById('leyendaSentencia');
-    if (leyendaContainer) {
-        leyendaContainer.innerHTML = etiquetas.map((etiqueta, i) =>
-            `<div class="leyenda-item">
-                <span class="leyenda-color" style="background:${colores[i]};"></span>
-                <span class="leyenda-texto">${etiqueta} (${valores[i]})</span>
-            </div>`
-        ).join('');
+        let newHovered = -1;
+
+        if (dist >= ir && dist <= r + 5) {
+            let angle = Math.atan2(dy, dx);
+            if (angle < -Math.PI / 2) angle += Math.PI * 2;
+
+            const segmentos = window.datosDonaSegmentos || [];
+            for (let i = 0; i < segmentos.length; i++) {
+                if (angle >= segmentos[i].startAngle && angle < segmentos[i].endAngle) {
+                    newHovered = i;
+                    break;
+                }
+            }
+        }
+
+        canvas.style.cursor = newHovered >= 0 ? 'pointer' : 'default';
+
+        if (newHovered !== window.hoveredDonaSegment) {
+            window.hoveredDonaSegment = newHovered;
+            dibujarGraficaSentencia();
+        }
+    });
+
+    canvas.addEventListener('mouseleave', function () {
+        canvas.style.cursor = 'default';
+        if (window.hoveredDonaSegment !== -1) {
+            window.hoveredDonaSegment = -1;
+            dibujarGraficaSentencia();
+        }
+    });
+}
+
+function clickDonaFiltro(valor) {
+    if (filtroSentenciaDona === valor) {
+        filtroSentenciaDona = '';
+    } else {
+        filtroSentenciaDona = valor;
     }
+    paginaActual = 1;
+    aplicarFiltros();
+}
+
+function limpiarFiltroDona() {
+    filtroSentenciaDona = '';
+    paginaActual = 1;
+    aplicarFiltros();
 }
 
 function obtenerNombreEstadoProcesal(id) {
@@ -447,6 +656,14 @@ function aplicarFiltros() {
             if (nombre !== estadoFiltros.filtroEstadoProcesal) return false;
         }
 
+        if (filtroSentenciaDona) {
+            if (filtroSentenciaDona === 'SIN_SENTENCIA') {
+                if (caso.sentencia) return false;
+            } else {
+                if (caso.sentencia !== filtroSentenciaDona) return false;
+            }
+        }
+
         if (busqueda) {
             const expediente = (caso.numero_expediente || '').toLowerCase();
             const denunciante = getPersonaNombre(caso.denunciante).toLowerCase();
@@ -460,10 +677,12 @@ function aplicarFiltros() {
     });
 
     renderizarTabla();
+    dibujarGraficaSentencia();
 }
 
 function limpiarFiltros() {
     Object.keys(estadoFiltros).forEach(k => estadoFiltros[k] = '');
+    filtroSentenciaDona = '';
     const searchInput = document.getElementById('searchInput');
     if (searchInput) searchInput.value = '';
 
