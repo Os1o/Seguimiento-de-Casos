@@ -24,7 +24,6 @@ function renderizarHeaderApp(header) {
 
     const bloqueSesion = showSession ? `
         <div class="header-user">
-            <span class="header-user-avatar" aria-hidden="true">U</span>
             <div class="header-user-main">
                 <span id="nombreUsuario" class="header-user-name">Usuario</span>
                 <div class="header-user-meta">
