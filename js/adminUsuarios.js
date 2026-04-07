@@ -19,7 +19,7 @@ function cerrarSesion() {
     window.location.href = 'login.html';
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const usuario = verificarSesion();
     if (!usuario) return;
 
@@ -31,11 +31,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
 
-    // Llenar select de delegaciones en modal
+    // Cargar catalogos desde Supabase y llenar delegaciones
+    await cargarCatalogos().catch(() => console.warn('Catalogos: usando fallback local'));
     llenarDelegacionesModal();
 
     // Listener para cambio de rol (admin no necesita delegación)
-    // Ya no se deshabilita la delegación por rol; cualquier rol puede tener "Todas"
     document.getElementById('inputRol').addEventListener('change', function() {
         const helpDelegacion = document.getElementById('helpDelegacion');
         if (this.value === 'admin') {
@@ -45,12 +45,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    cargarUsuarios();
+    await cargarUsuarios();
 });
 
 function llenarDelegacionesModal() {
     const select = document.getElementById('inputDelegacion');
-    catalogos.delegaciones.forEach(d => {
+    const delegaciones = catalogosCargados ? catalogosDB.delegaciones : [];
+    delegaciones.forEach(d => {
         const option = document.createElement('option');
         option.value = d.id;
         option.textContent = d.nombre;
@@ -58,9 +59,15 @@ function llenarDelegacionesModal() {
     });
 }
 
-function cargarUsuarios() {
-    const usuariosStr = localStorage.getItem('usuarios');
-    usuarios = usuariosStr ? JSON.parse(usuariosStr) : [];
+async function cargarUsuarios() {
+    try {
+        usuarios = await obtenerUsuarios();
+        localStorage.setItem('usuarios', JSON.stringify(usuarios));
+    } catch (err) {
+        console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
+        const usuariosStr = localStorage.getItem('usuarios');
+        usuarios = usuariosStr ? JSON.parse(usuariosStr) : [];
+    }
     renderizarTabla();
 }
 
@@ -148,7 +155,7 @@ function editarUsuario(id) {
     document.getElementById('modalUsuario').style.display = 'flex';
 }
 
-function guardarUsuario(e) {
+async function guardarUsuarioForm(e) {
     e.preventDefault();
 
     const nombre = document.getElementById('inputNombre').value.trim();
@@ -160,7 +167,7 @@ function guardarUsuario(e) {
     const permisoPenal = document.getElementById('inputPermisoPenal').checked;
     const activo = document.getElementById('inputActivo').checked;
 
-    // Validar usuario único (solo al crear)
+    // Validar usuario unico (solo al crear)
     if (!editandoId) {
         const existe = usuarios.find(u => u.usuario === usuario);
         if (existe) {
@@ -169,44 +176,33 @@ function guardarUsuario(e) {
         }
     }
 
+    const datosUsuario = {
+        nombre_completo: nombre,
+        usuario: usuario,
+        password: password,
+        rol: rol,
+        delegacion_id: delegacionId ? parseInt(delegacionId) : null,
+        permiso_civil_mercantil: permisoCivil,
+        permiso_penal: permisoPenal,
+        activo: activo
+    };
+
     if (editandoId) {
-        // Editar existente
-        const idx = usuarios.findIndex(u => u.id === editandoId);
-        if (idx !== -1) {
-            usuarios[idx].nombre_completo = nombre;
-            usuarios[idx].password = password;
-            usuarios[idx].rol = rol;
-            usuarios[idx].delegacion_id = delegacionId ? parseInt(delegacionId) : null;
-            usuarios[idx].permiso_civil_mercantil = permisoCivil;
-            usuarios[idx].permiso_penal = permisoPenal;
-            usuarios[idx].activo = activo;
-        }
-    } else {
-        // Crear nuevo
-        const nuevoId = usuarios.length > 0 ? Math.max(...usuarios.map(u => u.id)) + 1 : 1;
-        usuarios.push({
-            id: nuevoId,
-            usuario: usuario,
-            password: password,
-            nombre_completo: nombre,
-            rol: rol,
-            delegacion_id: delegacionId ? parseInt(delegacionId) : null,
-            permiso_civil_mercantil: permisoCivil,
-            permiso_penal: permisoPenal,
-            activo: activo
-        });
+        datosUsuario.id = editandoId;
     }
 
-    // Guardar en localStorage
-    localStorage.setItem('usuarios', JSON.stringify(usuarios));
-
-    cerrarModal();
-    renderizarTabla();
-
-    alert(editandoId ? 'Usuario actualizado exitosamente' : 'Usuario creado exitosamente');
+    try {
+        await guardarUsuario(datosUsuario);
+        cerrarModal();
+        await cargarUsuarios();
+        alert(editandoId ? 'Usuario actualizado exitosamente' : 'Usuario creado exitosamente');
+    } catch (err) {
+        console.error('Error al guardar usuario:', err);
+        alert('Error al guardar usuario: ' + err.message);
+    }
 }
 
-function toggleActivoUsuario(id) {
+async function toggleActivoUsuario(id) {
     const u = usuarios.find(usr => usr.id === id);
     if (!u) return;
 
@@ -218,9 +214,14 @@ function toggleActivoUsuario(id) {
     }
 
     const accion = u.activo ? 'desactivar' : 'activar';
-    if (!confirm(`¿Estás seguro de ${accion} al usuario "${u.nombre_completo}"?`)) return;
+    if (!confirm(`Estas seguro de ${accion} al usuario "${u.nombre_completo}"?`)) return;
 
-    u.activo = !u.activo;
-    localStorage.setItem('usuarios', JSON.stringify(usuarios));
-    renderizarTabla();
+    try {
+        const datosActualizados = { id: u.id, activo: !u.activo };
+        await guardarUsuario(datosActualizados);
+        await cargarUsuarios();
+    } catch (err) {
+        console.error('Error al cambiar estado:', err);
+        alert('Error al cambiar estado del usuario: ' + err.message);
+    }
 }
