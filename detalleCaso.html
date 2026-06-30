@@ -5,12 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle del Asunto - Sistema de Gestión de Juicios</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
 </head>
 
 <body>
     <!-- Header -->
-    <header class="header-gob app-header" data-home-href="casos.html" data-module="Civil / Mercantil" data-back-href="casos.html" data-back-label="Volver a asuntos"></header>
+    <header class="header-gob app-header" data-home-href="casos.html" data-module="Civil / Mercantil" data-back-href="casos.html" data-back-label="Volver a asuntos" data-header-variant="modern" data-show-module-nav="false" data-breadcrumb-in-header="false"></header>
 
     <!-- Contenido Principal -->
     <div class="container">
@@ -44,6 +49,11 @@
         </div>
 
         <!-- SECCIÓN 1: DATOS DEL REGISTRO -->
+        <div class="case-accumulation-alert" id="caseAccumulationAlert" style="display: none;">
+            <div class="case-accumulation-alert-title">Asunto acumulado</div>
+            <div class="case-accumulation-alert-body" id="caseAccumulationAlertText">---</div>
+        </div>
+
         <div class="seccion-card seccion-registro">
             <div class="seccion-title">
                 <h2>Datos del Registro</h2>
@@ -73,12 +83,24 @@
                     <h4 class="group-title">Información Legal</h4>
                     <div class="info-grid info-grid-3">
                         <div class="info-item">
-                            <span class="info-label">Tipo de Juicio</span>
-                            <span class="info-value" id="tipoJuicio">---</span>
+                            <span class="info-label">Materia</span>
+                            <span class="info-value" id="materia">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Tipo de Procedimiento</span>
+                            <span class="info-value" id="tipoProcedimiento">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Via</span>
+                            <span class="info-value" id="viaProcedimiento">---</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Tribunal</span>
                             <span class="info-value" id="tribunal">---</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Circuito</span>
+                            <span class="info-value" id="circuitoTribunal">---</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Fecha de Inicio</span>
@@ -119,6 +141,19 @@
                     </table>
                 </div>
 
+                <!-- Notas de Abogados -->
+                <div class="info-group" id="seccionNotas" style="display: none;">
+                    <h4 class="group-title">Notas / Comentarios</h4>
+                    <div class="notas-box">
+                        <div class="notas-header">
+                            <span class="notas-title">Nota del Abogado Responsable</span>
+                        </div>
+                        <div class="notas-content" id="prestacionesNotas">
+                            <span class="info-vacio">Sin comentarios</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Importe -->
                 <div class="info-group">
                     <h4 class="group-title">Importe Demandado</h4>
@@ -136,25 +171,17 @@
                             <div class="info-value" id="abogadoResponsable">
                                 <span class="info-vacio">Sin asignar</span>
                             </div>
+                            <div class="responsable-actions" id="responsableActions" style="display: none;">
+                                <button type="button" class="btn btn-secondary btn-reasignar-abogado" id="btnReasignarAbogado">
+                                    Reasignar abogado
+                                </button>
+                            </div>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Pronóstico</span>
                             <div class="info-value" id="pronostico">
                                 <span class="info-vacio">Sin información</span>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Notas de Abogados -->
-                <div class="info-group" id="seccionNotas" style="display: none;">
-                    <h4 class="group-title">Notas / Comentarios</h4>
-                    <div class="notas-box">
-                        <div class="notas-header">
-                            <span class="notas-title">Nota del Abogado Responsable</span>
-                        </div>
-                        <div class="notas-content" id="prestacionesNotas">
-                            <span class="info-vacio">Sin comentarios</span>
                         </div>
                     </div>
                 </div>
@@ -260,10 +287,8 @@
 
                 <!-- Documentos -->
                 <div class="info-group">
-                    <h4 class="group-title">Documentos Adjuntos</h4>
-                    <div class="documentos-box" id="documentosAdjuntos">
-                        <span class="info-vacio">Sin documentos</span>
-                    </div>
+                    <h4 class="group-title">Historial de Actualizaciones</h4>
+                    <div id="timelineCivil" class="timeline"></div>
                 </div>
             </div>
         </div>
@@ -282,9 +307,38 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabaseClient.js"></script>
-    <script src="js/supabaseService.js"></script>
+    <div id="modalReasignarAbogado" class="modal-overlay" style="display: none;">
+        <div class="modal-content card" style="max-width: 520px; width: 92%;">
+            <div class="modal-header">
+                <h3>Reasignar abogado</h3>
+                <button type="button" class="btn-close" onclick="cerrarModalReasignarAbogado()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Asunto</label>
+                <div class="info-value" id="reasignarNumeroAsunto">---</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Abogado actual</label>
+                <div class="info-value" id="reasignarAbogadoActual">Sin asignar</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required" for="selectReasignarAbogado">Nuevo abogado responsable</label>
+                <select id="selectReasignarAbogado" class="form-input">
+                    <option value="">Seleccione...</option>
+                </select>
+                <small class="form-help">Solo se muestran abogados disponibles para este asunto.</small>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalReasignarAbogado()">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarReasignacionAbogado">Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/headerComponent.js"></script>
     <script src="js/detalleCaso.js"></script>
 </body>

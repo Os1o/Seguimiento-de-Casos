@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitácora de Auditoría - Sistema de Gestión</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
+</head>
+
+<body>
+    <header class="header-gob app-header" data-home-href="casos.html" data-module="Auditoría" data-back-href="casos.html" data-back-label="Volver a asuntos" data-admin-link="true" data-header-variant="modern" data-show-module-nav="false"></header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="casos.html">Asuntos</a>
+            <span class="breadcrumb-separator">></span>
+            <span>Administración</span>
+            <span class="breadcrumb-separator">></span>
+            <span>Bitácora</span>
+        </div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Bitácora de Auditoría</h1>
+                <p class="page-subtitle">Consulta de movimientos recientes con usuario, módulo, expediente afectado y detalle de la acción.</p>
+            </div>
+        </div>
+
+        <div class="card auditoria-filtros-card" style="margin-bottom:24px;">
+            <div class="auditoria-filtros-layout">
+                <div class="auditoria-filtros-grupo">
+                    <div class="form-group auditoria-filtro auditoria-filtro-modulo">
+                        <label class="form-label">Módulo</label>
+                        <select id="filtroModulo" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="AUTH">Acceso</option>
+                            <option value="USUARIOS">Usuarios</option>
+                            <option value="CIVIL">Civil</option>
+                            <option value="PENAL">Penal</option>
+                        </select>
+                    </div>
+                    <div class="form-group auditoria-filtro auditoria-filtro-accion">
+                        <label class="form-label">Movimiento</label>
+                        <select id="filtroAccion" class="form-select">
+                            <option value="">Todas</option>
+                            <option value="LOGIN">Login</option>
+                            <option value="LOGOUT">Logout</option>
+                            <option value="REEMPLAZAR_SESION">Sesión reemplazada</option>
+                            <option value="CREAR">Crear</option>
+                            <option value="EDITAR">Editar</option>
+                            <option value="ACTUALIZAR">Actualizar</option>
+                            <option value="ELIMINAR">Eliminar</option>
+                            <option value="ACUMULAR">Acumular</option>
+                        </select>
+                    </div>
+                    <div class="form-group auditoria-filtro auditoria-filtro-fecha">
+                        <label class="form-label">Desde</label>
+                        <input type="date" id="filtroFechaDesde" class="form-input">
+                    </div>
+                    <div class="form-group auditoria-filtro auditoria-filtro-fecha">
+                        <label class="form-label">Hasta</label>
+                        <input type="date" id="filtroFechaHasta" class="form-input">
+                    </div>
+                    <div class="form-group auditoria-filtro auditoria-filtro-limpiar-fechas">
+                        <button id="btnLimpiarFechasAuditoria" class="btn btn-secondary" type="button" onclick="limpiarRangoFechasAuditoria()">Limpiar fechas</button>
+                    </div>
+                </div>
+                <div class="form-group auditoria-filtro auditoria-filtro-acciones">
+                    <div class="auditoria-filtros-botones">
+                        <button id="btnRecargarAuditoria" class="btn btn-primary" type="button" onclick="cargarAuditoria()">Actualizar</button>
+                        <button id="btnExportarAuditoria" class="btn btn-secondary" type="button" onclick="exportarAuditoriaCsv()">Exportar CSV</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-container">
+                <table class="table" style="table-layout:auto; min-width:1100px;">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Perfil</th>
+                            <th>JSJ</th>
+                            <th>Módulo</th>
+                            <th>Movimiento</th>
+                            <th>Registro</th>
+                            <th>Actuación</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaAuditoriaBody"></tbody>
+                </table>
+            </div>
+            <div class="auditoria-paginacion" id="auditoriaPaginacion">
+                <button id="btnPaginaAnteriorAuditoria" class="btn btn-secondary" type="button" onclick="cambiarPaginaAuditoria(-1)">Anterior</button>
+                <span id="auditoriaPaginacionInfo" class="auditoria-paginacion-info">Página 1 de 1</span>
+                <button id="btnPaginaSiguienteAuditoria" class="btn btn-secondary" type="button" onclick="cambiarPaginaAuditoria(1)">Siguiente</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/headerComponent.js"></script>
+    <script src="js/auditoria.js"></script>
+</body>
+
+</html>

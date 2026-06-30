@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listado de requerimientos ministeriales - Sistema de Gestión</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
+</head>
+<body class="modern-header-page penal-intake-page">
+    <header class="header-gob app-header" data-home-href="penal.html" data-module="Penal" data-back-href="detalleCasoPenal.html" data-back-label="Volver al detalle" data-header-variant="modern" data-show-module-nav="false"></header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="penal.html">Asuntos Penales</a>
+            <span class="breadcrumb-separator">></span>
+            <a href="detalleCasoPenal.html">Detalle del asunto</a>
+            <span class="breadcrumb-separator">></span>
+            <span>Listado de requerimientos</span>
+        </div>
+
+        <section class="penal-req-shell penal-req-list-shell">
+            <div class="penal-req-hero penal-req-list-hero">
+                <div class="penal-req-hero-copy">
+                    <h1 class="penal-req-title">Requerimientos ministeriales</h1>
+                    <p class="penal-req-list-subtitle">Listado general de requerimientos vinculados a la carpeta, con acceso compacto a cada fase del seguimiento y su historial.</p>
+                </div>
+
+                <div class="penal-req-list-actions">
+                    <label class="penal-req-list-deleted-toggle" id="toggleEliminadosRequerimientosWrap" hidden>
+                        <input type="checkbox" id="toggleEliminadosRequerimientos">
+                        <span>Mostrar eliminados</span>
+                    </label>
+                    <a href="requerimientosMinisterialesPenal.html" class="btn btn-primary penal-req-list-add-btn">
+                        <span class="material-symbols-outlined">add</span>
+                        Nuevo requerimiento
+                    </a>
+                </div>
+            </div>
+
+            <div class="card penal-req-summary penal-req-list-summary">
+                <div class="penal-req-summary-head">
+                    <h2>Referencia del asunto</h2>
+                </div>
+
+                <div class="penal-req-summary-grid">
+                    <div class="info-item">
+                        <span class="info-label">No. de carpeta</span>
+                        <span class="info-value">LOC/CAM/CAM/9200004/2026</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Delito que se investiga</span>
+                        <span class="info-value">ABUSO DE CONFIANZA</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">OOAD</span>
+                        <span class="info-value">CAMPECHE</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="penal-req-list-stats">
+                <article class="card penal-req-list-stat">
+                    <span class="penal-req-list-stat-label">Total requerimientos</span>
+                    <strong class="penal-req-list-stat-value">3</strong>
+                </article>
+                <article class="card penal-req-list-stat">
+                    <span class="penal-req-list-stat-label">Solicitudes en trámite</span>
+                    <strong class="penal-req-list-stat-value">5</strong>
+                </article>
+                <article class="card penal-req-list-stat">
+                    <span class="penal-req-list-stat-label">Solicitudes desahogadas</span>
+                    <strong class="penal-req-list-stat-value">4</strong>
+                </article>
+            </div>
+
+            <section class="penal-req-list-group">
+                <details class="card penal-req-list-card" open>
+                    <summary class="penal-req-list-card-summary">
+                        <div class="penal-req-list-card-main">
+                            <div class="penal-req-list-card-topline">
+                                <span class="penal-req-list-card-folio">REQ-FISC-2026-014</span>
+                                <span class="penal-req-list-phase-badge is-phase-2">Seguimiento interno</span>
+                            </div>
+                            <div class="penal-req-list-card-meta">
+                                <span>Fiscalía Especializada Campeche</span>
+                                <span>Recepción: 10/06/2026</span>
+                                <span>Límite: 21/06/2026</span>
+                            </div>
+                        </div>
+
+                        <div class="penal-req-list-card-kpis">
+                            <div class="penal-req-list-kpi">
+                                <strong>2</strong>
+                                <span>Solicitudes</span>
+                            </div>
+                            <div class="penal-req-list-kpi">
+                                <strong>1</strong>
+                                <span>En trámite</span>
+                            </div>
+                            <div class="penal-req-list-kpi">
+                                <strong>1</strong>
+                                <span>Desahogada</span>
+                            </div>
+                        </div>
+
+                        <span class="material-symbols-outlined penal-req-list-chevron">expand_more</span>
+                    </summary>
+
+                    <div class="penal-req-list-card-body">
+                        <div class="penal-req-list-detail-grid">
+                            <div class="penal-req-list-detail-item">
+                                <span class="penal-req-list-detail-label">Autoridad / MP</span>
+                                <strong>Fiscalía Especializada Campeche</strong>
+                            </div>
+                            <div class="penal-req-list-detail-item">
+                                <span class="penal-req-list-detail-label">Área responsable</span>
+                                <strong>Jefatura de Servicios Jurídicos</strong>
+                            </div>
+                            <div class="penal-req-list-detail-item">
+                                <span class="penal-req-list-detail-label">Fase actual</span>
+                                <strong>Seguimiento interno</strong>
+                            </div>
+                        </div>
+
+                        <div class="penal-req-phase-tabs" data-req-tabs>
+                            <button type="button" class="penal-req-phase-tab" data-target="fase-inicial-1">Registro inicial</button>
+                            <button type="button" class="penal-req-phase-tab is-active" data-target="fase-interna-1">Seguimiento interno</button>
+                            <button type="button" class="penal-req-phase-tab is-disabled" disabled>Contestación final</button>
+                        </div>
+
+                        <div class="penal-req-phase-panels">
+                            <section class="penal-req-phase-panel" id="fase-inicial-1">
+                                <div class="penal-req-list-detail-grid">
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Documento inicial</span>
+                                        <strong><a href="#" class="penal-req-list-inline-link">Ver documento</a></strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Fecha de recepción</span>
+                                        <strong>10/06/2026</strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Folio o referencia</span>
+                                        <strong>REQ-FISC-2026-014</strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Solicitudes registradas</span>
+                                        <strong>2 solicitudes capturadas</strong>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="penal-req-phase-panel is-active" id="fase-interna-1">
+                                <div class="penal-req-list-detail-grid">
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Documento del requerimiento interno</span>
+                                        <strong><a href="#" class="penal-req-list-inline-link">Ver documento</a></strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Fecha de inicio</span>
+                                        <strong>11/06/2026</strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Solicitudes en trámite</span>
+                                        <strong>1 pendiente por desahogar</strong>
+                                    </div>
+                                </div>
+
+                                <div class="penal-req-list-subcards penal-req-list-subcards-accordion">
+                                    <details class="penal-req-list-subcard penal-req-list-subcard-accordion" open>
+                                        <summary class="penal-req-list-subcard-summary">
+                                            <div class="penal-req-list-subcard-head">
+                                                <span class="penal-req-item-index">Solicitud 01</span>
+                                                <span class="penal-req-list-substatus is-complete">Desahogada</span>
+                                            </div>
+                                            <div class="penal-req-list-subcard-title-row">
+                                                <h4>Información de expediente médico</h4>
+                                                <span class="material-symbols-outlined penal-req-list-subcard-chevron">expand_more</span>
+                                            </div>
+                                        </summary>
+                                        <div class="penal-req-list-subcard-body">
+                                            <div class="penal-req-list-subcard-detail-grid">
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Resumen</span>
+                                                    <strong>Se recibió documentación del área y ya cuenta con fecha de desahogo.</strong>
+                                                </div>
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Documento</span>
+                                                    <strong><a href="#" class="penal-req-list-inline-link">Ver documento</a></strong>
+                                                </div>
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Fecha de desahogo</span>
+                                                    <strong>16/06/2026</strong>
+                                                </div>
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Observaciones</span>
+                                                    <strong>Documentación completa y validada por el área responsable.</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
+
+                                    <details class="penal-req-list-subcard penal-req-list-subcard-accordion">
+                                        <summary class="penal-req-list-subcard-summary">
+                                            <div class="penal-req-list-subcard-head">
+                                                <span class="penal-req-item-index">Solicitud 02</span>
+                                                <span class="penal-req-list-substatus is-pending">En trámite</span>
+                                            </div>
+                                            <div class="penal-req-list-subcard-title-row">
+                                                <h4>Informe complementario de atención</h4>
+                                                <span class="material-symbols-outlined penal-req-list-subcard-chevron">expand_more</span>
+                                            </div>
+                                        </summary>
+                                        <div class="penal-req-list-subcard-body">
+                                            <div class="penal-req-list-subcard-detail-grid">
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Resumen</span>
+                                                    <strong>Pendiente de recepción por parte del área interna responsable.</strong>
+                                                </div>
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Documento</span>
+                                                    <strong>Sin archivo recibido</strong>
+                                                </div>
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Fecha de desahogo</span>
+                                                    <strong>Pendiente</strong>
+                                                </div>
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Observaciones</span>
+                                                    <strong>Se mantiene en espera de carga documental por parte del área.</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                            </section>
+                        </div>
+
+                        <details class="penal-req-list-history">
+                            <summary class="penal-req-list-history-head">
+                                <div>
+                                    <h4>Historial del requerimiento</h4>
+                                    <span>Movimientos registrados</span>
+                                </div>
+                                <span class="material-symbols-outlined penal-req-list-history-chevron">expand_more</span>
+                            </summary>
+                            <div class="penal-req-list-history-timeline">
+                                <article class="penal-req-list-history-item">
+                                    <div class="penal-req-list-history-dot"></div>
+                                    <div class="penal-req-list-history-content">
+                                        <div class="penal-req-list-history-topline">
+                                            <strong>16/06/2026</strong>
+                                            <span class="penal-req-list-history-type">Desahogo de solicitud 01</span>
+                                        </div>
+                                        <p>Se recibió documentación completa del área responsable y se registró la fecha de desahogo.</p>
+                                        <a href="#" class="penal-req-list-inline-link">Ver documento relacionado</a>
+                                    </div>
+                                </article>
+                                <article class="penal-req-list-history-item">
+                                    <div class="penal-req-list-history-dot"></div>
+                                    <div class="penal-req-list-history-content">
+                                        <div class="penal-req-list-history-topline">
+                                            <strong>11/06/2026</strong>
+                                            <span class="penal-req-list-history-type">Requerimiento interno</span>
+                                        </div>
+                                        <p>Se turnó la atención a la Jefatura de Servicios Jurídicos y quedó activa la solicitud 02.</p>
+                                        <a href="#" class="penal-req-list-inline-link">Ver documento relacionado</a>
+                                    </div>
+                                </article>
+                                <article class="penal-req-list-history-item">
+                                    <div class="penal-req-list-history-dot"></div>
+                                    <div class="penal-req-list-history-content">
+                                        <div class="penal-req-list-history-topline">
+                                            <strong>10/06/2026</strong>
+                                            <span class="penal-req-list-history-type">Alta inicial</span>
+                                        </div>
+                                        <p>Se registró el requerimiento inicial de la fiscalía con dos solicitudes por atender.</p>
+                                        <a href="#" class="penal-req-list-inline-link">Ver documento relacionado</a>
+                                    </div>
+                                </article>
+                            </div>
+                        </details>
+
+                        <div class="penal-req-list-card-actions">
+                            <a href="requerimientosMinisterialesPenal.html" class="btn btn-primary">Actualizar requerimiento</a>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="card penal-req-list-card">
+                    <summary class="penal-req-list-card-summary">
+                        <div class="penal-req-list-card-main">
+                            <div class="penal-req-list-card-topline">
+                                <span class="penal-req-list-card-folio">REQ-FISC-2026-009</span>
+                                <span class="penal-req-list-phase-badge is-phase-3">Contestación final</span>
+                            </div>
+                            <div class="penal-req-list-card-meta">
+                                <span>Agencia del Ministerio Público Federal</span>
+                                <span>Recepción: 28/05/2026</span>
+                                <span>Límite: 12/06/2026</span>
+                            </div>
+                        </div>
+
+                        <div class="penal-req-list-card-kpis">
+                            <div class="penal-req-list-kpi">
+                                <strong>3</strong>
+                                <span>Solicitudes</span>
+                            </div>
+                            <div class="penal-req-list-kpi">
+                                <strong>0</strong>
+                                <span>En trámite</span>
+                            </div>
+                            <div class="penal-req-list-kpi">
+                                <strong>3</strong>
+                                <span>Desahogadas</span>
+                            </div>
+                        </div>
+
+                        <span class="material-symbols-outlined penal-req-list-chevron">expand_more</span>
+                    </summary>
+
+                    <div class="penal-req-list-card-body">
+                        <div class="penal-req-list-detail-grid">
+                            <div class="penal-req-list-detail-item">
+                                <span class="penal-req-list-detail-label">Autoridad / MP</span>
+                                <strong>Agencia del Ministerio Público Federal</strong>
+                            </div>
+                            <div class="penal-req-list-detail-item">
+                                <span class="penal-req-list-detail-label">Área responsable</span>
+                                <strong>Subdelegación Administrativa</strong>
+                            </div>
+                            <div class="penal-req-list-detail-item">
+                                <span class="penal-req-list-detail-label">Fase actual</span>
+                                <strong>Contestación final</strong>
+                            </div>
+                        </div>
+
+                        <div class="penal-req-phase-tabs" data-req-tabs>
+                            <button type="button" class="penal-req-phase-tab" data-target="fase-inicial-2">Registro inicial</button>
+                            <button type="button" class="penal-req-phase-tab" data-target="fase-interna-2">Seguimiento interno</button>
+                            <button type="button" class="penal-req-phase-tab is-active" data-target="fase-final-2">Contestación final</button>
+                        </div>
+
+                        <div class="penal-req-phase-panels">
+                            <section class="penal-req-phase-panel" id="fase-inicial-2">
+                                <div class="penal-req-list-detail-grid">
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Documento inicial</span>
+                                        <strong><a href="#" class="penal-req-list-inline-link">Ver documento</a></strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Fecha de recepción</span>
+                                        <strong>28/05/2026</strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Folio o referencia</span>
+                                        <strong>REQ-FISC-2026-009</strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Solicitudes registradas</span>
+                                        <strong>3 solicitudes capturadas</strong>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="penal-req-phase-panel" id="fase-interna-2">
+                                <div class="penal-req-list-detail-grid">
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Documento del requerimiento interno</span>
+                                        <strong><a href="#" class="penal-req-list-inline-link">Ver documento</a></strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Fecha de inicio</span>
+                                        <strong>29/05/2026</strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Solicitudes en trámite</span>
+                                        <strong>0 pendientes</strong>
+                                    </div>
+                                </div>
+
+                                <div class="penal-req-list-subcards penal-req-list-subcards-accordion">
+                                    <details class="penal-req-list-subcard penal-req-list-subcard-accordion">
+                                        <summary class="penal-req-list-subcard-summary">
+                                            <div class="penal-req-list-subcard-head">
+                                                <span class="penal-req-item-index">Solicitud 01</span>
+                                                <span class="penal-req-list-substatus is-complete">Desahogada</span>
+                                            </div>
+                                            <div class="penal-req-list-subcard-title-row">
+                                                <h4>Constancia de localización</h4>
+                                                <span class="material-symbols-outlined penal-req-list-subcard-chevron">expand_more</span>
+                                            </div>
+                                        </summary>
+                                        <div class="penal-req-list-subcard-body">
+                                            <div class="penal-req-list-subcard-detail-grid">
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Resumen</span>
+                                                    <strong>Solicitud atendida y remitida con soporte documental.</strong>
+                                                </div>
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Documento</span>
+                                                    <strong><a href="#" class="penal-req-list-inline-link">Ver documento</a></strong>
+                                                </div>
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Fecha de desahogo</span>
+                                                    <strong>05/06/2026</strong>
+                                                </div>
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Observaciones</span>
+                                                    <strong>Validado y remitido dentro del plazo del requerimiento.</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                            </section>
+
+                            <section class="penal-req-phase-panel is-active" id="fase-final-2">
+                                <div class="penal-req-list-final-block penal-req-list-final-block-embedded">
+                                    <div class="penal-req-list-final-head">
+                                        <h4>Contestación final</h4>
+                                    </div>
+                                    <div class="penal-req-list-detail-grid penal-req-list-final-grid">
+                                        <div class="penal-req-list-detail-item">
+                                            <span class="penal-req-list-detail-label">Fecha de envío</span>
+                                            <strong>10/06/2026</strong>
+                                        </div>
+                                        <div class="penal-req-list-detail-item">
+                                            <span class="penal-req-list-detail-label">Contestación enviada</span>
+                                            <strong><a href="#" class="penal-req-list-inline-link">Ver documento</a></strong>
+                                        </div>
+                                        <div class="penal-req-list-detail-item">
+                                            <span class="penal-req-list-detail-label">Fecha de respuesta de fiscalía</span>
+                                            <strong>12/06/2026</strong>
+                                        </div>
+                                        <div class="penal-req-list-detail-item">
+                                            <span class="penal-req-list-detail-label">Respuesta de fiscalía</span>
+                                            <strong><a href="#" class="penal-req-list-inline-link">Ver documento</a></strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <details class="penal-req-list-history">
+                            <summary class="penal-req-list-history-head">
+                                <div>
+                                    <h4>Historial del requerimiento</h4>
+                                    <span>Movimientos registrados</span>
+                                </div>
+                                <span class="material-symbols-outlined penal-req-list-history-chevron">expand_more</span>
+                            </summary>
+                            <div class="penal-req-list-history-timeline">
+                                <article class="penal-req-list-history-item">
+                                    <div class="penal-req-list-history-dot"></div>
+                                    <div class="penal-req-list-history-content">
+                                        <div class="penal-req-list-history-topline">
+                                            <strong>12/06/2026</strong>
+                                            <span class="penal-req-list-history-type">Respuesta de fiscalía</span>
+                                        </div>
+                                        <p>La fiscalía emitió respuesta final y el requerimiento quedó concluido.</p>
+                                        <a href="#" class="penal-req-list-inline-link">Ver documento relacionado</a>
+                                    </div>
+                                </article>
+                                <article class="penal-req-list-history-item">
+                                    <div class="penal-req-list-history-dot"></div>
+                                    <div class="penal-req-list-history-content">
+                                        <div class="penal-req-list-history-topline">
+                                            <strong>10/06/2026</strong>
+                                            <span class="penal-req-list-history-type">Contestación enviada</span>
+                                        </div>
+                                        <p>Se remitió la contestación final del IMSS con el expediente documental completo.</p>
+                                        <a href="#" class="penal-req-list-inline-link">Ver documento relacionado</a>
+                                    </div>
+                                </article>
+                                <article class="penal-req-list-history-item">
+                                    <div class="penal-req-list-history-dot"></div>
+                                    <div class="penal-req-list-history-content">
+                                        <div class="penal-req-list-history-topline">
+                                            <strong>28/05/2026</strong>
+                                            <span class="penal-req-list-history-type">Alta inicial</span>
+                                        </div>
+                                        <p>Se registró el requerimiento inicial con tres solicitudes y quedó activa su atención.</p>
+                                        <a href="#" class="penal-req-list-inline-link">Ver documento relacionado</a>
+                                    </div>
+                                </article>
+                            </div>
+                        </details>
+
+                        <div class="penal-req-list-card-actions">
+                            <a href="requerimientosMinisterialesPenal.html" class="btn btn-primary">Actualizar requerimiento</a>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="card penal-req-list-card">
+                    <summary class="penal-req-list-card-summary">
+                        <div class="penal-req-list-card-main">
+                            <div class="penal-req-list-card-topline">
+                                <span class="penal-req-list-card-folio">REQ-FISC-2026-003</span>
+                                <span class="penal-req-list-phase-badge is-phase-1">Alta inicial</span>
+                            </div>
+                            <div class="penal-req-list-card-meta">
+                                <span>Fiscalía Regional Norte</span>
+                                <span>Recepción: 20/05/2026</span>
+                                <span>Límite: 25/06/2026</span>
+                            </div>
+                        </div>
+
+                        <div class="penal-req-list-card-kpis">
+                            <div class="penal-req-list-kpi">
+                                <strong>1</strong>
+                                <span>Solicitud</span>
+                            </div>
+                            <div class="penal-req-list-kpi">
+                                <strong>1</strong>
+                                <span>En trámite</span>
+                            </div>
+                            <div class="penal-req-list-kpi">
+                                <strong>0</strong>
+                                <span>Desahogadas</span>
+                            </div>
+                        </div>
+
+                        <span class="material-symbols-outlined penal-req-list-chevron">expand_more</span>
+                    </summary>
+
+                    <div class="penal-req-list-card-body">
+                        <div class="penal-req-list-detail-grid">
+                            <div class="penal-req-list-detail-item">
+                                <span class="penal-req-list-detail-label">Autoridad / MP</span>
+                                <strong>Fiscalía Regional Norte</strong>
+                            </div>
+                            <div class="penal-req-list-detail-item">
+                                <span class="penal-req-list-detail-label">Área responsable</span>
+                                <strong>Sin asignar aún</strong>
+                            </div>
+                            <div class="penal-req-list-detail-item">
+                                <span class="penal-req-list-detail-label">Fase actual</span>
+                                <strong>Alta inicial</strong>
+                            </div>
+                        </div>
+
+                        <div class="penal-req-phase-tabs" data-req-tabs>
+                            <button type="button" class="penal-req-phase-tab is-active" data-target="fase-inicial-3">Registro inicial</button>
+                            <button type="button" class="penal-req-phase-tab is-disabled" disabled>Seguimiento interno</button>
+                            <button type="button" class="penal-req-phase-tab is-disabled" disabled>Contestación final</button>
+                        </div>
+
+                        <div class="penal-req-phase-panels">
+                            <section class="penal-req-phase-panel is-active" id="fase-inicial-3">
+                                <div class="penal-req-list-detail-grid">
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Documento inicial</span>
+                                        <strong><a href="#" class="penal-req-list-inline-link">Ver documento</a></strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Fecha de recepción</span>
+                                        <strong>20/05/2026</strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Folio o referencia</span>
+                                        <strong>REQ-FISC-2026-003</strong>
+                                    </div>
+                                    <div class="penal-req-list-detail-item">
+                                        <span class="penal-req-list-detail-label">Solicitudes registradas</span>
+                                        <strong>1 solicitud capturada</strong>
+                                    </div>
+                                </div>
+
+                                <div class="penal-req-list-subcards penal-req-list-subcards-accordion">
+                                    <details class="penal-req-list-subcard penal-req-list-subcard-accordion">
+                                        <summary class="penal-req-list-subcard-summary">
+                                            <div class="penal-req-list-subcard-head">
+                                                <span class="penal-req-item-index">Solicitud 01</span>
+                                                <span class="penal-req-list-substatus is-pending">En trámite</span>
+                                            </div>
+                                            <div class="penal-req-list-subcard-title-row">
+                                                <h4>Entrega de informe base</h4>
+                                                <span class="material-symbols-outlined penal-req-list-subcard-chevron">expand_more</span>
+                                            </div>
+                                        </summary>
+                                        <div class="penal-req-list-subcard-body">
+                                            <div class="penal-req-list-subcard-detail-grid">
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Resumen</span>
+                                                    <strong>Solicitud registrada y pendiente de turnarse al área responsable.</strong>
+                                                </div>
+                                                <div class="penal-req-list-subcard-detail-item">
+                                                    <span class="penal-req-list-detail-label">Documento</span>
+                                                    <strong>Sin archivo recibido</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                            </section>
+                        </div>
+
+                        <details class="penal-req-list-history">
+                            <summary class="penal-req-list-history-head">
+                                <div>
+                                    <h4>Historial del requerimiento</h4>
+                                    <span>Movimientos registrados</span>
+                                </div>
+                                <span class="material-symbols-outlined penal-req-list-history-chevron">expand_more</span>
+                            </summary>
+                            <div class="penal-req-list-history-timeline">
+                                <article class="penal-req-list-history-item">
+                                    <div class="penal-req-list-history-dot"></div>
+                                    <div class="penal-req-list-history-content">
+                                        <div class="penal-req-list-history-topline">
+                                            <strong>20/05/2026</strong>
+                                            <span class="penal-req-list-history-type">Alta inicial</span>
+                                        </div>
+                                        <p>Se registró el requerimiento inicial con una solicitud pendiente de atención.</p>
+                                        <a href="#" class="penal-req-list-inline-link">Ver documento relacionado</a>
+                                    </div>
+                                </article>
+                            </div>
+                        </details>
+
+                        <div class="penal-req-list-card-actions">
+                            <a href="requerimientosMinisterialesPenal.html" class="btn btn-primary">Actualizar requerimiento</a>
+                        </div>
+                    </div>
+                </details>
+            </section>
+        </section>
+    </div>
+
+    <script src="js/headerComponent.js"></script>
+    <script src="js/listadoRequerimientosPenal.js"></script>
+</body>
+</html>

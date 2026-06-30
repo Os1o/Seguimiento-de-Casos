@@ -1,13 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuevo Asunto Penal - Sistema de Gestión</title>
+    <title>Nuevo Asunto Penal - Sistema de Gesti&oacute;n</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
 </head>
-<body>
-    <header class="header-gob app-header" data-home-href="penal.html" data-module="Penal" data-back-href="penal.html" data-back-label="Volver a penal"></header>
+<body class="modern-header-page penal-intake-page">
+    <header class="header-gob app-header" data-home-href="penal.html" data-module="Penal" data-back-href="penal.html" data-back-label="Volver a penal" data-header-variant="modern" data-show-module-nav="false"></header>
 
     <div class="container">
         <div class="breadcrumb">
@@ -16,249 +21,236 @@
             <span>Nuevo Asunto</span>
         </div>
 
-        <div class="page-header">
-            <div>
+        <div class="page-header penal-intake-header">
+            <div class="penal-intake-header-copy">
+                <span class="penal-intake-eyebrow">Registro inicial</span>
                 <h1 class="page-title">Nuevo Asunto Penal</h1>
-                <p class="page-subtitle">Completa todos los campos requeridos</p>
             </div>
         </div>
 
-        <form id="formNuevoCaso" class="card">
-            <!-- SECCION 1: Información General -->
-            <div class="form-section">
-                <h3 class="form-section-title">Información General</h3>
+        <form id="formNuevoCaso" class="card penal-intake-shell">
+            <div class="form-section penal-section-anchor">
+                <div class="penal-section-head">
+                    <div>
+                        <h3 class="form-section-title">Base del asunto</h3>
+                    </div>
+                    <span class="penal-section-state">Captura activa</span>
+                </div>
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label required">Jefatura de Servicios Jurídicos</label>
+                        <label class="form-label required">OOAD</label>
                         <select id="delegacion" class="form-select" required>
                             <option value="">Seleccione...</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label required">Fecha de Inicio</label>
+                        <label class="form-label required">Fecha de presentaci&oacute;n de la denuncia / querella</label>
                         <input type="date" id="fechaInicio" class="form-input" required>
                     </div>
                 </div>
 
-                <!-- Número de Expediente compuesto: JURISDICCION/ENTIDAD/OOAD/NUM/AÑO -->
                 <div class="form-group">
-                    <label class="form-label required">Número de Expediente</label>
-                    <p class="form-hint">Formato: JURISDICCIÓN / ENTIDAD / OOAD / NÚMERO / AÑO</p>
+                    <label class="form-label required">No. de Carpeta</label>
+                    <p class="form-hint">Formato actual: JURISDICCI&Oacute;N / ENTIDAD / OOAD / N&Uacute;MERO / A&Ntilde;O</p>
                     <div class="expediente-compuesto">
                         <select id="expJurisdiccion" class="form-select" required>
-                            <option value="">Jurisdicción</option>
+                            <option value="">Jurisdicci&oacute;n</option>
                             <option value="FED">FED</option>
                             <option value="LOC">LOC</option>
                         </select>
                         <span class="exp-separador">/</span>
-                        <input type="text" id="expEntidad" class="form-input" placeholder="Entidad (ej: QRO)" maxlength="10" required>
+                        <input type="text" id="expEntidad" class="form-input" placeholder="Entidad" maxlength="4" pattern="[A-Za-z]{3,4}" inputmode="text" required>
                         <span class="exp-separador">/</span>
-                        <input type="text" id="expOoad" class="form-input" placeholder="OOAD (ej: SJR)" maxlength="10" required>
+                        <input type="text" id="expOoad" class="form-input" placeholder="OOAD" maxlength="4" pattern="[A-Za-z]{3,4}" inputmode="text" required>
                         <span class="exp-separador">/</span>
-                        <input type="text" id="expNumero" class="form-input" placeholder="Núm." maxlength="10" required>
+                        <input type="text" id="expNumero" class="form-input" placeholder="N&uacute;m." maxlength="7" pattern="[0-9]{7}" inputmode="numeric" required>
                         <span class="exp-separador">/</span>
-                        <input type="text" id="expAnio" class="form-input" placeholder="Año" maxlength="4" required>
+                        <input type="text" id="expAnio" class="form-input" placeholder="A&ntilde;o" maxlength="4" required>
                     </div>
                     <small class="form-preview" id="previewExpediente">Vista previa: ---</small>
                 </div>
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label required">Delito</label>
+                        <label class="form-label required">Delito que se investiga</label>
                         <select id="delito" class="form-select" required>
                             <option value="">Seleccione...</option>
                         </select>
                     </div>
                 </div>
+
+                <div class="penal-preview-grid">
+                    <div class="penal-preview-card">
+                        <div class="penal-preview-card-head">
+                            <h4>Lugar de los hechos</h4>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Área generadora</label>
+                            <select id="areaGeneradora" class="form-select">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="penal-preview-card">
+                        <div class="penal-preview-card-head">
+                            <h4>Cuantía</h4>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Monto</label>
+                                <input type="text" id="cuantiaMonto" class="form-input" placeholder="Monto o cantidad">
+                            </div>
+                            <div class="form-group penal-cuantia-toggle-wrap">
+                                <label class="form-label">Captura de cuantía</label>
+                                <label class="penal-qrr-toggle" for="sinCuantificar">
+                                    <input type="checkbox" id="sinCuantificar">
+                                    <span class="penal-qrr-box"></span>
+                                    <span class="penal-qrr-copy">
+                                        <strong>Sin cuantificar</strong>
+                                        <small>Marcar cuando no exista cuantía determinada</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- SECCION 2: Partes -->
-            <div class="form-section">
-                <h3 class="form-section-title">Partes</h3>
+            <div class="form-section penal-section-anchor">
+                <div class="penal-section-head">
+                    <div>
+                        <h3 class="form-section-title">Denunciante y hechos</h3>
+                    </div>
+                    <span class="penal-section-state">Captura activa</span>
+                </div>
 
-                <!-- Denunciante -->
                 <div class="form-subsection">
                     <h4 class="form-subsection-title">Denunciante</h4>
                     <div class="form-group">
-                        <label class="form-label required">Tipo de Persona</label>
-                        <div class="form-radio-group">
-                            <div class="form-radio">
-                                <input type="radio" id="denuncianteFisica" name="denuncianteTipo" value="FISICA" required>
-                                <label for="denuncianteFisica">Física</label>
-                            </div>
-                            <div class="form-radio">
-                                <input type="radio" id="denuncianteMoral" name="denuncianteTipo" value="MORAL">
-                                <label for="denuncianteMoral">Moral</label>
-                            </div>
+                        <label class="form-label required">Escenario del denunciante</label>
+                        <div class="penal-choice-grid">
+                            <label class="penal-choice-card">
+                                <input type="radio" id="denuncianteModoImss" name="denuncianteModo" value="IMSS" checked>
+                                <span class="penal-choice-title">IMSS como denunciante</span>
+                                <span class="penal-choice-copy">La carpeta se registra con el IMSS como denunciante principal y puede sumar personas relacionadas de forma opcional.</span>
+                            </label>
+
+                            <label class="penal-choice-card">
+                                <input type="radio" id="denuncianteModoImssOtro" name="denuncianteModo" value="IMSS_OTRO">
+                                <span class="penal-choice-title">Coadyuvancia</span>
+                                <span class="penal-choice-copy">Otra persona o entidad figura como denunciante principal y el IMSS participa como coadyuvante.</span>
+                            </label>
+
+                            <label class="penal-choice-card">
+                                <input type="radio" id="denuncianteModoOtro" name="denuncianteModo" value="OTRO">
+                                <span class="penal-choice-title">Denunciante distinto al IMSS</span>
+                                <span class="penal-choice-copy">La carpeta se registra a nombre de una persona o entidad distinta al IMSS.</span>
+                            </label>
                         </div>
                     </div>
-                    <div id="denuncianteFisicaCampos" style="display:none;">
-                        <div class="form-grid form-grid-3">
-                            <div class="form-group">
-                                <label class="form-label required">Nombre(s)</label>
-                                <input type="text" id="denuncianteNombres" class="form-input" placeholder="Nombre(s)">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label required">Apellido Paterno</label>
-                                <input type="text" id="denunciantePaterno" class="form-input" placeholder="Apellido paterno">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Apellido Materno</label>
-                                <input type="text" id="denuncianteMaterno" class="form-input" placeholder="Apellido materno">
-                            </div>
-                        </div>
+
+                    <div class="penal-preview-inline">
+                        <div id="denuncianteImssPill" class="penal-preview-pill">IMSS precargado</div>
+                        <div id="denuncianteEscenarioPill" class="penal-preview-pill is-muted">Puede agregar personas relacionadas de forma opcional cuando el IMSS sea el denunciante principal.</div>
                     </div>
-                    <div id="denuncianteMoralCampos" style="display:none;">
-                        <div class="form-group">
-                            <label class="form-label required">Razón Social / Empresa</label>
-                            <input type="text" id="denuncianteEmpresa" class="form-input" placeholder="Razón social">
+
+                    <div id="denuncianteRelacionadosWrap" class="penal-preview-card penal-preview-card-full">
+                        <div class="penal-preview-card-head">
+                            <h4>Personas relacionadas con el denunciante</h4>
+                            <span class="penal-preview-chip">Captura opcional</span>
                         </div>
+                        <div id="listaDenuncianteRelacionados"></div>
+                        <button type="button" id="btnAgregarDenuncianteRelacionado" class="btn-add">Agregar persona relacionada</button>
+                    </div>
+
+                    <div id="denunciantePrincipalesWrap" class="penal-preview-card penal-preview-card-full" style="display: none;">
+                        <div class="penal-preview-card-head">
+                            <h4>Denunciantes principales</h4>
+                            <span class="penal-preview-chip">Captura activa</span>
+                        </div>
+                        <div id="listaDenunciantesPrincipales"></div>
+                        <button type="button" id="btnAgregarDenunciantePrincipal" class="btn-add">Agregar denunciante principal</button>
                     </div>
                 </div>
 
-                <!-- Probable Responsable -->
-                <div class="form-subsection">
-                    <h4 class="form-subsection-title">Probable Responsable</h4>
+                <div class="penal-preview-card penal-preview-card-full">
+                    <div class="penal-preview-card-head">
+                        <h4>Hechos con datos de la v&iacute;ctima / denunciante</h4>
+                        <span class="penal-preview-chip">Captura activa</span>
+                    </div>
                     <div class="form-group">
-                        <label class="form-label required">Tipo de Persona</label>
-                        <div class="form-radio-group">
-                            <div class="form-radio">
-                                <input type="radio" id="responsableFisica" name="responsableTipo" value="FISICA" required>
-                                <label for="responsableFisica">Física</label>
-                            </div>
-                            <div class="form-radio">
-                                <input type="radio" id="responsableMoral" name="responsableTipo" value="MORAL">
-                                <label for="responsableMoral">Moral</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="responsableFisicaCampos" style="display:none;">
-                        <div class="form-grid form-grid-3">
-                            <div class="form-group">
-                                <label class="form-label required">Nombre(s)</label>
-                                <input type="text" id="responsableNombres" class="form-input" placeholder="Nombre(s)">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label required">Apellido Paterno</label>
-                                <input type="text" id="responsablePaterno" class="form-input" placeholder="Apellido paterno">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Apellido Materno</label>
-                                <input type="text" id="responsableMaterno" class="form-input" placeholder="Apellido materno">
-                            </div>
-                        </div>
-                    </div>
-                    <div id="responsableMoralCampos" style="display:none;">
-                        <div class="form-group">
-                            <label class="form-label required">Razón Social / Empresa</label>
-                            <input type="text" id="responsableEmpresa" class="form-input" placeholder="Razón social">
-                        </div>
+                        <textarea id="hechosVictimaDenunciante" class="form-textarea" placeholder="Narrativa inicial de hechos con datos de la v&iacute;ctima o del denunciante."></textarea>
                     </div>
                 </div>
             </div>
 
-            <!-- SECCION 3: Estatus de Investigación y Estado Procesal -->
-            <div class="form-section">
-                <h3 class="form-section-title">Estatus de Investigación y Estado Procesal</h3>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Estatus de las investigaciones en la JSJ</label>
-                        <select id="estatusInvestigacionJSJ" class="form-select">
-                            <option value="">Seleccione...</option>
-                        </select>
+            <div class="form-section penal-section-anchor">
+                <div class="penal-section-head">
+                    <div>
+                        <h3 class="form-section-title">Probable responsable y control interno</h3>
                     </div>
+                    <span class="penal-section-state">Captura activa</span>
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Fecha de Conocimiento AMP</label>
-                        <input type="date" id="fechaConocimientoAmp" class="form-input">
+                <div class="form-grid penal-mode-group">
+                    <div class="form-group form-grid-full">
+                        <label class="form-label">Identificaci&oacute;n del probable responsable</label>
+                        <label class="penal-qrr-toggle" for="responsableQrr">
+                            <input type="checkbox" id="responsableQrr">
+                            <span class="penal-qrr-box"></span>
+                            <span class="penal-qrr-copy">
+                                <strong>QRR - Qui&eacute;n Resulte Responsable</strong>
+                                <small>Registrar cuando no se cuente con una persona o entidad identificada.</small>
+                            </span>
+                        </label>
                     </div>
                 </div>
 
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label required">Estado Procesal</label>
-                        <select id="estadoProcesal" class="form-select" required>
-                            <option value="">Seleccione...</option>
-                        </select>
+                <div id="probablesResponsablesWrap" class="penal-preview-card penal-preview-card-full">
+                    <div class="penal-preview-card-head">
+                        <h4>Probables responsables</h4>
+                        <span class="penal-preview-chip">Captura activa</span>
                     </div>
+                    <div id="listaProbablesResponsables"></div>
+                    <button type="button" id="btnAgregarProbableResponsable" class="btn-add">
+                        + Agregar probable responsable
+                    </button>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label">Acciones Pendientes</label>
-                    <textarea id="accionesPendientes" class="form-textarea" placeholder="Descripción de acciones pendientes..."></textarea>
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Fecha de Judicialización</label>
-                        <input type="date" id="fechaJudicializacion" class="form-input">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Determinación Judicial</label>
-                        <input type="text" id="determinacionJudicial" class="form-input" placeholder="Ej: Vinculado a proceso">
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECCION 4: Sentencia y Conclusión -->
-            <div class="form-section">
-                <h3 class="form-section-title">Sentencia y Conclusión</h3>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Sentencia</label>
-                        <select id="sentencia" class="form-select">
-                            <option value="">Sin sentencia</option>
-                            <option value="FAVORABLE">Favorable</option>
-                            <option value="DESFAVORABLE">Desfavorable</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Fecha de Sentencia</label>
-                        <input type="date" id="fechaSentencia" class="form-input">
-                    </div>
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Fecha de Conclusión</label>
-                        <input type="date" id="fechaConclusion" class="form-input">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Abogado Responsable</label>
-                        <input type="text" id="abogadoResponsable" class="form-input" placeholder="Nombre del abogado">
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECCION 5: Dato Relevante -->
-            <div class="form-section">
-                <h3 class="form-section-title">Información Adicional</h3>
 
                 <div class="form-group">
                     <label class="form-label">Dato Relevante</label>
-                    <textarea id="datoRelevante" class="form-textarea" placeholder="Descripción del hecho, contexto relevante..."></textarea>
+                    <textarea id="datoRelevante" class="form-textarea" data-effective-limit="500" placeholder="Descripci&oacute;n del hecho, contexto relevante..."></textarea>
+                </div>
+
+                <div class="penal-preview-card penal-preview-card-full">
+                    <div class="penal-preview-card-head">
+                        <h4>Documento inicial</h4>
+                        <span class="penal-preview-chip">Captura activa</span>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Archivo inicial</label>
+                            <input type="file" id="archivoInicialPenal" class="form-input" accept=".pdf,application/pdf">
+                            <small class="form-help-text">Solo se permite un archivo PDF de hasta 10 MB.</small>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Botones -->
-            <div style="display: flex; gap: 16px; justify-content: flex-end; margin-top: 32px;">
-                <a href="penal.html" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-success">Guardar Asunto</button>
+            <div class="penal-intake-footer">
+                <div class="penal-intake-actions">
+                    <a href="penal.html" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-success">Guardar Asunto</button>
+                </div>
             </div>
         </form>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabaseClient.js"></script>
-    <script src="js/supabaseService.js"></script>
     <script src="js/headerComponent.js"></script>
+    <script src="js/textLimiter.js"></script>
     <script src="js/formularioPenal.js"></script>
 </body>
 </html>

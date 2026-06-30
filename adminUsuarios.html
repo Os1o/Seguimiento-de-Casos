@@ -5,16 +5,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administrar Usuarios - Sistema de Gestión</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
 </head>
 
 <body>
-    <!-- Header -->
-    <header class="header-gob app-header" data-home-href="casos.html" data-module="Administracion" data-back-href="casos.html" data-back-label="Volver a asuntos"></header>
+    <header class="header-gob app-header" data-home-href="casos.html" data-module="Administracion" data-back-href="casos.html" data-back-label="Volver a asuntos" data-admin-link="true" data-header-variant="modern" data-show-module-nav="false"></header>
 
-    <!-- Contenido Principal -->
     <div class="container">
-        <!-- Encabezado de Página -->
+        <div class="breadcrumb">
+            <a href="casos.html">Asuntos</a>
+            <span class="breadcrumb-separator">></span>
+            <span>Administración</span>
+            <span class="breadcrumb-separator">></span>
+            <span>Usuarios</span>
+        </div>
+
         <div class="page-header">
             <div>
                 <h1 class="page-title">Administrar Usuarios</h1>
@@ -25,10 +35,26 @@
             </button>
         </div>
 
-        <!-- Tabla de Usuarios -->
-        <div class="card">
-            <div class="table-container">
-                <table class="table" id="tablaUsuarios" style="table-layout: auto; min-width: 0;">
+        <div class="card admin-usuarios-card admin-usuarios-toolbar-card">
+            <div class="admin-usuarios-toolbar">
+                <div class="admin-usuarios-busqueda">
+                    <span class="admin-usuarios-busqueda-icon material-symbols-outlined" aria-hidden="true">search</span>
+                    <input type="text" id="inputBusquedaUsuarios" class="form-input admin-usuarios-busqueda-input" placeholder="Buscar por nombre o usuario..." autocomplete="off">
+                </div>
+                <div class="form-group admin-usuarios-filtro-rol">
+                    <select id="selectFiltroRol" class="form-select">
+                        <option value="">Todos los roles</option>
+                        <option value="admin">Administrador</option>
+                        <option value="editor">Editor</option>
+                        <option value="consulta">Consulta</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card admin-usuarios-card">
+            <div class="table-container admin-usuarios-table-container">
+                <table class="table admin-usuarios-table" id="tablaUsuarios" style="table-layout: auto; min-width: 0;">
                     <thead>
                         <tr>
                             <th style="white-space: nowrap;">Nombre completo</th>
@@ -44,10 +70,13 @@
                     <tbody id="tablaUsuariosBody"></tbody>
                 </table>
             </div>
+            <div class="admin-usuarios-pagination">
+                <span id="tablaUsuariosResumen" class="admin-usuarios-pagination-summary">Mostrando 0 de 0 usuarios registrados</span>
+                <div id="tablaUsuariosPaginacion" class="admin-usuarios-pagination-controls"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Modal para crear/editar usuario -->
     <div id="modalUsuario" class="modal-overlay" style="display: none;">
         <div class="modal-content card" style="max-width: 600px; width: 90%;">
             <div class="modal-header">
@@ -70,7 +99,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label required">Contraseña</label>
-                        <input type="text" id="inputPassword" class="form-input" required placeholder="Contraseña">
+                        <input type="password" id="inputPassword" class="form-input" placeholder="Contraseña">
                     </div>
                     <div class="form-group">
                         <label class="form-label required">Rol</label>
@@ -88,7 +117,15 @@
                     <select id="inputDelegacion" class="form-select">
                         <option value="">Todas las JSJ</option>
                     </select>
-                    <small class="form-help" id="helpDelegacion" style="display:none;">Los administradores pueden ver todas las delegaciones</small>
+                    <small class="form-help" id="helpDelegacion" style="display:none;">Los administradores y usuarios con alcance global pueden ver todas las delegaciones</small>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="inputAlcanceGlobal">
+                        <label for="inputAlcanceGlobal">Ver todas las JSJ (solo lectura global)</label>
+                    </div>
+                    <small class="form-help">Disponible para administradores y usuarios de consulta global</small>
                 </div>
 
                 <div class="form-group">
@@ -100,13 +137,28 @@
                         </div>
                         <div class="form-checkbox">
                             <input type="checkbox" id="inputPermisoPenal">
-                            <label for="inputPermisoPenal">Penal (futuro)</label>
+                            <label for="inputPermisoPenal">Penal</label>
                         </div>
                         <div class="form-checkbox">
                             <input type="checkbox" id="inputActivo" checked>
                             <label for="inputActivo">Usuario activo</label>
                         </div>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Atributos adicionales</label>
+                    <div style="display: flex; gap: 32px; margin-top: 8px; flex-wrap: wrap;">
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="inputEsAbogado">
+                            <label for="inputEsAbogado">Es abogado</label>
+                        </div>
+                        <div class="form-checkbox">
+                            <input type="checkbox" id="inputEsJefe">
+                            <label for="inputEsJefe">Es jefe</label>
+                        </div>
+                    </div>
+                    <small class="form-help">Estos atributos complementan el rol principal del usuario.</small>
                 </div>
 
                 <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
@@ -117,12 +169,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabaseClient.js"></script>
-    <script src="js/supabaseService.js"></script>
     <script src="js/headerComponent.js"></script>
     <script src="js/adminUsuarios.js"></script>
 </body>
 
 </html>
-

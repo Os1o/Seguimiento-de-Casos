@@ -4,26 +4,148 @@
 
 let usuarios = [];
 let editandoId = null;
+let filtroBusquedaUsuarios = '';
+let filtroRolUsuarios = '';
+let paginaActualUsuarios = 1;
+const USUARIOS_POR_PAGINA = 8;
+let catalogos = {
+    delegaciones: []
+};
 
-function verificarSesion() {
-    const usuarioStr = sessionStorage.getItem('usuario');
-    if (!usuarioStr) {
-        window.location.href = 'login.html';
-        return null;
+function normalizarUsuarioLegacy(usuario) {
+    if (!usuario || typeof usuario !== 'object') {
+        return usuario;
     }
-    return JSON.parse(usuarioStr);
+
+    if (usuario.rol === 'jefe') {
+        return {
+            ...usuario,
+            rol: 'consulta',
+            alcance_global: true
+        };
+    }
+
+    return usuario;
 }
 
-function cerrarSesion() {
-    sessionStorage.removeItem('usuario');
+async function verificarSesion() {
+    const usuarioStr = sessionStorage.getItem('usuario');
+    if (usuarioStr) {
+        return JSON.parse(usuarioStr);
+    }
+
+    try {
+        const response = await fetch('api/session.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.ok) {
+            const user = result.data?.user || {};
+            const usuario = {
+                id: user.id ?? null,
+                usuario: user.usuario ?? '',
+                nombre_completo: user.nombreCompleto ?? '',
+                rol: user.rol ?? '',
+                delegacion_id: user.delegacionId ?? null,
+                alcance_global: Boolean(user.alcanceGlobal),
+                permiso_civil_mercantil: Boolean(user.permisoCivilMercantil),
+                permiso_penal: Boolean(user.permisoPenal),
+                es_abogado: Boolean(user.esAbogado),
+                es_jefe: Boolean(user.esJefe),
+                session_token: user.sessionToken ?? ''
+            };
+
+            sessionStorage.setItem('usuario', JSON.stringify(usuario));
+            return usuario;
+        }
+    } catch (error) {
+        console.error('No se pudo recuperar la sesión desde la API:', error);
+    }
+
     window.location.href = 'login.html';
+    return null;
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
-    const usuario = verificarSesion();
-    if (!usuario) return;
+async function cerrarSesion() {
+    try {
+        await fetch('api/logout.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+    } finally {
+        sessionStorage.removeItem('usuario');
+        window.location.href = 'login.html';
+    }
+}
 
-    // Solo admin puede acceder
+window.cerrarSesion = cerrarSesion;
+
+async function cargarCatalogosAdmin() {
+    const response = await fetch('api/getCatalogs.php', {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar los catálogos');
+    }
+
+    catalogos.delegaciones = result.data?.delegaciones || [];
+}
+
+async function obtenerUsuariosApi() {
+    const response = await fetch('api/getUsers.php', {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar los usuarios');
+    }
+
+    return (result.data?.users || []).map(normalizarUsuarioLegacy);
+}
+
+async function guardarUsuarioApi(datosUsuario) {
+    const response = await fetch('api/saveUser.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(datosUsuario)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        const detail = result.errors?.detail ? `: ${result.errors.detail}` : '';
+        throw new Error((result.message || 'No se pudo guardar el usuario') + detail);
+    }
+
+
+    return result.data?.user || null;
+}
+
+function obtenerDelegacion(id) {
+    if (!id) return null;
+    return (catalogos.delegaciones || []).find(delegacion => delegacion.id == id) || null;
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
+    const usuario = await verificarSesion();
+    if (!usuario) return;
+    window.mostrarCargaVista?.('.container');
+
     if (usuario.rol !== 'admin') {
         window.location.href = 'casos.html';
         return;
@@ -31,99 +153,265 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
 
-    // Cargar catalogos desde Supabase y llenar delegaciones
-    await cargarCatalogos().catch(() => console.warn('Catalogos: usando fallback local'));
-    llenarDelegacionesModal();
+    const badgeRol = document.getElementById('badgeRol');
+    if (badgeRol) {
+        badgeRol.textContent = 'Admin';
+        badgeRol.className = 'badge-rol badge-rol-admin';
+    }
 
-    // Listener para cambio de rol (admin no necesita delegación)
-    document.getElementById('inputRol').addEventListener('change', function() {
-        const helpDelegacion = document.getElementById('helpDelegacion');
-        if (this.value === 'admin') {
-            helpDelegacion.style.display = 'block';
-        } else {
-            helpDelegacion.style.display = 'none';
+    const infoOOAD = document.getElementById('infoOOAD');
+    if (infoOOAD) {
+        infoOOAD.textContent = 'Todas las JSJ';
+    }
+
+    try {
+        try {
+            await cargarCatalogosAdmin();
+        } catch (error) {
+            console.warn('Catálogos: usando fallback local', error);
         }
-    });
 
-    await cargarUsuarios();
+        llenarDelegacionesModal();
+
+        document.getElementById('inputRol').addEventListener('change', function () {
+            actualizarCamposAcceso();
+        });
+
+        document.getElementById('inputAlcanceGlobal').addEventListener('change', actualizarCamposAcceso);
+        document.getElementById('inputBusquedaUsuarios').addEventListener('input', manejarBusquedaUsuarios);
+        document.getElementById('selectFiltroRol').addEventListener('change', manejarFiltroRolUsuarios);
+
+        await cargarUsuarios({ showLoader: false });
+    } finally {
+        await window.ocultarCargaVista?.('.container');
+    }
 });
 
 function llenarDelegacionesModal() {
     const select = document.getElementById('inputDelegacion');
-    const delegaciones = catalogosCargados ? catalogosDB.delegaciones : [];
-    delegaciones.forEach(d => {
+    select.innerHTML = '<option value="">Todas las JSJ</option>';
+
+    (catalogos.delegaciones || []).forEach(delegacion => {
         const option = document.createElement('option');
-        option.value = d.id;
-        option.textContent = d.nombre;
+        option.value = delegacion.id;
+        option.textContent = delegacion.nombre;
         select.appendChild(option);
     });
 }
 
-async function cargarUsuarios() {
-    try {
-        usuarios = await obtenerUsuarios();
-        localStorage.setItem('usuarios', JSON.stringify(usuarios));
-    } catch (err) {
-        console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
-        const usuariosStr = localStorage.getItem('usuarios');
-        usuarios = usuariosStr ? JSON.parse(usuariosStr) : [];
+async function cargarUsuarios(options = {}) {
+    const { showLoader = true } = options;
+
+    if (showLoader) {
+        window.mostrarCargaBloque?.('.table-container');
     }
+
+    try {
+        usuarios = await obtenerUsuariosApi();
+    } catch (error) {
+        console.error('No se pudieron cargar los usuarios desde la API:', error);
+        usuarios = [];
+    } finally {
+        if (showLoader) {
+            await window.ocultarCargaBloque?.('.table-container');
+        }
+    }
+
     renderizarTabla();
+}
+
+function normalizarTextoBusqueda(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+function obtenerTextoRolUsuario(rol = '') {
+    const rolesTexto = {
+        admin: 'Administrador',
+        editor: 'Editor',
+        consulta: 'Consulta'
+    };
+
+    return rolesTexto[rol] || rol || '';
+}
+
+function obtenerUsuariosFiltrados() {
+    const termino = normalizarTextoBusqueda(filtroBusquedaUsuarios);
+
+    return usuarios.filter(usuario => {
+        const coincideBusqueda = !termino || [
+            usuario.nombre_completo,
+            usuario.usuario
+        ].some(valor => normalizarTextoBusqueda(valor).includes(termino));
+
+        const coincideRol = !filtroRolUsuarios || usuario.rol === filtroRolUsuarios;
+
+        return coincideBusqueda && coincideRol;
+    });
+}
+
+function obtenerUsuariosPaginados(usuariosFiltrados) {
+    const totalPaginas = Math.max(1, Math.ceil(usuariosFiltrados.length / USUARIOS_POR_PAGINA));
+    paginaActualUsuarios = Math.min(Math.max(1, paginaActualUsuarios), totalPaginas);
+
+    const inicio = (paginaActualUsuarios - 1) * USUARIOS_POR_PAGINA;
+    const fin = inicio + USUARIOS_POR_PAGINA;
+
+    return {
+        totalPaginas,
+        inicio,
+        fin,
+        usuariosPagina: usuariosFiltrados.slice(inicio, fin)
+    };
 }
 
 function renderizarTabla() {
     const tbody = document.getElementById('tablaUsuariosBody');
+    const resumen = document.getElementById('tablaUsuariosResumen');
+    const paginacion = document.getElementById('tablaUsuariosPaginacion');
+    const usuariosFiltrados = obtenerUsuariosFiltrados();
+    const { totalPaginas, inicio, fin, usuariosPagina } = obtenerUsuariosPaginados(usuariosFiltrados);
 
-    if (usuarios.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--color-text-light);">No hay usuarios registrados</td></tr>';
+    if (usuariosFiltrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="admin-usuarios-empty">No hay usuarios que coincidan con los filtros aplicados</td></tr>';
+
+        if (resumen) {
+            resumen.textContent = 'Mostrando 0 de 0 usuarios registrados';
+        }
+
+        if (paginacion) {
+            paginacion.innerHTML = '';
+        }
+
         return;
     }
 
-    tbody.innerHTML = usuarios.map(u => {
-        const delegacion = u.delegacion_id ? obtenerDelegacion(u.delegacion_id) : null;
-        const delegNombre = delegacion ? delegacion.nombre : '<em style="color:var(--color-text-light);">Todas</em>';
+    tbody.innerHTML = usuariosPagina.map(usuario => {
+        const delegacion = usuario.delegacion_id ? obtenerDelegacion(usuario.delegacion_id) : null;
+        const delegNombre = usuario.alcance_global
+            ? '<span class="admin-usuarios-jsj-global">Todas las JSJ</span>'
+            : (delegacion ? delegacion.nombre : '<span class="admin-usuarios-jsj-empty">Sin JSJ</span>');
 
-        const rolesTexto = { admin: 'Administrador', editor: 'Editor', consulta: 'Consulta' };
-        const rolesBadge = { admin: 'badge-rol-admin', editor: 'badge-rol-editor', consulta: 'badge-rol-consulta' };
+        const atributos = [
+            usuario.es_abogado ? '<span class="admin-usuarios-attribute-badge">Abogado</span>' : '',
+            usuario.es_jefe ? '<span class="admin-usuarios-attribute-badge">Jefe de area</span>' : ''
+        ].filter(Boolean).join('');
+
+        const civilPermitido = usuario.permiso_civil_mercantil
+            ? '<span class="admin-usuarios-check admin-usuarios-check-on material-symbols-outlined" aria-label="Permitido">check_circle</span>'
+            : '<span class="admin-usuarios-check admin-usuarios-check-off material-symbols-outlined" aria-label="Sin permiso">radio_button_unchecked</span>';
+
+        const penalPermitido = usuario.permiso_penal
+            ? '<span class="admin-usuarios-check admin-usuarios-check-on material-symbols-outlined" aria-label="Permitido">check_circle</span>'
+            : '<span class="admin-usuarios-check admin-usuarios-check-off material-symbols-outlined" aria-label="Sin permiso">radio_button_unchecked</span>';
+
+        const estadoBadge = usuario.activo
+            ? '<span class="admin-usuarios-status-badge admin-usuarios-status-active">Activo</span>'
+            : '<span class="admin-usuarios-status-badge admin-usuarios-status-inactive">Inactivo</span>';
 
         return `
-            <tr>
-                <td><strong>${u.nombre_completo}</strong></td>
-                <td><code>${u.usuario}</code></td>
-                <td><span class="badge-rol ${rolesBadge[u.rol] || ''}">${rolesTexto[u.rol] || u.rol}</span></td>
-                <td><small>${delegNombre}</small></td>
-                <td style="text-align:center;">${u.permiso_civil_mercantil ? '<span style="color:var(--color-success);">&#10003;</span>' : '<span style="color:var(--color-text-light);">&#10007;</span>'}</td>
-                <td style="text-align:center;">${u.permiso_penal ? '<span style="color:var(--color-success);">&#10003;</span>' : '<span style="color:var(--color-text-light);">&#10007;</span>'}</td>
-                <td style="text-align:center;">${u.activo
-                    ? '<span class="badge badge-tramite">Activo</span>'
-                    : '<span class="badge badge-concluido" style="background:#f5f5f5;color:#999;">Inactivo</span>'
-                }</td>
+            <tr class="admin-usuarios-row">
+                <td class="admin-usuarios-cell-name"><strong>${usuario.nombre_completo}</strong></td>
+                <td class="admin-usuarios-cell-user"><span class="admin-usuarios-username">${usuario.usuario}</span></td>
                 <td>
-                    <div style="display:flex;gap:8px;">
-                        <button class="btn-link" onclick="editarUsuario(${u.id})" style="font-size:13px;">Editar</button>
-                        <button class="btn-link" onclick="toggleActivoUsuario(${u.id})" style="font-size:13px;color:${u.activo ? 'var(--color-danger)' : 'var(--color-success)'};">
-                            ${u.activo ? 'Desactivar' : 'Activar'}
+                    <div class="admin-usuarios-role-stack">
+                        <span class="badge-rol badge-rol-${usuario.rol || ''} admin-usuarios-role-badge">${obtenerTextoRolUsuario(usuario.rol)}</span>
+                        ${atributos ? `<div class="admin-usuarios-role-attributes">${atributos}</div>` : ''}
+                    </div>
+                </td>
+                <td class="admin-usuarios-cell-jsj">${delegNombre}</td>
+                <td class="admin-usuarios-cell-check">${civilPermitido}</td>
+                <td class="admin-usuarios-cell-check">${penalPermitido}</td>
+                <td class="admin-usuarios-cell-status">${estadoBadge}</td>
+                <td class="admin-usuarios-cell-actions">
+                    <div class="admin-usuarios-actions">
+                        <button class="btn-link" onclick="editarUsuario(${usuario.id})">Editar</button>
+                        <button class="btn-link admin-usuarios-toggle-action ${usuario.activo ? 'is-danger' : 'is-success'}" onclick="toggleActivoUsuario(${usuario.id})">
+                            ${usuario.activo ? 'Desactivar' : 'Activar'}
                         </button>
                     </div>
                 </td>
             </tr>
         `;
     }).join('');
+
+    if (resumen) {
+        resumen.textContent = `Mostrando ${inicio + 1}-${Math.min(fin, usuariosFiltrados.length)} de ${usuariosFiltrados.length} usuarios registrados`;
+    }
+
+    if (paginacion) {
+        paginacion.innerHTML = construirPaginacionUsuarios(totalPaginas);
+    }
 }
 
-// =====================================================
-// MODAL
-// =====================================================
+function construirPaginacionUsuarios(totalPaginas) {
+    if (totalPaginas <= 1) {
+        return '';
+    }
+
+    const botones = [];
+
+    botones.push(`
+        <button type="button" class="admin-usuarios-page-btn admin-usuarios-page-nav" ${paginaActualUsuarios === 1 ? 'disabled' : ''} onclick="cambiarPaginaUsuarios(${paginaActualUsuarios - 1})">
+            Anterior
+        </button>
+    `);
+
+    for (let pagina = 1; pagina <= totalPaginas; pagina += 1) {
+        botones.push(`
+            <button type="button" class="admin-usuarios-page-btn admin-usuarios-page-number ${pagina === paginaActualUsuarios ? 'is-active' : ''}" onclick="cambiarPaginaUsuarios(${pagina})">
+                ${pagina}
+            </button>
+        `);
+    }
+
+    botones.push(`
+        <button type="button" class="admin-usuarios-page-btn admin-usuarios-page-nav" ${paginaActualUsuarios === totalPaginas ? 'disabled' : ''} onclick="cambiarPaginaUsuarios(${paginaActualUsuarios + 1})">
+            Siguiente
+        </button>
+    `);
+
+    return botones.join('');
+}
+
+function cambiarPaginaUsuarios(nuevaPagina) {
+    paginaActualUsuarios = nuevaPagina;
+    renderizarTabla();
+}
+
+window.cambiarPaginaUsuarios = cambiarPaginaUsuarios;
+
+function manejarBusquedaUsuarios(event) {
+    filtroBusquedaUsuarios = event.target.value || '';
+    paginaActualUsuarios = 1;
+    renderizarTabla();
+}
+
+function manejarFiltroRolUsuarios(event) {
+    filtroRolUsuarios = event.target.value || '';
+    paginaActualUsuarios = 1;
+    renderizarTabla();
+}
 
 function abrirModal() {
     editandoId = null;
     document.getElementById('modalTitulo').textContent = 'Nuevo Usuario';
     document.getElementById('formUsuario').reset();
     document.getElementById('inputPermisoCivil').checked = true;
+    document.getElementById('inputPermisoPenal').checked = false;
+    document.getElementById('inputEsAbogado').checked = false;
+    document.getElementById('inputEsJefe').checked = false;
     document.getElementById('inputActivo').checked = true;
+    document.getElementById('inputAlcanceGlobal').checked = false;
     document.getElementById('inputDelegacion').disabled = false;
     document.getElementById('helpDelegacion').style.display = 'none';
     document.getElementById('inputUsuario').disabled = false;
+    document.getElementById('inputPassword').value = '';
+    document.getElementById('inputPassword').required = true;
+    actualizarCamposAcceso();
     document.getElementById('modalUsuario').style.display = 'flex';
 }
 
@@ -133,95 +421,161 @@ function cerrarModal() {
 }
 
 function editarUsuario(id) {
-    const u = usuarios.find(usr => usr.id === id);
-    if (!u) return;
+    const usuario = usuarios.find(item => item.id === id);
+    if (!usuario) return;
 
     editandoId = id;
     document.getElementById('modalTitulo').textContent = 'Editar Usuario';
-    document.getElementById('inputNombre').value = u.nombre_completo;
-    document.getElementById('inputUsuario').value = u.usuario;
-    document.getElementById('inputUsuario').disabled = true; // No permitir cambiar username
-    document.getElementById('inputPassword').value = u.password;
-    document.getElementById('inputRol').value = u.rol;
-    document.getElementById('inputPermisoCivil').checked = u.permiso_civil_mercantil;
-    document.getElementById('inputPermisoPenal').checked = u.permiso_penal;
-    document.getElementById('inputActivo').checked = u.activo;
-
-    // Delegación: "" = Todas, o el ID de la delegación
-    document.getElementById('inputDelegacion').value = u.delegacion_id || '';
+    document.getElementById('inputNombre').value = usuario.nombre_completo;
+    document.getElementById('inputUsuario').value = usuario.usuario;
+    document.getElementById('inputUsuario').disabled = true;
+    document.getElementById('inputPassword').value = '';
+    document.getElementById('inputPassword').required = false;
+    document.getElementById('inputRol').value = usuario.rol;
+    document.getElementById('inputPermisoCivil').checked = usuario.permiso_civil_mercantil;
+    document.getElementById('inputPermisoPenal').checked = usuario.permiso_penal;
+    document.getElementById('inputEsAbogado').checked = Boolean(usuario.es_abogado);
+    document.getElementById('inputEsJefe').checked = Boolean(usuario.es_jefe);
+    document.getElementById('inputActivo').checked = usuario.activo;
+    document.getElementById('inputAlcanceGlobal').checked = Boolean(usuario.alcance_global);
+    document.getElementById('inputDelegacion').value = usuario.delegacion_id || '';
     document.getElementById('inputDelegacion').disabled = false;
-    document.getElementById('helpDelegacion').style.display = u.rol === 'admin' ? 'block' : 'none';
-
+    actualizarCamposAcceso();
     document.getElementById('modalUsuario').style.display = 'flex';
 }
 
-async function guardarUsuarioForm(e) {
-    e.preventDefault();
+function actualizarCamposAcceso() {
+    const rol = document.getElementById('inputRol').value;
+    const alcanceGlobal = document.getElementById('inputAlcanceGlobal').checked;
+    const inputDelegacion = document.getElementById('inputDelegacion');
+    const helpDelegacion = document.getElementById('helpDelegacion');
+
+    if (rol === 'admin') {
+        document.getElementById('inputAlcanceGlobal').checked = true;
+        document.getElementById('inputAlcanceGlobal').disabled = true;
+        inputDelegacion.value = '';
+        inputDelegacion.disabled = true;
+        helpDelegacion.style.display = 'block';
+        return;
+    }
+
+    document.getElementById('inputAlcanceGlobal').disabled = rol === 'editor';
+
+    if (rol === 'editor') {
+        document.getElementById('inputAlcanceGlobal').checked = false;
+    }
+
+    const globalActivo = document.getElementById('inputAlcanceGlobal').checked;
+    helpDelegacion.style.display = globalActivo ? 'block' : 'none';
+    inputDelegacion.disabled = globalActivo;
+
+    if (globalActivo) {
+        inputDelegacion.value = '';
+    }
+}
+
+async function guardarUsuarioForm(event) {
+    event.preventDefault();
 
     const nombre = document.getElementById('inputNombre').value.trim();
     const usuario = document.getElementById('inputUsuario').value.trim();
     const password = document.getElementById('inputPassword').value;
     const rol = document.getElementById('inputRol').value;
     const delegacionId = document.getElementById('inputDelegacion').value;
+    const alcanceGlobal = document.getElementById('inputAlcanceGlobal').checked;
     const permisoCivil = document.getElementById('inputPermisoCivil').checked;
     const permisoPenal = document.getElementById('inputPermisoPenal').checked;
+    const esAbogado = document.getElementById('inputEsAbogado').checked;
+    const esJefe = document.getElementById('inputEsJefe').checked;
     const activo = document.getElementById('inputActivo').checked;
 
-    // Validar usuario unico (solo al crear)
     if (!editandoId) {
-        const existe = usuarios.find(u => u.usuario === usuario);
+        const existe = usuarios.find(item => item.usuario === usuario);
         if (existe) {
-            alert('Ya existe un usuario con ese nombre de usuario');
+            await window.appAlert?.({
+                title: 'Usuario duplicado',
+                message: 'Ya existe un usuario con ese nombre de usuario.'
+            });
             return;
         }
     }
 
     const datosUsuario = {
         nombre_completo: nombre,
-        usuario: usuario,
-        password: password,
-        rol: rol,
+        usuario,
+        password,
+        rol,
         delegacion_id: delegacionId ? parseInt(delegacionId) : null,
+        alcance_global: alcanceGlobal,
         permiso_civil_mercantil: permisoCivil,
         permiso_penal: permisoPenal,
-        activo: activo
+        es_abogado: esAbogado,
+        es_jefe: esJefe,
+        activo
     };
 
     if (editandoId) {
         datosUsuario.id = editandoId;
     }
 
+    if (datosUsuario.rol === 'admin' || datosUsuario.alcance_global) {
+        datosUsuario.delegacion_id = null;
+    }
+
     try {
-        await guardarUsuario(datosUsuario);
+        await guardarUsuarioApi(datosUsuario);
         cerrarModal();
         await cargarUsuarios();
-        alert(editandoId ? 'Usuario actualizado exitosamente' : 'Usuario creado exitosamente');
-    } catch (err) {
-        console.error('Error al guardar usuario:', err);
-        alert('Error al guardar usuario: ' + err.message);
+        await window.appAlert?.({
+            title: 'Cambios guardados',
+            message: 'El registro se guardo correctamente.'
+        });
+    } catch (error) {
+        console.error('Error al guardar usuario:', error);
+        await window.appAlert?.({
+            title: 'No se pudo guardar el usuario',
+            message: error.message || 'Ocurrio un problema al guardar el usuario.'
+        });
     }
 }
 
 async function toggleActivoUsuario(id) {
-    const u = usuarios.find(usr => usr.id === id);
-    if (!u) return;
+    const usuario = usuarios.find(item => item.id === id);
+    if (!usuario) return;
 
-    // No permitir desactivar al propio admin
-    const sesion = JSON.parse(sessionStorage.getItem('usuario'));
+    const sesion = JSON.parse(sessionStorage.getItem('usuario') || 'null');
     if (sesion && sesion.id === id) {
-        alert('No puedes desactivar tu propia cuenta');
+        await window.appAlert?.({
+            title: 'Accion no permitida',
+            message: 'No puedes desactivar tu propia cuenta.'
+        });
         return;
     }
 
-    const accion = u.activo ? 'desactivar' : 'activar';
-    if (!confirm(`Estas seguro de ${accion} al usuario "${u.nombre_completo}"?`)) return;
+    const accion = usuario.activo ? 'desactivar' : 'activar';
+    const confirmacion = await window.appConfirm?.({
+        title: 'Confirmar cambio de estado',
+        message: `¿Estás seguro de ${accion} al usuario "${usuario.nombre_completo}"?`,
+        confirmText: 'Confirmar',
+        cancelText: 'Cancelar'
+    });
+
+    if (!confirmacion) {
+        return;
+    }
 
     try {
-        const datosActualizados = { id: u.id, activo: !u.activo };
-        await guardarUsuario(datosActualizados);
+        await guardarUsuarioApi({
+            id: usuario.id,
+            activo: !usuario.activo
+        });
+
         await cargarUsuarios();
-    } catch (err) {
-        console.error('Error al cambiar estado:', err);
-        alert('Error al cambiar estado del usuario: ' + err.message);
+    } catch (error) {
+        console.error('Error al cambiar estado:', error);
+        await window.appAlert?.({
+            title: 'No se pudo cambiar el estado',
+            message: error.message || 'Ocurrio un problema al cambiar el estado del usuario.'
+        });
     }
 }

@@ -1,277 +1,960 @@
-// =====================================================
+﻿// =====================================================
 // FORMULARIO PENAL - Nuevo caso penal
 // =====================================================
 
 let usuarioActual = null;
+let catalogos = {
+    delegaciones: [],
+    delitos: [],
+    areas: []
+};
+let limitadorDatoRelevantePenal = null;
+let limitadorHechosVictimaPenal = null;
+let contadorDenuncianteRelacionado = 0;
+let contadorDenunciantePrincipal = 0;
+let contadorProbableResponsable = 0;
 
-function verificarSesion() {
+async function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
-    if (!usuarioStr) { window.location.href = 'login.html'; return null; }
-    return JSON.parse(usuarioStr);
+    if (usuarioStr) {
+        return JSON.parse(usuarioStr);
+    }
+
+    try {
+        const response = await fetch('api/session.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.ok) {
+            const user = result.data?.user || {};
+            const usuario = {
+                id: user.id ?? null,
+                usuario: user.usuario ?? '',
+                nombre_completo: user.nombreCompleto ?? '',
+                rol: user.rol ?? '',
+                delegacion_id: user.delegacionId ?? null,
+                permiso_civil_mercantil: Boolean(user.permisoCivilMercantil),
+                permiso_penal: Boolean(user.permisoPenal),
+                session_token: user.sessionToken ?? ''
+            };
+
+            sessionStorage.setItem('usuario', JSON.stringify(usuario));
+            return usuario;
+        }
+    } catch (error) {
+        console.error('No se pudo recuperar la sesión desde la API:', error);
+    }
+
+    window.location.href = 'login.html';
+    return null;
 }
 
-function cerrarSesion() {
-    sessionStorage.removeItem('usuario');
-    window.location.href = 'login.html';
+async function cerrarSesion() {
+    try {
+        await fetch('api/logout.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+    } finally {
+        sessionStorage.removeItem('usuario');
+        window.location.href = 'login.html';
+    }
+}
+
+window.cerrarSesion = cerrarSesion;
+
+function actualizarInfoOOADFormularioPenal() {
+    const infoOOAD = document.getElementById('infoOOAD');
+    if (!infoOOAD || !usuarioActual) return;
+
+    if (usuarioActual.delegacion_id) {
+        const delegacion = (catalogos.delegaciones || []).find(item => item.id == usuarioActual.delegacion_id);
+        if (delegacion) {
+            infoOOAD.textContent = delegacion.nombre;
+            return;
+        }
+    }
+
+    infoOOAD.textContent = 'Todas las JSJ';
+}
+
+async function cargarCatalogosPenalFormulario() {
+    const response = await fetch('api/penal/getNewCaseCatalogs.php', {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar los catálogos');
+    }
+
+    const data = result.data || {};
+
+    catalogos = {
+        delegaciones: data.delegaciones || [],
+        delitos: data.delitos || [],
+        areas: data.areas || []
+    };
+}
+
+async function guardarCasoPenalApi(formData) {
+    const response = await fetch('api/savePenalCase.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: formData
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        const detail = result.errors?.detail ? `: ${result.errors.detail}` : '';
+        throw new Error((result.message || 'No se pudo guardar el asunto penal') + detail);
+    }
+
+    return result.data?.case || null;
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
-    const usuario = verificarSesion();
+    const usuario = await verificarSesion();
     if (!usuario) return;
     usuarioActual = usuario;
+    window.mostrarCargaVista?.('.container');
 
-    if (usuario.rol === 'consulta') {
+    if (usuario.rol === 'consulta' || usuario.rol === 'jefe') {
         window.location.href = 'penal.html';
         return;
     }
 
     document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
 
-    // Cargar catálogos
-    try { await cargarCatalogos(); } catch (e) { console.warn('Supabase no disponible, usando datos locales'); }
+    const badgeRol = document.getElementById('badgeRol');
+    if (badgeRol) {
+        const rolesTexto = { admin: 'Admin', jefe: 'Jefe', editor: 'Editor', consulta: 'Consulta' };
+        badgeRol.textContent = rolesTexto[usuario.rol] || usuario.rol;
+        badgeRol.className = 'badge-rol badge-rol-' + usuario.rol;
+    }
 
-    cargarDelegaciones();
-    cargarDelitos();
-    cargarEstadosProcesales();
-    cargarEstatusInvestigacion();
-    initRadioButtons();
-    initExpedienteCompuesto();
+    actualizarInfoOOADFormularioPenal();
 
-    // Submit
-    document.getElementById('formNuevoCaso').addEventListener('submit', function (e) {
-        e.preventDefault();
-        guardarCaso();
-    });
+    try {
+        try {
+            await cargarCatalogosPenalFormulario();
+        } catch (error) {
+            console.warn('No se pudieron cargar los catálogos penales desde la API:', error);
+        }
+
+        actualizarInfoOOADFormularioPenal();
+
+        cargarDelegaciones();
+        cargarAreasGeneradoras();
+        cargarDelitos();
+        initDenuncianteMode();
+        initProbableResponsableMode();
+        initCuantiaMode();
+        initExpedienteCompuesto();
+        sincronizarFechasBasePenal();
+        document.getElementById('fechaInicio')?.addEventListener('change', sincronizarFechasBasePenal);
+        document.getElementById('delegacion')?.addEventListener('change', cargarAreasGeneradoras);
+        limitadorHechosVictimaPenal = window.setupExpandableTextLimiter?.({
+            fieldId: 'hechosVictimaDenunciante',
+            initialLimit: 1000
+        }) || null;
+        limitadorDatoRelevantePenal = window.setupExpandableTextLimiter?.({
+            fieldId: 'datoRelevante',
+            initialLimit: 500
+        }) || null;
+
+        document.getElementById('formNuevoCaso').addEventListener('submit', function (event) {
+            event.preventDefault();
+            guardarCaso();
+        });
+    } finally {
+        await window.ocultarCargaVista?.('.container');
+    }
 });
 
 function cargarDelegaciones() {
     const select = document.getElementById('delegacion');
-    const delegaciones = catalogosCargados ? catalogosDB.delegaciones : [];
+    if (!select) {
+        return;
+    }
 
-    delegaciones.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.textContent = d.nombre;
-        select.appendChild(opt);
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    (catalogos.delegaciones || []).forEach(delegacion => {
+        const option = document.createElement('option');
+        option.value = delegacion.id;
+        option.textContent = delegacion.nombre;
+        select.appendChild(option);
     });
 
-    // Pre-seleccionar y bloquear si no es admin
     if (usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
         select.value = usuarioActual.delegacion_id;
         select.disabled = true;
     }
 }
 
+function obtenerEscenarioDenunciantePayload() {
+    const modo = obtenerModoDenuncianteActual();
+
+    if (modo === 'IMSS_OTRO') {
+        return {
+            escenario: 'COADYUVANCIA',
+            coadyuvancia: true
+        };
+    }
+
+    if (modo === 'OTRO') {
+        return {
+            escenario: 'DISTINTO_IMSS',
+            coadyuvancia: false
+        };
+    }
+
+    return {
+        escenario: 'IMSS',
+        coadyuvancia: false
+    };
+}
+
+function obtenerMontoPenalNormalizado() {
+    const inputMonto = document.getElementById('cuantiaMonto');
+    if (!inputMonto) {
+        return '';
+    }
+
+    return inputMonto.value.replace(/,/g, '').trim();
+}
+
+function cargarAreasGeneradoras() {
+    const selectDelegacion = document.getElementById('delegacion');
+    const selectArea = document.getElementById('areaGeneradora');
+
+    if (!selectDelegacion || !selectArea) {
+        return;
+    }
+
+    const delegacionId = parseInt(selectDelegacion.value, 10);
+    selectArea.innerHTML = '<option value="">Seleccione...</option>';
+
+    if (!delegacionId) {
+        selectArea.disabled = true;
+        return;
+    }
+
+    const areasFiltradas = (catalogos.areas || []).filter(area => parseInt(area.delegacion_id, 10) === delegacionId);
+
+    areasFiltradas.forEach(area => {
+        const option = document.createElement('option');
+        option.value = area.id;
+        option.textContent = area.nombre;
+        selectArea.appendChild(option);
+    });
+
+    selectArea.disabled = false;
+}
+
 function cargarDelitos() {
     const select = document.getElementById('delito');
-    let delitos;
+    select.innerHTML = '<option value="">Seleccione...</option>';
 
-    if (catalogosCargados && catalogosDB.delitos.length > 0) {
-        delitos = catalogosDB.delitos;
-    } else {
-        delitos = [
-            { id: 1, nombre: 'ABUSO DE CONFIANZA' }, { id: 17, nombre: 'FRAUDE' },
-            { id: 22, nombre: 'LESIONES' }, { id: 27, nombre: 'ROBO' }
-        ];
+    (catalogos.delitos || []).forEach(delito => {
+        const option = document.createElement('option');
+        option.value = delito.id;
+        option.textContent = delito.nombre;
+        select.appendChild(option);
+    });
+}
+
+function crearCampoDenunciante({ tipo, id, valor = '' }) {
+    const esRelacionado = tipo === 'relacionado';
+    const containerId = esRelacionado ? 'listaDenuncianteRelacionados' : 'listaDenunciantesPrincipales';
+    const titulo = esRelacionado ? 'Persona relacionada' : 'Denunciante principal';
+    const placeholder = esRelacionado
+        ? 'Nombre de la persona, empresa o institucion relacionada con la denuncia'
+        : 'Nombre de la persona, empresa o institucion denunciante';
+    const label = esRelacionado ? 'Nombre de persona relacionada' : 'Nombre del denunciante principal';
+    const fieldId = id || `${tipo}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+    const html = `
+        <div class="dynamic-field" id="${fieldId}">
+            <div class="dynamic-field-header">
+                <span class="dynamic-field-title">${titulo}</span>
+                <button type="button" class="btn-remove" onclick="eliminarCampoDenunciante('${fieldId}', '${tipo}')">Eliminar</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label${esRelacionado ? '' : ' required'}">${label}</label>
+                <input
+                    type="text"
+                    class="form-input ${esRelacionado ? 'denunciante-relacionado-input' : 'denunciante-principal-input'}"
+                    placeholder="${placeholder}"
+                    value="${valor.replace(/"/g, '&quot;')}"
+                >
+            </div>
+        </div>
+    `;
+
+    document.getElementById(containerId)?.insertAdjacentHTML('beforeend', html);
+    renumerarCamposDenunciante(tipo);
+    actualizarEstadoBotonesDenunciante(tipo);
+}
+
+function limpiarCamposDenunciante(tipo) {
+    const containerId = tipo === 'relacionado' ? 'listaDenuncianteRelacionados' : 'listaDenunciantesPrincipales';
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = '';
     }
 
-    delitos.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.textContent = d.nombre;
-        select.appendChild(opt);
-    });
-}
-
-function cargarEstadosProcesales() {
-    const select = document.getElementById('estadoProcesal');
-    let estados;
-
-    if (catalogosCargados && catalogosDB.estadosProcesales.length > 0) {
-        estados = catalogosDB.estadosProcesales;
+    if (tipo === 'relacionado') {
+        contadorDenuncianteRelacionado = 0;
     } else {
-        estados = [
-            { id: 1, nombre: 'Etapa de investigación' },
-            { id: 2, nombre: 'Etapa intermedia o etapa de preparación a juicio' },
-            { id: 3, nombre: 'Etapa de juicio oral' }
-        ];
+        contadorDenunciantePrincipal = 0;
     }
 
-    estados.forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e.id;
-        opt.textContent = e.nombre;
-        select.appendChild(opt);
-    });
+    renumerarCamposDenunciante(tipo);
+    actualizarEstadoBotonesDenunciante(tipo);
 }
 
-function cargarEstatusInvestigacion() {
-    const select = document.getElementById('estatusInvestigacionJSJ');
-    if (!select) return;
+function obtenerModoDenuncianteActual() {
+    return document.querySelector('input[name="denuncianteModo"]:checked')?.value || 'IMSS';
+}
 
-    let estatus;
-    if (catalogosCargados && catalogosDB.estatusInvestigacion && catalogosDB.estatusInvestigacion.length > 0) {
-        estatus = catalogosDB.estatusInvestigacion;
-    } else {
-        estatus = [
-            { id: 1, nombre: 'ACUERDO REPARATORIO' },
-            { id: 2, nombre: 'EN TRÁMITE' },
-            { id: 3, nombre: 'CONCLUIDO' },
-            { id: 4, nombre: 'INCOMPETENCIA' },
-            { id: 5, nombre: 'NO EJERCICIO DE LA ACCIÓN PENAL' },
-            { id: 6, nombre: 'SE SEÑALA NUEVA FECHA PARA AUDIENCIA DE JUICIO ORAL' },
-            { id: 7, nombre: 'CAUSA PENAL' }
-        ];
+function syncDenuncianteMode() {
+    const modo = obtenerModoDenuncianteActual();
+    const wrapRelacionados = document.getElementById('denuncianteRelacionadosWrap');
+    const wrapPrincipales = document.getElementById('denunciantePrincipalesWrap');
+    const pillImss = document.getElementById('denuncianteImssPill');
+    const pillEscenario = document.getElementById('denuncianteEscenarioPill');
+
+    if (wrapRelacionados) {
+        wrapRelacionados.style.display = modo === 'IMSS' ? '' : 'none';
     }
 
-    estatus.forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e.nombre;
-        opt.textContent = e.nombre;
-        select.appendChild(opt);
+    if (wrapPrincipales) {
+        wrapPrincipales.style.display = modo === 'IMSS' ? 'none' : '';
+    }
+
+    if (pillImss) {
+        pillImss.classList.remove('is-muted');
+        if (modo === 'IMSS') {
+            pillImss.textContent = 'IMSS precargado';
+        } else if (modo === 'IMSS_OTRO') {
+            pillImss.textContent = 'IMSS como coadyuvante';
+            pillImss.classList.add('is-muted');
+        } else {
+            pillImss.textContent = 'IMSS no participa';
+            pillImss.classList.add('is-muted');
+        }
+    }
+
+    if (pillEscenario) {
+        if (modo === 'IMSS') {
+            pillEscenario.textContent = 'Puede agregar personas relacionadas de forma opcional cuando el IMSS sea el denunciante principal.';
+        } else if (modo === 'IMSS_OTRO') {
+            pillEscenario.textContent = 'Capture de 1 a N denunciantes principales. El IMSS quedara solo como coadyuvante.';
+        } else {
+            pillEscenario.textContent = 'Capture de 1 a N denunciantes principales. El IMSS no figurara en este escenario.';
+        }
+    }
+
+    if (modo !== 'IMSS') {
+        if (!document.querySelector('#listaDenunciantesPrincipales .denunciante-principal-input')) {
+            crearCampoDenunciante({ tipo: 'principal' });
+        }
+    }
+}
+
+function initDenuncianteMode() {
+    document.getElementById('btnAgregarDenuncianteRelacionado')?.addEventListener('click', function () {
+        crearCampoDenunciante({ tipo: 'relacionado' });
+    });
+
+    document.getElementById('btnAgregarDenunciantePrincipal')?.addEventListener('click', function () {
+        crearCampoDenunciante({ tipo: 'principal' });
+    });
+
+    document.querySelectorAll('input[name="denuncianteModo"]').forEach(radio => {
+        radio.addEventListener('change', syncDenuncianteMode);
+    });
+
+    syncDenuncianteMode();
+}
+
+function eliminarCampoDenunciante(id, tipo) {
+    const containerId = tipo === 'relacionado' ? 'listaDenuncianteRelacionados' : 'listaDenunciantesPrincipales';
+    const container = document.getElementById(containerId);
+    const items = container ? Array.from(container.querySelectorAll('.dynamic-field')) : [];
+    const itemIndex = items.findIndex(item => item.id === id);
+
+    if (tipo === 'principal' && itemIndex === 0) {
+        const primerInput = items[0]?.querySelector('.denunciante-principal-input');
+        if (primerInput) {
+            primerInput.value = '';
+            primerInput.focus();
+        }
+        renumerarCamposDenunciante(tipo);
+        actualizarEstadoBotonesDenunciante(tipo);
+        return;
+    }
+
+    if (tipo === 'principal' && items.length <= 1) {
+        const input = document.querySelector('#listaDenunciantesPrincipales .denunciante-principal-input');
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+        renumerarCamposDenunciante(tipo);
+        actualizarEstadoBotonesDenunciante(tipo);
+        return;
+    }
+
+    document.getElementById(id)?.remove();
+
+    if (tipo === 'principal' && container && !container.querySelector('.denunciante-principal-input')) {
+        crearCampoDenunciante({ tipo: 'principal' });
+        return;
+    }
+
+    renumerarCamposDenunciante(tipo);
+    actualizarEstadoBotonesDenunciante(tipo);
+}
+
+window.eliminarCampoDenunciante = eliminarCampoDenunciante;
+
+function renumerarCamposDenunciante(tipo) {
+    const containerId = tipo === 'relacionado' ? 'listaDenuncianteRelacionados' : 'listaDenunciantesPrincipales';
+    const selector = type => type === 'relacionado' ? '.denunciante-relacionado-input' : '.denunciante-principal-input';
+    const container = document.getElementById(containerId);
+    if (!container) {
+        return;
+    }
+
+    const items = Array.from(container.querySelectorAll('.dynamic-field'));
+    const tituloBase = tipo === 'relacionado' ? 'Persona relacionada' : 'Denunciante principal';
+
+    items.forEach((item, index) => {
+        const title = item.querySelector('.dynamic-field-title');
+        if (title) {
+            title.textContent = `${tituloBase} ${index + 1}`;
+        }
+    });
+
+    if (tipo === 'relacionado') {
+        contadorDenuncianteRelacionado = items.length;
+    } else {
+        contadorDenunciantePrincipal = items.length;
+    }
+}
+
+function actualizarEstadoBotonesDenunciante(tipo) {
+    const containerId = tipo === 'relacionado' ? 'listaDenuncianteRelacionados' : 'listaDenunciantesPrincipales';
+    const container = document.getElementById(containerId);
+    if (!container) {
+        return;
+    }
+
+    const items = Array.from(container.querySelectorAll('.dynamic-field'));
+    const botones = items.map(item => item.querySelector('.btn-remove')).filter(Boolean);
+    botones.forEach((boton, index) => {
+        if (tipo === 'principal' && index === 0) {
+            boton.textContent = 'Limpiar';
+            boton.disabled = false;
+            boton.style.opacity = '';
+            boton.style.cursor = '';
+            return;
+        }
+
+        boton.textContent = 'Eliminar';
+        boton.disabled = false;
+        boton.style.opacity = '';
+        boton.style.cursor = '';
     });
 }
 
-function initRadioButtons() {
-    // Denunciante
-    document.querySelectorAll('input[name="denuncianteTipo"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            document.getElementById('denuncianteFisicaCampos').style.display = this.value === 'FISICA' ? '' : 'none';
-            document.getElementById('denuncianteMoralCampos').style.display = this.value === 'MORAL' ? '' : 'none';
-        });
+function initResponsableQrrMode() {
+    const checkbox = document.getElementById('responsableQrr');
+    const wrap = document.getElementById('probablesResponsablesWrap');
+
+    if (!checkbox || !wrap) {
+        return;
+    }
+
+    const sync = () => {
+        if (checkbox.checked) {
+            wrap.style.display = 'none';
+        } else {
+            wrap.style.display = '';
+            if (!document.querySelector('#listaProbablesResponsables .probable-responsable-input')) {
+                crearCampoProbableResponsable();
+            }
+        }
+    };
+
+    checkbox.addEventListener('change', sync);
+    sync();
+}
+
+function crearCampoProbableResponsable(valor = '') {
+    const container = document.getElementById('listaProbablesResponsables');
+    if (!container) {
+        return;
+    }
+
+    contadorProbableResponsable += 1;
+    const fieldId = `probable_responsable_${Date.now()}_${contadorProbableResponsable}`;
+
+    const html = `
+        <div class="dynamic-field" id="${fieldId}">
+            <div class="dynamic-field-header">
+                <span class="dynamic-field-title">Probable responsable</span>
+                <button type="button" class="btn-remove" onclick="eliminarCampoProbableResponsable('${fieldId}')">Eliminar</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">Nombre del probable responsable</label>
+                <input
+                    type="text"
+                    class="form-input probable-responsable-input"
+                    placeholder="Nombre de persona, empresa o institucion"
+                    value="${valor.replace(/"/g, '&quot;')}"
+                >
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', html);
+    renumerarCamposProbableResponsable();
+    actualizarEstadoBotonesProbableResponsable();
+}
+
+function eliminarCampoProbableResponsable(id) {
+    const container = document.getElementById('listaProbablesResponsables');
+    const items = container ? Array.from(container.querySelectorAll('.dynamic-field')) : [];
+    const itemIndex = items.findIndex(item => item.id === id);
+
+    if (items.length <= 1 || itemIndex === 0) {
+        const primerInput = items[0]?.querySelector('.probable-responsable-input');
+        if (primerInput) {
+            primerInput.value = '';
+            primerInput.focus();
+        }
+        renumerarCamposProbableResponsable();
+        actualizarEstadoBotonesProbableResponsable();
+        return;
+    }
+
+    document.getElementById(id)?.remove();
+
+    if (container && !container.querySelector('.probable-responsable-input')) {
+        crearCampoProbableResponsable();
+        return;
+    }
+
+    renumerarCamposProbableResponsable();
+    actualizarEstadoBotonesProbableResponsable();
+}
+
+window.eliminarCampoProbableResponsable = eliminarCampoProbableResponsable;
+
+function renumerarCamposProbableResponsable() {
+    const container = document.getElementById('listaProbablesResponsables');
+    if (!container) {
+        return;
+    }
+
+    const items = Array.from(container.querySelectorAll('.dynamic-field'));
+    items.forEach((item, index) => {
+        const title = item.querySelector('.dynamic-field-title');
+        if (title) {
+            title.textContent = `Probable responsable ${index + 1}`;
+        }
     });
 
-    // Probable Responsable
-    document.querySelectorAll('input[name="responsableTipo"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            document.getElementById('responsableFisicaCampos').style.display = this.value === 'FISICA' ? '' : 'none';
-            document.getElementById('responsableMoralCampos').style.display = this.value === 'MORAL' ? '' : 'none';
-        });
+    contadorProbableResponsable = items.length;
+}
+
+function actualizarEstadoBotonesProbableResponsable() {
+    const container = document.getElementById('listaProbablesResponsables');
+    if (!container) {
+        return;
+    }
+
+    const items = Array.from(container.querySelectorAll('.dynamic-field'));
+    const botones = items.map(item => item.querySelector('.btn-remove')).filter(Boolean);
+
+    botones.forEach((boton, index) => {
+        if (index === 0) {
+            boton.textContent = 'Limpiar';
+        } else {
+            boton.textContent = 'Eliminar';
+        }
+        boton.disabled = false;
+        boton.style.opacity = '';
+        boton.style.cursor = '';
     });
 }
 
-// =====================================================
-// EXPEDIENTE COMPUESTO: JURISDICCION/ENTIDAD/OOAD/NUM/AÑO
-// =====================================================
+function initProbableResponsableMode() {
+    document.getElementById('btnAgregarProbableResponsable')?.addEventListener('click', function () {
+        crearCampoProbableResponsable();
+    });
+
+    if (!document.querySelector('#listaProbablesResponsables .probable-responsable-input')) {
+        crearCampoProbableResponsable();
+    }
+
+    initResponsableQrrMode();
+}
+
+function initCuantiaMode() {
+    const checkbox = document.getElementById('sinCuantificar');
+    const inputMonto = document.getElementById('cuantiaMonto');
+
+    if (!checkbox || !inputMonto) {
+        return;
+    }
+
+    const sync = () => {
+        if (checkbox.checked) {
+            inputMonto.value = '';
+            inputMonto.disabled = true;
+            inputMonto.placeholder = 'Sin cuantificar';
+        } else {
+            inputMonto.disabled = false;
+            inputMonto.placeholder = '0.00';
+        }
+    };
+
+    inputMonto.addEventListener('input', function () {
+        let valor = this.value.replace(/[^0-9.]/g, '');
+
+        const partes = valor.split('.');
+        if (partes.length > 2) {
+            valor = partes[0] + '.' + partes.slice(1).join('');
+        }
+
+        const partesFinales = valor.split('.');
+        if (partesFinales[0]) {
+            partesFinales[0] = partesFinales[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        this.value = partesFinales.join('.');
+    });
+
+    checkbox.addEventListener('change', sync);
+    sync();
+}
 
 function initExpedienteCompuesto() {
     const campos = ['expJurisdiccion', 'expEntidad', 'expOoad', 'expNumero', 'expAnio'];
+
     campos.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('input', actualizarPreviewExpediente);
-            el.addEventListener('change', actualizarPreviewExpediente);
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', actualizarPreviewExpediente);
+            element.addEventListener('change', actualizarPreviewExpediente);
         }
     });
 }
 
+function sanitizePenalExpedienteParts() {
+    const entidadInput = document.getElementById('expEntidad');
+    const ooadInput = document.getElementById('expOoad');
+    const numeroInput = document.getElementById('expNumero');
+
+    const entidad = entidadInput.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+    const ooad = ooadInput.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+    const numero = numeroInput.value.replace(/\D/g, '').slice(0, 7);
+
+    entidadInput.value = entidad;
+    ooadInput.value = ooad;
+    numeroInput.value = numero;
+
+    return { entidad, ooad, numero };
+}
+
+function validatePenalExpedienteParts() {
+    const { entidad, ooad, numero } = sanitizePenalExpedienteParts();
+
+    if (!/^[A-Z]{3,4}$/.test(entidad)) {
+        throw new Error('La entidad del expediente penal debe tener entre 3 y 4 letras.');
+    }
+
+    if (!/^[A-Z]{3,4}$/.test(ooad)) {
+        throw new Error('La OOAD del expediente penal debe tener entre 3 y 4 letras.');
+    }
+
+    if (!/^\d{7}$/.test(numero)) {
+        throw new Error('El numero del expediente penal debe tener exactamente 7 digitos.');
+    }
+
+    return { entidad, ooad, numero };
+}
+
 function actualizarPreviewExpediente() {
-    const j = document.getElementById('expJurisdiccion').value;
-    const e = document.getElementById('expEntidad').value.toUpperCase();
-    const o = document.getElementById('expOoad').value.toUpperCase();
-    const n = document.getElementById('expNumero').value;
-    const a = document.getElementById('expAnio').value;
+    const jurisdiccion = document.getElementById('expJurisdiccion').value;
+    const { entidad, ooad, numero } = sanitizePenalExpedienteParts();
+    const anio = document.getElementById('expAnio').value;
 
-    // Forzar mayúsculas en los inputs
-    document.getElementById('expEntidad').value = e;
-    document.getElementById('expOoad').value = o;
-
-    const partes = [j, e, o, n, a].filter(p => p);
+    const partes = [jurisdiccion, entidad, ooad, numero, anio].filter(Boolean);
     const preview = document.getElementById('previewExpediente');
+
     if (preview) {
-        preview.textContent = partes.length > 0 ? 'Vista previa: ' + partes.join('/') : 'Vista previa: ---';
+        preview.textContent = partes.length > 0 ? `Vista previa: ${partes.join('/')}` : 'Vista previa: ---';
     }
 }
 
 function obtenerNumeroExpediente() {
-    const j = document.getElementById('expJurisdiccion').value;
-    const e = document.getElementById('expEntidad').value.toUpperCase();
-    const o = document.getElementById('expOoad').value.toUpperCase();
-    const n = document.getElementById('expNumero').value;
-    const a = document.getElementById('expAnio').value;
+    const jurisdiccion = document.getElementById('expJurisdiccion').value;
+    const { entidad, ooad, numero } = validatePenalExpedienteParts();
+    const anio = document.getElementById('expAnio').value;
 
-    if (!j || !e || !o || !n || !a) return null;
-    return `${j}/${e}/${o}/${n}/${a}`;
+    if (!jurisdiccion || !entidad || !ooad || !numero || !anio) {
+        return null;
+    }
+
+    return `${jurisdiccion}/${entidad}/${ooad}/${numero}/${anio}`;
 }
 
-// =====================================================
-// GUARDAR
-// =====================================================
+function construirDenunciantePayload() {
+    const modo = obtenerModoDenuncianteActual();
+    const relacionados = Array.from(document.querySelectorAll('.denunciante-relacionado-input'))
+        .map(input => input.value.trim())
+        .filter(Boolean);
+    const principales = Array.from(document.querySelectorAll('.denunciante-principal-input'))
+        .map(input => input.value.trim())
+        .filter(Boolean);
 
-async function guardarCaso() {
-    const delegacionId = parseInt(document.getElementById('delegacion').value);
-    const numeroExpediente = obtenerNumeroExpediente();
-    const fechaInicio = document.getElementById('fechaInicio').value;
-    const delitoId = parseInt(document.getElementById('delito').value);
-    const estadoProcesalId = parseInt(document.getElementById('estadoProcesal').value);
+    if (modo !== 'IMSS' && principales.length === 0) {
+        throw new Error('Captura al menos un denunciante principal.');
+    }
 
-    if (!delegacionId || !numeroExpediente || !fechaInicio || !delitoId || !estadoProcesalId) {
-        alert('Por favor completa todos los campos requeridos.');
+    if (modo === 'IMSS') {
+        return [
+            {
+                nombre: 'Instituto Mexicano del Seguro Social',
+                tipo: 'DENUNCIANTE',
+                rol: 'PRINCIPAL',
+                es_imss: true,
+                es_coadyuvante: false
+            },
+            ...relacionados.map(nombre => ({
+                nombre,
+                tipo: 'RELACIONADO',
+                rol: 'RELACIONADO',
+                es_imss: false,
+                es_coadyuvante: false
+            }))
+        ];
+    }
+
+    if (modo === 'IMSS_OTRO') {
+        return [
+            ...principales.map(nombre => ({
+                nombre,
+                tipo: 'DENUNCIANTE',
+                rol: 'PRINCIPAL',
+                es_imss: false,
+                es_coadyuvante: false
+            })),
+            {
+                nombre: 'Instituto Mexicano del Seguro Social',
+                tipo: 'DENUNCIANTE',
+                rol: 'COADYUVANTE',
+                es_imss: true,
+                es_coadyuvante: true
+            }
+        ];
+    }
+
+    return principales.map(nombre => ({
+        nombre,
+        tipo: 'DENUNCIANTE',
+        rol: 'PRINCIPAL',
+        es_imss: false,
+        es_coadyuvante: false
+    }));
+}
+
+function construirProbableResponsablePayload() {
+    const esQrr = Boolean(document.getElementById('responsableQrr')?.checked);
+    const responsables = Array.from(document.querySelectorAll('.probable-responsable-input'))
+        .map(input => input.value.trim())
+        .filter(Boolean);
+
+    if (esQrr) {
+        return [
+            {
+                nombre: 'QRR',
+                tipo: 'PROBABLE_RESPONSABLE',
+                rol: 'SIN_IDENTIFICAR',
+                qrr: true
+            }
+        ];
+    }
+
+    if (responsables.length === 0) {
+        throw new Error('Captura al menos un probable responsable o marca la opción de sin identificar.');
+    }
+
+    return responsables.map(nombre => ({
+        nombre,
+        tipo: 'PROBABLE_RESPONSABLE',
+        rol: 'PRINCIPAL',
+        qrr: false
+    }));
+}
+
+function validarArchivoInicialPenal() {
+    const input = document.getElementById('archivoInicialPenal');
+    if (!input) {
+        return null;
+    }
+
+    const file = input.files?.[0] || null;
+    if (!file) {
+        throw new Error('Adjunta el documento inicial en formato PDF.');
+    }
+
+    const maxBytes = 10 * 1024 * 1024;
+    const nombre = (file.name || '').toLowerCase();
+    const mime = (file.type || '').toLowerCase();
+    const esPdfPorNombre = nombre.endsWith('.pdf');
+    const esPdfPorMime = !mime || mime === 'application/pdf';
+
+    if (!esPdfPorNombre || !esPdfPorMime) {
+        throw new Error('El documento inicial debe ser un archivo PDF válido.');
+    }
+
+    if (file.size > maxBytes) {
+        throw new Error('El documento inicial no puede exceder 10 MB.');
+    }
+
+    return file;
+}
+
+function sincronizarFechasBasePenal() {
+    const fechaInicio = document.getElementById('fechaInicio');
+    const fechasDependientes = [
+        document.getElementById('fechaConocimientoAmp')
+    ].filter(Boolean);
+
+    if (!fechaInicio) {
         return;
     }
 
-    // Construir denunciante
-    const denuncianteTipo = document.querySelector('input[name="denuncianteTipo"]:checked')?.value;
-    let denunciante = null;
-    if (denuncianteTipo === 'FISICA') {
-        denunciante = {
-            tipo_persona: 'FISICA',
-            nombres: document.getElementById('denuncianteNombres').value.trim(),
-            apellido_paterno: document.getElementById('denunciantePaterno').value.trim(),
-            apellido_materno: document.getElementById('denuncianteMaterno').value.trim()
-        };
-    } else if (denuncianteTipo === 'MORAL') {
-        denunciante = {
-            tipo_persona: 'MORAL',
-            empresa: document.getElementById('denuncianteEmpresa').value.trim()
-        };
-    }
+    const fechaBase = fechaInicio.value || '';
 
-    // Construir probable responsable
-    const responsableTipo = document.querySelector('input[name="responsableTipo"]:checked')?.value;
-    let probableResponsable = null;
-    if (responsableTipo === 'FISICA') {
-        probableResponsable = {
-            tipo_persona: 'FISICA',
-            nombres: document.getElementById('responsableNombres').value.trim(),
-            apellido_paterno: document.getElementById('responsablePaterno').value.trim(),
-            apellido_materno: document.getElementById('responsableMaterno').value.trim()
-        };
-    } else if (responsableTipo === 'MORAL') {
-        probableResponsable = {
-            tipo_persona: 'MORAL',
-            empresa: document.getElementById('responsableEmpresa').value.trim()
-        };
-    }
+    fechasDependientes.forEach(input => {
+        input.min = fechaBase;
 
-    const nuevoCaso = {
-        delegacion_id: delegacionId,
-        numero_expediente: numeroExpediente,
-        fecha_inicio: fechaInicio,
-        delito_id: delitoId,
-        denunciante: denunciante,
-        probable_responsable: probableResponsable,
-        estatus_investigacion_jsj: document.getElementById('estatusInvestigacionJSJ').value || null,
-        fecha_conocimiento_amp: document.getElementById('fechaConocimientoAmp').value || null,
-        estado_procesal_id: estadoProcesalId,
-        acciones_pendientes: document.getElementById('accionesPendientes').value.trim() || null,
-        fecha_judicializacion: document.getElementById('fechaJudicializacion').value || null,
-        determinacion_judicial: document.getElementById('determinacionJudicial').value.trim() || null,
-        sentencia: document.getElementById('sentencia').value || null,
-        fecha_sentencia: document.getElementById('fechaSentencia').value || null,
-        fecha_conclusion: document.getElementById('fechaConclusion').value || null,
-        dato_relevante: document.getElementById('datoRelevante').value.trim() || null,
-        estatus: document.getElementById('fechaConclusion').value ? 'CONCLUIDO' : 'TRAMITE',
-        abogado_responsable: document.getElementById('abogadoResponsable').value.trim() || null
-    };
+        if (fechaBase && input.value && input.value < fechaBase) {
+            input.value = '';
+        }
+    });
+}
+
+async function guardarCaso() {
+    const delegacionId = parseInt(document.getElementById('delegacion').value);
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const delitoId = parseInt(document.getElementById('delito').value);
+    const areaGeneradoraId = parseInt(document.getElementById('areaGeneradora').value, 10);
+    const hechosVictimaDenunciante = document.getElementById('hechosVictimaDenunciante')?.value.trim() || '';
+    const datoRelevante = document.getElementById('datoRelevante')?.value.trim() || '';
+    const sinCuantificar = Boolean(document.getElementById('sinCuantificar')?.checked);
+    const cuantiaMonto = obtenerMontoPenalNormalizado();
+    let numeroExpediente = null;
 
     try {
-        const casoGuardado = await guardarCasoPenal(nuevoCaso);
-        upsertCacheCasoPenal({ ...nuevoCaso, ...casoGuardado });
-        alert('Asunto penal guardado correctamente.');
+        numeroExpediente = obtenerNumeroExpediente();
+    } catch (error) {
+        await window.appAlert({
+            title: 'Número de expediente inválido',
+            message: error.message
+        });
+        return;
+    }
+
+    if (!delegacionId || !numeroExpediente || !fechaInicio || !delitoId || !areaGeneradoraId) {
+        await window.appAlert({
+            title: 'Campos obligatorios',
+            message: 'Por favor completa todos los campos requeridos.'
+        });
+        return;
+    }
+
+    if (!hechosVictimaDenunciante) {
+        await window.appAlert({
+            title: 'Campos obligatorios',
+            message: 'Captura los hechos con datos de la víctima o denunciante.'
+        });
+        return;
+    }
+
+    if (!sinCuantificar && cuantiaMonto === '') {
+        await window.appAlert({
+            title: 'Cuantía obligatoria',
+            message: 'Captura el monto o marca la opción sin cuantificar.'
+        });
+        return;
+    }
+
+    let denunciante = null;
+    let probableResponsable = null;
+    let archivoInicial = null;
+
+    try {
+        denunciante = construirDenunciantePayload();
+        probableResponsable = construirProbableResponsablePayload();
+        archivoInicial = validarArchivoInicialPenal();
+    } catch (error) {
+        await window.appAlert({
+            title: 'Datos incompletos',
+            message: error.message
+        });
+        return;
+    }
+
+    const escenarioDenunciante = obtenerEscenarioDenunciantePayload();
+    const anioInicio = parseInt(document.getElementById('expAnio').value, 10);
+    const formData = new FormData();
+    formData.append('delegacion_id', String(delegacionId));
+    formData.append('numero_carpeta', numeroExpediente);
+    formData.append('anio_inicio', Number.isNaN(anioInicio) ? '' : String(anioInicio));
+    formData.append('fecha_presentacion_denuncia', fechaInicio);
+    formData.append('delito_id', String(delitoId));
+    formData.append('area_hechos_id', String(areaGeneradoraId));
+    formData.append('hechos_denunciante', hechosVictimaDenunciante);
+    formData.append('dato_relevante', datoRelevante);
+    formData.append('sin_cuantificar', sinCuantificar ? '1' : '0');
+    formData.append('cuantia_monto', sinCuantificar ? '' : cuantiaMonto);
+    formData.append('escenario_denunciante', escenarioDenunciante.escenario);
+    formData.append('coadyuvancia', escenarioDenunciante.coadyuvancia ? '1' : '0');
+    formData.append('denunciantes', JSON.stringify(denunciante));
+    formData.append('probables_responsables', JSON.stringify(probableResponsable));
+    formData.append('documento_inicial_observaciones', document.getElementById('observacionesArchivoInicialPenal')?.value.trim() || '');
+    formData.append('archivo_inicial', archivoInicial);
+
+    try {
+        await guardarCasoPenalApi(formData);
+        await window.appAlert({
+            title: 'Cambios guardados',
+            message: 'El registro se guardó correctamente.'
+        });
         window.location.href = 'penal.html';
-    } catch (err) {
-        console.error('Error al guardar:', err);
-        alert('Error al guardar el asunto: ' + err.message);
+    } catch (error) {
+        console.error('Error al guardar asunto penal:', error);
+        await window.appAlert({
+            title: 'No se pudo guardar el asunto',
+            message: error.message || 'Ocurrió un problema al guardar el asunto.'
+        });
     }
 }
+

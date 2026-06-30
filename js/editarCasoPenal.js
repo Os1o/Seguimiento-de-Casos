@@ -1,359 +1,614 @@
-// =====================================================
-// EDITAR CASO PENAL
-// =====================================================
+// Edicion del registro inicial penal sobre el modelo nuevo.
 
-let usuarioActual = null;
-let casoActual = null;
+const IMSS_NOMBRE = 'INSTITUTO MEXICANO DEL SEGURO SOCIAL';
+const MAX_ARCHIVO_PDF = 10 * 1024 * 1024;
 
-function verificarSesion() {
-    const usuarioStr = sessionStorage.getItem('usuario');
-    if (!usuarioStr) { window.location.href = 'login.html'; return null; }
-    return JSON.parse(usuarioStr);
-}
+let catalogosPenal = {
+    delegaciones: [],
+    delitos: [],
+    areas: []
+};
 
-function cerrarSesion() {
-    sessionStorage.removeItem('usuario');
-    window.location.href = 'login.html';
-}
+let casoPenalActual = null;
 
-document.addEventListener('DOMContentLoaded', async function () {
-    const usuario = verificarSesion();
-    if (!usuario) return;
-    usuarioActual = usuario;
+const $ = (selector) => document.querySelector(selector);
 
-    if (usuario.rol === 'consulta') {
-        window.location.href = 'penal.html';
+function mostrarMensaje(titulo, mensaje, tipo = 'info') {
+    if (typeof window.mostrarModalMensaje === 'function') {
+        window.mostrarModalMensaje(titulo, mensaje, tipo);
         return;
     }
 
-    document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
+    alert(`${titulo}\n\n${mensaje}`);
+}
 
+function mostrarError(mensaje) {
+    mostrarMensaje('No se pudo continuar', mensaje, 'error');
+}
+
+function mostrarExito(mensaje) {
+    mostrarMensaje('Cambios guardados', mensaje, 'success');
+}
+
+function obtenerIdCaso() {
     const params = new URLSearchParams(window.location.search);
-    const casoId = parseInt(params.get('id'));
-    if (!casoId) {
-        alert('No se especificó un asunto.');
-        window.location.href = 'penal.html';
-        return;
-    }
-
-    try {
-        const [, casoCargado] = await Promise.all([
-            cargarCatalogos(),
-            obtenerCasoPenal(casoId)
-        ]);
-        casoActual = casoCargado;
-    } catch (err) {
-        console.warn('No se pudieron cargar todos los datos desde Supabase, usando fallback:', err);
-        try { await cargarCatalogos(); } catch (e) { console.warn('Supabase no disponible'); }
-        try {
-            casoActual = await obtenerCasoPenal(casoId);
-        } catch (errorCaso) {
-            console.warn('No se pudo cargar desde Supabase, usando cache local:', errorCaso);
-            const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-            casoActual = casos.find(c => c.id === casoId);
-        }
-    }
-    if (!casoActual) {
-        alert('Asunto no encontrado.');
-        window.location.href = 'penal.html';
-        return;
-    }
-
-    document.getElementById('subtituloExpediente').textContent = `Expediente: ${casoActual.numero_expediente}`;
-
-    cargarDelegaciones();
-    cargarDelitos();
-    cargarEstadosProcesales();
-    cargarEstatusInvestigacion();
-    initRadioButtons();
-    initExpedienteCompuesto();
-    llenarFormulario();
-
-    document.getElementById('formEditarCaso').addEventListener('submit', function (e) {
-        e.preventDefault();
-        guardarCambios();
-    });
-});
-
-function cargarDelegaciones() {
-    const select = document.getElementById('delegacion');
-    const delegaciones = catalogosCargados ? catalogosDB.delegaciones : [];
-    delegaciones.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.textContent = d.nombre;
-        select.appendChild(opt);
-    });
-    if (usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
-        select.value = usuarioActual.delegacion_id;
-        select.disabled = true;
-    }
+    const id = Number.parseInt(params.get('id') || '', 10);
+    return Number.isFinite(id) && id > 0 ? id : null;
 }
 
-function cargarDelitos() {
-    const select = document.getElementById('delito');
-    let delitos;
+async function fetchJson(url, options = {}) {
+    const response = await fetch(url, {
+        credentials: 'same-origin',
+        ...options
+    });
 
-    if (catalogosCargados && catalogosDB.delitos.length > 0) {
-        delitos = catalogosDB.delitos;
-    } else {
-        delitos = [
-            { id: 1, nombre: 'ABUSO DE CONFIANZA' }, { id: 17, nombre: 'FRAUDE' },
-            { id: 22, nombre: 'LESIONES' }, { id: 27, nombre: 'ROBO' }
-        ];
+    const result = await response.json();
+
+    if (!response.ok || result.ok === false) {
+        throw new Error(result.message || 'La solicitud no pudo completarse');
     }
 
-    delitos.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.textContent = d.nombre;
-        select.appendChild(opt);
-    });
+    return result;
 }
 
-function cargarEstadosProcesales() {
-    const select = document.getElementById('estadoProcesal');
-    let estados;
-
-    if (catalogosCargados && catalogosDB.estadosProcesales.length > 0) {
-        estados = catalogosDB.estadosProcesales;
-    } else {
-        estados = [
-            { id: 1, nombre: 'Etapa de investigación' },
-            { id: 2, nombre: 'Etapa intermedia o etapa de preparación a juicio' },
-            { id: 3, nombre: 'Etapa de juicio oral' }
-        ];
-    }
-
-    estados.forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e.id;
-        opt.textContent = e.nombre;
-        select.appendChild(opt);
-    });
-}
-
-function cargarEstatusInvestigacion() {
-    const select = document.getElementById('estatusInvestigacionJSJ');
+function llenarSelect(select, items, placeholder = 'Seleccione...') {
     if (!select) return;
 
-    let estatus;
-    if (catalogosCargados && catalogosDB.estatusInvestigacion && catalogosDB.estatusInvestigacion.length > 0) {
-        estatus = catalogosDB.estatusInvestigacion;
-    } else {
-        estatus = [
-            { id: 1, nombre: 'ACUERDO REPARATORIO' },
-            { id: 2, nombre: 'EN TRÁMITE' },
-            { id: 3, nombre: 'CONCLUIDO' },
-            { id: 4, nombre: 'INCOMPETENCIA' },
-            { id: 5, nombre: 'NO EJERCICIO DE LA ACCIÓN PENAL' },
-            { id: 6, nombre: 'SE SEÑALA NUEVA FECHA PARA AUDIENCIA DE JUICIO ORAL' },
-            { id: 7, nombre: 'CAUSA PENAL' }
-        ];
+    select.innerHTML = `<option value="">${placeholder}</option>`;
+    items.forEach((item) => {
+        const option = document.createElement('option');
+        option.value = String(item.id);
+        option.textContent = item.nombre || item.nombre_completo || item.descripcion || '';
+        select.appendChild(option);
+    });
+}
+
+function obtenerNumeroCarpeta() {
+    const jurisdiccion = ($('#expJurisdiccion')?.value || '').trim().toUpperCase();
+    const entidad = ($('#expEntidad')?.value || '').trim().toUpperCase();
+    const ooad = ($('#expOoad')?.value || '').trim().toUpperCase();
+    const numero = ($('#expNumero')?.value || '').trim();
+    const anio = ($('#expAnio')?.value || '').trim();
+
+    if (!jurisdiccion || !entidad || !ooad || !numero || !anio) {
+        return '';
     }
 
-    estatus.forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e.nombre;
-        opt.textContent = e.nombre;
-        select.appendChild(opt);
-    });
-}
-
-function initRadioButtons() {
-    document.querySelectorAll('input[name="denuncianteTipo"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            document.getElementById('denuncianteFisicaCampos').style.display = this.value === 'FISICA' ? '' : 'none';
-            document.getElementById('denuncianteMoralCampos').style.display = this.value === 'MORAL' ? '' : 'none';
-        });
-    });
-    document.querySelectorAll('input[name="responsableTipo"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            document.getElementById('responsableFisicaCampos').style.display = this.value === 'FISICA' ? '' : 'none';
-            document.getElementById('responsableMoralCampos').style.display = this.value === 'MORAL' ? '' : 'none';
-        });
-    });
-}
-
-// =====================================================
-// EXPEDIENTE COMPUESTO: JURISDICCION/ENTIDAD/OOAD/NUM/AÑO
-// =====================================================
-
-function initExpedienteCompuesto() {
-    const campos = ['expJurisdiccion', 'expEntidad', 'expOoad', 'expNumero', 'expAnio'];
-    campos.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('input', actualizarPreviewExpediente);
-            el.addEventListener('change', actualizarPreviewExpediente);
-        }
-    });
+    return `${jurisdiccion}/${entidad}/${ooad}/${numero}/${anio}`;
 }
 
 function actualizarPreviewExpediente() {
-    const j = document.getElementById('expJurisdiccion').value;
-    const e = document.getElementById('expEntidad').value.toUpperCase();
-    const o = document.getElementById('expOoad').value.toUpperCase();
-    const n = document.getElementById('expNumero').value;
-    const a = document.getElementById('expAnio').value;
+    const preview = $('#previewExpediente');
+    if (!preview) return;
 
-    document.getElementById('expEntidad').value = e;
-    document.getElementById('expOoad').value = o;
+    preview.textContent = `Vista previa: ${obtenerNumeroCarpeta() || '---'}`;
+}
 
-    const partes = [j, e, o, n, a].filter(p => p);
-    const preview = document.getElementById('previewExpediente');
-    if (preview) {
-        preview.textContent = partes.length > 0 ? 'Vista previa: ' + partes.join('/') : 'Vista previa: ---';
+function descomponerNumeroCarpeta(numeroCarpeta) {
+    const partes = String(numeroCarpeta || '').split('/');
+    if (partes.length !== 5) return;
+
+    $('#expJurisdiccion').value = partes[0] || '';
+    $('#expEntidad').value = partes[1] || '';
+    $('#expOoad').value = partes[2] || '';
+    $('#expNumero').value = partes[3] || '';
+    $('#expAnio').value = partes[4] || '';
+    actualizarPreviewExpediente();
+}
+
+function normalizarTextoInput(event) {
+    const input = event.target;
+    input.value = input.value.toUpperCase();
+    actualizarPreviewExpediente();
+}
+
+function filtrarAreasPorDelegacion(areaSeleccionada = '') {
+    const delegacionId = Number.parseInt($('#delegacion')?.value || '', 10);
+    const areas = catalogosPenal.areas.filter((area) => Number(area.delegacion_id) === delegacionId);
+    llenarSelect($('#areaGeneradora'), areas);
+
+    if (areaSeleccionada) {
+        $('#areaGeneradora').value = String(areaSeleccionada);
     }
 }
 
-function obtenerNumeroExpediente() {
-    const j = document.getElementById('expJurisdiccion').value;
-    const e = document.getElementById('expEntidad').value.toUpperCase();
-    const o = document.getElementById('expOoad').value.toUpperCase();
-    const n = document.getElementById('expNumero').value;
-    const a = document.getElementById('expAnio').value;
+function syncCuantia() {
+    const sinCuantificar = $('#sinCuantificar')?.checked;
+    const monto = $('#cuantiaMonto');
+    if (!monto) return;
 
-    if (!j || !e || !o || !n || !a) return null;
-    return `${j}/${e}/${o}/${n}/${a}`;
-}
+    monto.disabled = Boolean(sinCuantificar);
+    monto.required = !sinCuantificar;
 
-function llenarFormulario() {
-    const caso = casoActual;
-
-    document.getElementById('delegacion').value = caso.delegacion_id;
-    document.getElementById('fechaInicio').value = caso.fecha_inicio || '';
-    document.getElementById('delito').value = caso.delito_id || '';
-    document.getElementById('estatusInvestigacionJSJ').value = caso.estatus_investigacion_jsj || '';
-    document.getElementById('fechaConocimientoAmp').value = caso.fecha_conocimiento_amp || '';
-    document.getElementById('estadoProcesal').value = caso.estado_procesal_id || '';
-    document.getElementById('accionesPendientes').value = caso.acciones_pendientes || '';
-    document.getElementById('fechaJudicializacion').value = caso.fecha_judicializacion || '';
-    document.getElementById('determinacionJudicial').value = caso.determinacion_judicial || '';
-    document.getElementById('sentencia').value = caso.sentencia || '';
-    document.getElementById('fechaSentencia').value = caso.fecha_sentencia || '';
-    document.getElementById('fechaConclusion').value = caso.fecha_conclusion || '';
-    document.getElementById('abogadoResponsable').value = caso.abogado_responsable || '';
-    document.getElementById('datoRelevante').value = caso.dato_relevante || '';
-
-    // Llenar expediente compuesto desde numero_expediente
-    if (caso.numero_expediente) {
-        const partes = caso.numero_expediente.split('/');
-        if (partes.length === 5) {
-            document.getElementById('expJurisdiccion').value = partes[0];
-            document.getElementById('expEntidad').value = partes[1];
-            document.getElementById('expOoad').value = partes[2];
-            document.getElementById('expNumero').value = partes[3];
-            document.getElementById('expAnio').value = partes[4];
-            actualizarPreviewExpediente();
-        }
-    }
-
-    // Denunciante
-    let denunciante = caso.denunciante;
-    if (typeof denunciante === 'string') { try { denunciante = JSON.parse(denunciante); } catch (e) { denunciante = null; } }
-    if (denunciante) {
-        if (denunciante.tipo_persona === 'FISICA') {
-            document.getElementById('denuncianteFisica').checked = true;
-            document.getElementById('denuncianteFisicaCampos').style.display = '';
-            document.getElementById('denuncianteNombres').value = denunciante.nombres || '';
-            document.getElementById('denunciantePaterno').value = denunciante.apellido_paterno || '';
-            document.getElementById('denuncianteMaterno').value = denunciante.apellido_materno || '';
-        } else if (denunciante.tipo_persona === 'MORAL') {
-            document.getElementById('denuncianteMoral').checked = true;
-            document.getElementById('denuncianteMoralCampos').style.display = '';
-            document.getElementById('denuncianteEmpresa').value = denunciante.empresa || '';
-        }
-    }
-
-    // Probable responsable
-    let responsable = caso.probable_responsable;
-    if (typeof responsable === 'string') { try { responsable = JSON.parse(responsable); } catch (e) { responsable = null; } }
-    if (responsable) {
-        if (responsable.tipo_persona === 'FISICA') {
-            document.getElementById('responsableFisica').checked = true;
-            document.getElementById('responsableFisicaCampos').style.display = '';
-            document.getElementById('responsableNombres').value = responsable.nombres || '';
-            document.getElementById('responsablePaterno').value = responsable.apellido_paterno || '';
-            document.getElementById('responsableMaterno').value = responsable.apellido_materno || '';
-        } else if (responsable.tipo_persona === 'MORAL') {
-            document.getElementById('responsableMoral').checked = true;
-            document.getElementById('responsableMoralCampos').style.display = '';
-            document.getElementById('responsableEmpresa').value = responsable.empresa || '';
-        }
+    if (sinCuantificar) {
+        monto.value = '';
     }
 }
 
-async function guardarCambios() {
-    const delegacionId = parseInt(document.getElementById('delegacion').value);
-    const numeroExpediente = obtenerNumeroExpediente();
-    const fechaInicio = document.getElementById('fechaInicio').value;
-    const delitoId = parseInt(document.getElementById('delito').value);
-    const estadoProcesalId = parseInt(document.getElementById('estadoProcesal').value);
+function aplicarFormatoMoneda(event) {
+    const input = event.target;
+    const limpio = input.value.replace(/[^\d.]/g, '');
+    const partes = limpio.split('.');
+    const entero = partes.shift() || '';
+    const decimal = partes.length > 0 ? `.${partes.join('').slice(0, 2)}` : '';
+    input.value = entero + decimal;
+}
 
-    if (!delegacionId || !numeroExpediente || !fechaInicio || !delitoId || !estadoProcesalId) {
-        alert('Por favor completa todos los campos requeridos.');
+function crearCampoPersona({ tipo, valor = '' }) {
+    const esProbable = tipo === 'probable';
+    const contenedor = esProbable
+        ? $('#listaProbablesResponsables')
+        : tipo === 'relacionado'
+            ? $('#listaDenuncianteRelacionados')
+            : $('#listaDenunciantesPrincipales');
+
+    if (!contenedor) return null;
+
+    const card = document.createElement('div');
+    card.className = 'penal-person-card';
+    card.dataset.personaTipo = tipo;
+
+    const titulo = esProbable
+        ? 'Probable responsable'
+        : tipo === 'relacionado'
+            ? 'Persona relacionada'
+            : 'Denunciante principal';
+
+    card.innerHTML = `
+        <div class="penal-person-card-head">
+            <h4></h4>
+            <button type="button" class="btn btn-danger btn-sm" data-persona-remove>Eliminar</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label required">${esProbable ? 'Nombre del probable responsable' : 'Nombre'}</label>
+            <input type="text" class="form-input" data-persona-nombre maxlength="150" placeholder="Nombre de la persona, empresa o institucion" required>
+        </div>
+    `;
+
+    card.querySelector('[data-persona-nombre]').value = valor || '';
+    card.querySelector('[data-persona-remove]').addEventListener('click', () => eliminarCampoPersona(tipo, card));
+    contenedor.appendChild(card);
+
+    renumerarPersonas(tipo);
+    return card;
+}
+
+function renumerarPersonas(tipo) {
+    const selector = tipo === 'probable'
+        ? '#listaProbablesResponsables .penal-person-card'
+        : tipo === 'relacionado'
+            ? '#listaDenuncianteRelacionados .penal-person-card'
+            : '#listaDenunciantesPrincipales .penal-person-card';
+
+    document.querySelectorAll(selector).forEach((card, index) => {
+        const titulo = card.querySelector('h4');
+        const boton = card.querySelector('[data-persona-remove]');
+        const base = tipo === 'probable'
+            ? 'Probable responsable'
+            : tipo === 'relacionado'
+                ? 'Persona relacionada'
+                : 'Denunciante principal';
+
+        titulo.textContent = `${base} ${index + 1}`;
+
+        if (boton) {
+            boton.textContent = index === 0 ? 'Limpiar' : 'Eliminar';
+        }
+    });
+}
+
+function eliminarCampoPersona(tipo, card) {
+    const selector = tipo === 'probable'
+        ? '#listaProbablesResponsables .penal-person-card'
+        : tipo === 'relacionado'
+            ? '#listaDenuncianteRelacionados .penal-person-card'
+            : '#listaDenunciantesPrincipales .penal-person-card';
+
+    const cards = Array.from(document.querySelectorAll(selector));
+    if (cards.length <= 1) {
+        const input = card.querySelector('[data-persona-nombre]');
+        if (input) input.value = '';
         return;
     }
 
-    // Denunciante
-    const denuncianteTipo = document.querySelector('input[name="denuncianteTipo"]:checked')?.value;
-    let denunciante = null;
-    if (denuncianteTipo === 'FISICA') {
-        denunciante = {
-            tipo_persona: 'FISICA',
-            nombres: document.getElementById('denuncianteNombres').value.trim(),
-            apellido_paterno: document.getElementById('denunciantePaterno').value.trim(),
-            apellido_materno: document.getElementById('denuncianteMaterno').value.trim()
-        };
-    } else if (denuncianteTipo === 'MORAL') {
-        denunciante = { tipo_persona: 'MORAL', empresa: document.getElementById('denuncianteEmpresa').value.trim() };
+    card.remove();
+    renumerarPersonas(tipo);
+}
+
+function limpiarLista(selector) {
+    const contenedor = $(selector);
+    if (contenedor) contenedor.innerHTML = '';
+}
+
+function modoDenuncianteSeleccionado() {
+    return document.querySelector('input[name="denuncianteModo"]:checked')?.value || 'IMSS';
+}
+
+function syncModoDenunciante() {
+    const modo = modoDenuncianteSeleccionado();
+    const relacionadosWrap = $('#denuncianteRelacionadosWrap');
+    const principalesWrap = $('#denunciantePrincipalesWrap');
+    const imssPill = $('#denuncianteImssPill');
+    const escenarioPill = $('#denuncianteEscenarioPill');
+
+    if (modo === 'IMSS') {
+        relacionadosWrap.hidden = false;
+        principalesWrap.hidden = true;
+        imssPill.textContent = 'IMSS precargado';
+        imssPill.classList.remove('is-muted');
+        escenarioPill.textContent = 'Puede agregar personas relacionadas de forma opcional.';
+
+        if (!$('#listaDenuncianteRelacionados .penal-person-card')) {
+            crearCampoPersona({ tipo: 'relacionado' });
+        }
+        return;
     }
 
-    // Responsable
-    const responsableTipo = document.querySelector('input[name="responsableTipo"]:checked')?.value;
-    let probableResponsable = null;
-    if (responsableTipo === 'FISICA') {
-        probableResponsable = {
-            tipo_persona: 'FISICA',
-            nombres: document.getElementById('responsableNombres').value.trim(),
-            apellido_paterno: document.getElementById('responsablePaterno').value.trim(),
-            apellido_materno: document.getElementById('responsableMaterno').value.trim()
-        };
-    } else if (responsableTipo === 'MORAL') {
-        probableResponsable = { tipo_persona: 'MORAL', empresa: document.getElementById('responsableEmpresa').value.trim() };
+    relacionadosWrap.hidden = true;
+    principalesWrap.hidden = false;
+
+    if (modo === 'IMSS_OTRO') {
+        imssPill.textContent = 'IMSS como coadyuvante';
+        imssPill.classList.remove('is-muted');
+        escenarioPill.textContent = 'Capture de 1 a N denunciantes principales. El IMSS quedara solo como coadyuvante.';
+    } else {
+        imssPill.textContent = 'IMSS no participa';
+        imssPill.classList.add('is-muted');
+        escenarioPill.textContent = 'Capture de 1 a N denunciantes principales. El IMSS no figurara en este escenario.';
     }
 
-    // Actualizar caso
-    const casoActualizado = {
-        ...casoActual,
-        delegacion_id: delegacionId,
-        numero_expediente: numeroExpediente,
-        fecha_inicio: fechaInicio,
-        delito_id: delitoId,
-        denunciante: denunciante,
-        probable_responsable: probableResponsable,
-        estatus_investigacion_jsj: document.getElementById('estatusInvestigacionJSJ').value || null,
-        fecha_conocimiento_amp: document.getElementById('fechaConocimientoAmp').value || null,
-        estado_procesal_id: estadoProcesalId,
-        acciones_pendientes: document.getElementById('accionesPendientes').value.trim() || null,
-        fecha_judicializacion: document.getElementById('fechaJudicializacion').value || null,
-        determinacion_judicial: document.getElementById('determinacionJudicial').value.trim() || null,
-        sentencia: document.getElementById('sentencia').value || null,
-        fecha_sentencia: document.getElementById('fechaSentencia').value || null,
-        fecha_conclusion: document.getElementById('fechaConclusion').value || null,
-        dato_relevante: document.getElementById('datoRelevante').value.trim() || null,
-        abogado_responsable: document.getElementById('abogadoResponsable').value.trim() || null,
-        estatus: document.getElementById('fechaConclusion').value ? 'CONCLUIDO' : casoActual.estatus
-    };
-
-    try {
-        const casoGuardado = await guardarCasoPenal(casoActualizado);
-        upsertCacheCasoPenal({ ...casoActualizado, ...casoGuardado });
-        alert('Cambios guardados correctamente.');
-        window.location.href = `detalleCasoPenal.html?id=${casoActual.id}`;
-    } catch (err) {
-        console.error('Error al guardar:', err);
-        alert('Error al guardar los cambios: ' + err.message);
+    if (!$('#listaDenunciantesPrincipales .penal-person-card')) {
+        crearCampoPersona({ tipo: 'principal' });
     }
 }
+
+function syncQrr() {
+    const qrr = $('#responsableQrr')?.checked;
+    const wrap = $('#probablesResponsablesWrap');
+    if (!wrap) return;
+
+    wrap.hidden = Boolean(qrr);
+
+    if (!qrr && !$('#listaProbablesResponsables .penal-person-card')) {
+        crearCampoPersona({ tipo: 'probable' });
+    }
+}
+
+function obtenerValoresPersonas(selector) {
+    return Array.from(document.querySelectorAll(selector))
+        .map((input) => input.value.trim().toUpperCase())
+        .filter(Boolean);
+}
+
+function construirDenunciantesPayload() {
+    const modo = modoDenuncianteSeleccionado();
+    const denunciantes = [];
+
+    if (modo === 'IMSS') {
+        denunciantes.push({
+            nombre: IMSS_NOMBRE,
+            es_imss: true,
+            es_coadyuvante: false,
+            rol: 'PRINCIPAL'
+        });
+
+        obtenerValoresPersonas('#listaDenuncianteRelacionados [data-persona-nombre]').forEach((nombre) => {
+            denunciantes.push({
+                nombre,
+                es_imss: false,
+                es_coadyuvante: false,
+                rol: 'RELACIONADO'
+            });
+        });
+    }
+
+    if (modo === 'IMSS_OTRO' || modo === 'OTRO') {
+        const principales = obtenerValoresPersonas('#listaDenunciantesPrincipales [data-persona-nombre]');
+        if (principales.length === 0) {
+            throw new Error('Capture al menos un denunciante principal.');
+        }
+
+        principales.forEach((nombre) => {
+            denunciantes.push({
+                nombre,
+                es_imss: false,
+                es_coadyuvante: false,
+                rol: 'PRINCIPAL'
+            });
+        });
+
+        if (modo === 'IMSS_OTRO') {
+            denunciantes.push({
+                nombre: IMSS_NOMBRE,
+                es_imss: true,
+                es_coadyuvante: true,
+                rol: 'COADYUVANTE'
+            });
+        }
+    }
+
+    return denunciantes;
+}
+
+function construirProbablesPayload() {
+    if ($('#responsableQrr')?.checked) {
+        return [{
+            nombre: 'QUIEN RESULTE RESPONSABLE',
+            qrr: true
+        }];
+    }
+
+    const nombres = obtenerValoresPersonas('#listaProbablesResponsables [data-persona-nombre]');
+    if (nombres.length === 0) {
+        throw new Error('Capture al menos un probable responsable o marque Quien Resulte Responsable.');
+    }
+
+    return nombres.map((nombre) => ({ nombre, qrr: false }));
+}
+
+function escenarioBackend() {
+    const modo = modoDenuncianteSeleccionado();
+    if (modo === 'IMSS_OTRO') return 'COADYUVANCIA';
+    if (modo === 'OTRO') return 'DISTINTO_IMSS';
+    return 'IMSS';
+}
+
+function validarArchivoInicial() {
+    const archivo = $('#archivoInicialPenal')?.files?.[0] || null;
+    if (!archivo) return null;
+
+    const nombre = archivo.name.toLowerCase();
+    if (!nombre.endsWith('.pdf')) {
+        throw new Error('El documento inicial debe ser PDF.');
+    }
+
+    if (archivo.type && archivo.type !== 'application/pdf') {
+        throw new Error('El documento inicial debe ser PDF.');
+    }
+
+    if (archivo.size <= 0 || archivo.size > MAX_ARCHIVO_PDF) {
+        throw new Error('El documento inicial no debe superar 10 MB.');
+    }
+
+    return archivo;
+}
+
+async function cargarCatalogos() {
+    const result = await fetchJson('api/penal/getNewCaseCatalogs.php');
+    const data = result.data || {};
+
+    catalogosPenal = {
+        delegaciones: data.delegaciones || [],
+        delitos: data.delitos || [],
+        areas: data.areas || []
+    };
+
+    llenarSelect($('#delegacion'), catalogosPenal.delegaciones);
+    llenarSelect($('#delito'), catalogosPenal.delitos);
+    llenarSelect($('#areaGeneradora'), []);
+}
+
+async function cargarCaso(id) {
+    const result = await fetchJson(`api/penal/getCase.php?id=${encodeURIComponent(id)}`);
+    return result.data?.case || result.data || null;
+}
+
+function poblarDenunciantes(caso) {
+    limpiarLista('#listaDenuncianteRelacionados');
+    limpiarLista('#listaDenunciantesPrincipales');
+
+    const denunciantes = Array.isArray(caso.denunciantes) ? caso.denunciantes : [];
+    const escenario = caso.escenario_denunciante || (caso.coadyuvancia ? 'COADYUVANCIA' : 'IMSS');
+    const modo = escenario === 'COADYUVANCIA'
+        ? 'IMSS_OTRO'
+        : escenario === 'DISTINTO_IMSS'
+            ? 'OTRO'
+            : 'IMSS';
+
+    const radio = document.querySelector(`input[name="denuncianteModo"][value="${modo}"]`);
+    if (radio) radio.checked = true;
+
+    syncModoDenunciante();
+
+    if (modo === 'IMSS') {
+        limpiarLista('#listaDenuncianteRelacionados');
+        const relacionados = denunciantes.filter((item) => !item.es_imss);
+        if (relacionados.length === 0) {
+            crearCampoPersona({ tipo: 'relacionado' });
+        } else {
+            relacionados.forEach((item) => crearCampoPersona({ tipo: 'relacionado', valor: item.nombre }));
+        }
+        return;
+    }
+
+    limpiarLista('#listaDenunciantesPrincipales');
+    const principales = denunciantes.filter((item) => !item.es_imss && (item.es_principal || item.rol === 'PRINCIPAL'));
+    if (principales.length === 0) {
+        crearCampoPersona({ tipo: 'principal' });
+    } else {
+        principales.forEach((item) => crearCampoPersona({ tipo: 'principal', valor: item.nombre }));
+    }
+}
+
+function poblarProbables(caso) {
+    limpiarLista('#listaProbablesResponsables');
+
+    const probables = Array.isArray(caso.probables_responsables) ? caso.probables_responsables : [];
+    const esQrr = probables.some((item) => item.es_qrr || item.qrr);
+
+    $('#responsableQrr').checked = esQrr;
+    syncQrr();
+
+    if (esQrr) return;
+
+    limpiarLista('#listaProbablesResponsables');
+    if (probables.length === 0) {
+        crearCampoPersona({ tipo: 'probable' });
+    } else {
+        probables.forEach((item) => crearCampoPersona({ tipo: 'probable', valor: item.nombre }));
+    }
+}
+
+function poblarCaso(caso) {
+    casoPenalActual = caso;
+    const id = caso.id;
+
+    const detalleUrl = `detalleCasoPenal.html?id=${encodeURIComponent(id)}`;
+    $('#breadcrumbDetallePenal').href = detalleUrl;
+    $('#btnCancelarEditarPenal').href = detalleUrl;
+    document.querySelector('.app-header')?.setAttribute('data-back-href', detalleUrl);
+
+    $('#delegacion').value = caso.delegacion_id || '';
+    filtrarAreasPorDelegacion(caso.area_hechos_id || '');
+
+    $('#fechaInicio').value = caso.fecha_presentacion_denuncia || caso.fecha_inicio || '';
+    $('#delito').value = caso.delito_id || '';
+    descomponerNumeroCarpeta(caso.numero_carpeta || caso.numero_expediente || '');
+
+    $('#hechosVictimaDenunciante').value = caso.hechos_denunciante || '';
+    $('#datoRelevante').value = caso.dato_relevante || '';
+    $('#documentoInicialObservaciones').value = caso.documento_inicial_observaciones || '';
+
+    $('#sinCuantificar').checked = Boolean(caso.sin_cuantificar);
+    $('#cuantiaMonto').value = caso.cuantia_monto !== null && caso.cuantia_monto !== undefined ? String(caso.cuantia_monto) : '';
+    syncCuantia();
+
+    poblarDenunciantes(caso);
+    poblarProbables(caso);
+}
+
+function validarFormularioBase() {
+    const numero = obtenerNumeroCarpeta();
+    if (!numero) {
+        throw new Error('Capture el numero de carpeta completo.');
+    }
+
+    if (!/^(FED|LOC)\/[A-Z]{3,4}\/[A-Z]{3,4}\/\d{7}\/\d{4}$/.test(numero)) {
+        throw new Error('El numero de carpeta no cumple el formato requerido.');
+    }
+
+    const hechos = $('#hechosVictimaDenunciante').value.trim();
+    if (!hechos) {
+        throw new Error('Capture los hechos con datos de la victima / denunciante.');
+    }
+
+    if (hechos.length > 1000) {
+        throw new Error('Los hechos no pueden superar 1000 caracteres.');
+    }
+
+    const datoRelevante = $('#datoRelevante').value.trim();
+    if (datoRelevante.length > 500) {
+        throw new Error('El dato relevante no puede superar 500 caracteres.');
+    }
+
+    if (!$('#sinCuantificar').checked && !$('#cuantiaMonto').value.trim()) {
+        throw new Error('Capture la cuantia o marque Sin cuantificar.');
+    }
+
+    validarArchivoInicial();
+}
+
+async function guardarCaso(event) {
+    event.preventDefault();
+
+    try {
+        validarFormularioBase();
+
+        const id = obtenerIdCaso();
+        const numeroCarpeta = obtenerNumeroCarpeta();
+        const denunciantes = construirDenunciantesPayload();
+        const probables = construirProbablesPayload();
+        const archivo = validarArchivoInicial();
+
+        const formData = new FormData();
+        formData.append('id', String(id));
+        formData.append('delegacion_id', $('#delegacion').value);
+        formData.append('numero_carpeta', numeroCarpeta);
+        formData.append('anio_inicio', $('#expAnio').value);
+        formData.append('fecha_presentacion_denuncia', $('#fechaInicio').value);
+        formData.append('delito_id', $('#delito').value);
+        formData.append('area_hechos_id', $('#areaGeneradora').value);
+        formData.append('hechos_denunciante', $('#hechosVictimaDenunciante').value.trim());
+        formData.append('dato_relevante', $('#datoRelevante').value.trim());
+        formData.append('sin_cuantificar', $('#sinCuantificar').checked ? '1' : '0');
+        formData.append('cuantia_monto', $('#sinCuantificar').checked ? '' : $('#cuantiaMonto').value.trim());
+        formData.append('escenario_denunciante', escenarioBackend());
+        formData.append('coadyuvancia', modoDenuncianteSeleccionado() === 'IMSS_OTRO' ? '1' : '0');
+        formData.append('denunciantes', JSON.stringify(denunciantes));
+        formData.append('probables_responsables', JSON.stringify(probables));
+        formData.append('documento_inicial_observaciones', $('#documentoInicialObservaciones').value.trim());
+
+        if (archivo) {
+            formData.append('archivo_inicial', archivo);
+        }
+
+        await fetchJson('api/penal/updateCase.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        mostrarExito('El asunto penal se actualizo correctamente.');
+
+        setTimeout(() => {
+            window.location.href = `detalleCasoPenal.html?id=${encodeURIComponent(id)}`;
+        }, 500);
+    } catch (error) {
+        console.error('Error al actualizar asunto penal:', error);
+        mostrarError(error.message || 'No se pudo guardar el asunto penal.');
+    }
+}
+
+function registrarEventos() {
+    $('#formEditarCaso')?.addEventListener('submit', guardarCaso);
+    $('#delegacion')?.addEventListener('change', () => filtrarAreasPorDelegacion());
+    $('#sinCuantificar')?.addEventListener('change', syncCuantia);
+    $('#cuantiaMonto')?.addEventListener('input', aplicarFormatoMoneda);
+
+    ['#expEntidad', '#expOoad'].forEach((selector) => {
+        $(selector)?.addEventListener('input', normalizarTextoInput);
+    });
+
+    ['#expJurisdiccion', '#expNumero', '#expAnio'].forEach((selector) => {
+        $(selector)?.addEventListener('input', actualizarPreviewExpediente);
+        $(selector)?.addEventListener('change', actualizarPreviewExpediente);
+    });
+
+    document.querySelectorAll('input[name="denuncianteModo"]').forEach((radio) => {
+        radio.addEventListener('change', syncModoDenunciante);
+    });
+
+    $('#btnAgregarDenuncianteRelacionado')?.addEventListener('click', () => crearCampoPersona({ tipo: 'relacionado' }));
+    $('#btnAgregarDenunciantePrincipal')?.addEventListener('click', () => crearCampoPersona({ tipo: 'principal' }));
+    $('#btnAgregarProbableResponsable')?.addEventListener('click', () => crearCampoPersona({ tipo: 'probable' }));
+    $('#responsableQrr')?.addEventListener('change', syncQrr);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const id = obtenerIdCaso();
+    if (!id) {
+        mostrarError('No se recibio el identificador del asunto penal.');
+        return;
+    }
+
+    registrarEventos();
+    crearCampoPersona({ tipo: 'relacionado' });
+    crearCampoPersona({ tipo: 'principal' });
+    crearCampoPersona({ tipo: 'probable' });
+    syncModoDenunciante();
+    syncQrr();
+    syncCuantia();
+
+    try {
+        await cargarCatalogos();
+        const caso = await cargarCaso(id);
+
+        if (!caso) {
+            throw new Error('Caso penal no encontrado.');
+        }
+
+        poblarCaso(caso);
+    } catch (error) {
+        console.error('No se pudo cargar la edicion penal:', error);
+        mostrarError(error.message || 'No se pudo cargar el asunto penal.');
+    }
+});

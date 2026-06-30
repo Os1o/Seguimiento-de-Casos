@@ -7,154 +7,471 @@ let casoActual = null;
 let historialExpandido = false;
 const MAX_ACTUACIONES_VISIBLES = 5;
 
-function verificarSesion() {
-    const usuarioStr = sessionStorage.getItem('usuario');
-    if (!usuarioStr) { window.location.href = 'login.html'; return null; }
-    return JSON.parse(usuarioStr);
+let catalogos = {
+    delegaciones: [],
+    delitos: [],
+    estadosProcesales: []
+};
+
+function getEl(id) {
+    return document.getElementById(id);
 }
 
-function cerrarSesion() {
-    sessionStorage.removeItem('usuario');
+function setText(id, value, fallback = '---') {
+    const el = getEl(id);
+    if (!el) return;
+    el.textContent = value === null || value === undefined || value === '' ? fallback : value;
+}
+
+function setHTML(id, html) {
+    const el = getEl(id);
+    if (!el) return;
+    el.innerHTML = html;
+}
+
+async function verificarSesion() {
+    const usuarioStr = sessionStorage.getItem('usuario');
+    if (usuarioStr) {
+        return JSON.parse(usuarioStr);
+    }
+
+    try {
+        const response = await fetch('api/session.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.ok) {
+            const user = result.data?.user || {};
+            const usuario = {
+                id: user.id ?? null,
+                usuario: user.usuario ?? '',
+                nombre_completo: user.nombreCompleto ?? '',
+                rol: user.rol ?? '',
+                delegacion_id: user.delegacionId ?? null,
+                permiso_civil_mercantil: Boolean(user.permisoCivilMercantil),
+                permiso_penal: Boolean(user.permisoPenal),
+                session_token: user.sessionToken ?? ''
+            };
+
+            sessionStorage.setItem('usuario', JSON.stringify(usuario));
+            return usuario;
+        }
+    } catch (error) {
+        console.error('No se pudo recuperar la sesión desde la API:', error);
+    }
+
     window.location.href = 'login.html';
+    return null;
+}
+
+async function cerrarSesion() {
+    try {
+        await fetch('api/logout.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+    } finally {
+        sessionStorage.removeItem('usuario');
+        window.location.href = 'login.html';
+    }
+}
+
+window.cerrarSesion = cerrarSesion;
+
+async function cargarCatalogosPenalDetalle() {
+    const response = await fetch('api/getCatalogs.php', {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar los catálogos');
+    }
+
+    const data = result.data || {};
+
+    catalogos = {
+        delegaciones: data.delegaciones || [],
+        delitos: data.delitos || [],
+        estadosProcesales: data.estadosProcesales || []
+    };
+}
+
+async function obtenerCasoPenalDetalle(id) {
+    const response = await fetch(`api/getPenalCase.php?id=${encodeURIComponent(id)}`, {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudo cargar el asunto penal');
+    }
+
+    return result.data?.case || null;
+}
+
+async function obtenerDocumentosPenalApi(expedienteId) {
+    const response = await fetch(`api/getPenalDocuments.php?expediente_id=${encodeURIComponent(expedienteId)}`, {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar los documentos');
+    }
+
+    return result.data?.documentos || [];
+}
+
+async function eliminarCasoPenalApi(id) {
+    const response = await fetch('api/deletePenalCase.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ id })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudo eliminar el asunto penal');
+    }
+
+    return result.data || {};
+}
+
+async function eliminarSeguimientoPenalApi(id) {
+    const response = await fetch('api/deletePenalTracking.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ id })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudo eliminar la actuación penal');
+    }
+
+    return result.data || {};
+}
+
+function formatearTamanoArchivo(bytes) {
+    if (!bytes || Number.isNaN(Number(bytes))) return '0 KB';
+    const size = Number(bytes);
+    if (size >= 1024 * 1024) {
+        return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    return `${Math.max(1, Math.round(size / 1024))} KB`;
+}
+
+function formatearFecha(valor) {
+    if (!valor) return '---';
+    const fecha = new Date(valor);
+    if (Number.isNaN(fecha.getTime())) return String(valor);
+    return fecha.toLocaleDateString('es-MX');
+}
+
+function formatearCuantia(valor, sinCuantificar) {
+    if (sinCuantificar) return 'Sin cuantificar';
+    if (valor === null || valor === undefined || valor === '') return '---';
+    const numero = Number(valor);
+    if (Number.isNaN(numero)) return String(valor);
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN',
+        maximumFractionDigits: 2
+    }).format(numero);
+}
+
+function obtenerListaNormalizada(valor) {
+    if (!valor) return [];
+    if (Array.isArray(valor)) return valor;
+
+    if (typeof valor === 'string') {
+        try {
+            const parseado = JSON.parse(valor);
+            return Array.isArray(parseado) ? parseado : [];
+        } catch (error) {
+            return valor.trim() ? [valor.trim()] : [];
+        }
+    }
+
+    return [];
+}
+
+function obtenerDelegacion(id) {
+    if (!id) return null;
+    return (catalogos.delegaciones || []).find(item => item.id == id) || null;
+}
+
+function obtenerNombreDelitoLocal(id) {
+    if (!id) return '';
+    const delito = (catalogos.delitos || []).find(item => item.id == id);
+    return delito?.nombre || '';
+}
+
+function getPersonaNombreLocal(persona) {
+    if (!persona) return '---';
+
+    if (typeof persona === 'string') {
+        try {
+            return getPersonaNombreLocal(JSON.parse(persona));
+        } catch (error) {
+            return persona.trim() || '---';
+        }
+    }
+
+    if (persona.tipo_persona === 'FISICA') {
+        return `${persona.nombres || ''} ${persona.apellido_paterno || ''} ${persona.apellido_materno || ''}`.trim() || '---';
+    }
+
+    if (persona.tipo_persona === 'MORAL') {
+        return persona.empresa || '---';
+    }
+
+    if (persona.nombre) return persona.nombre;
+    if (persona.texto) return persona.texto;
+
+    return '---';
+}
+
+function renderizarDenunciantesDetalle(caso) {
+    const contenedor = getEl('denunciantesLista');
+    if (!contenedor) return;
+
+    const denunciantes = obtenerListaNormalizada(caso.denunciantes);
+
+    if (denunciantes.length > 0) {
+        contenedor.innerHTML = denunciantes.map((item) => `
+            <div class="documento-item">
+                <span class="material-symbols-outlined">person</span>
+                <span>${item?.nombre || item?.texto || item || '---'}</span>
+            </div>
+        `).join('');
+        return;
+    }
+
+    const legacy = getPersonaNombreLocal(caso.denunciante);
+    contenedor.innerHTML = legacy && legacy !== '---'
+        ? `<div class="documento-item"><span class="material-symbols-outlined">person</span><span>${legacy}</span></div>`
+        : '<div class="empty-text">Sin denunciantes registrados.</div>';
+}
+
+function obtenerProbablesResponsablesDetalle(caso) {
+    const responsables = obtenerListaNormalizada(caso.probables_responsables);
+    if (responsables.length > 0) {
+        return responsables.map((item) => item?.nombre || item?.texto || item || '---').join(', ');
+    }
+
+    return getPersonaNombreLocal(caso.probable_responsable);
+}
+
+function construirResumenRequerimientos(caso) {
+    const total = Number(caso.total_requerimientos || 0);
+    const seguimiento = Number(caso.requerimientos_seguimiento || 0);
+    const contestacion = Number(caso.requerimientos_contestacion || 0);
+
+    if (total <= 0) {
+        return 'La carpeta no cuenta con requerimientos ministeriales registrados.';
+    }
+
+    return `La carpeta cuenta con ${total} requerimiento(s) ministerial(es), ${seguimiento} en seguimiento interno y ${contestacion} en contestación final.`;
+}
+
+function agruparDocumentosPorSeguimiento(documentos) {
+    return (documentos || []).reduce((acc, documento) => {
+        const seguimientoId = documento.seguimiento_id || 0;
+        if (!acc[seguimientoId]) {
+            acc[seguimientoId] = [];
+        }
+        acc[seguimientoId].push(documento);
+        return acc;
+    }, {});
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
-    const usuario = verificarSesion();
+    const usuario = await verificarSesion();
     if (!usuario) return;
+
     usuarioActual = usuario;
+    window.mostrarCargaVista?.('.container');
 
-    document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
+    setText('nombreUsuario', usuario.nombre_completo);
 
-    // Obtener ID del caso
+    const badgeRol = getEl('badgeRol');
+    if (badgeRol) {
+        const rolesTexto = { admin: 'Admin', editor: 'Editor', consulta: 'Consulta' };
+        badgeRol.textContent = rolesTexto[usuario.rol] || usuario.rol;
+        badgeRol.className = 'badge-rol badge-rol-' + usuario.rol;
+    }
+
+    const infoOOAD = getEl('infoOOAD');
+    if (infoOOAD) {
+        infoOOAD.textContent = 'Todas las JSJ';
+    }
+
+    const linkAdmin = getEl('linkAdmin');
+    if (linkAdmin && usuario.rol === 'admin') {
+        linkAdmin.style.display = '';
+    }
+
     const params = new URLSearchParams(window.location.search);
-    const casoId = parseInt(params.get('id'));
+    const casoId = parseInt(params.get('id'), 10);
+
     if (!casoId) {
-        alert('No se especificó un asunto.');
+        await window.appAlert?.({
+            title: 'Asunto no disponible',
+            message: 'No se especificó un asunto.'
+        });
         window.location.href = 'penal.html';
         return;
     }
 
     try {
-        const [, casoCargado] = await Promise.all([
-            cargarCatalogos(),
-            obtenerCasoPenal(casoId)
-        ]);
-        casoActual = casoCargado;
-    } catch (err) {
-        console.warn('No se pudieron cargar todos los datos desde Supabase, usando fallback:', err);
-        try { await cargarCatalogos(); } catch (e) { console.warn('Supabase no disponible'); }
-        try {
-            casoActual = await obtenerCasoPenal(casoId);
-        } catch (errorCaso) {
-            console.warn('No se pudo cargar desde Supabase, usando cache local:', errorCaso);
-            const casos = JSON.parse(localStorage.getItem('casosPenal') || '[]');
-            casoActual = casos.find(c => c.id === casoId);
+        await cargarCatalogosPenalDetalle();
+        casoActual = await obtenerCasoPenalDetalle(casoId);
+
+        if (!casoActual) {
+            await window.appAlert?.({
+                title: 'Asunto no encontrado',
+                message: 'No se encontró el asunto solicitado.'
+            });
+            window.location.href = 'penal.html';
+            return;
+        }
+
+        const btnRegistroAmp = getEl('btnRegistroAmp');
+        const btnActualizar = getEl('btnActualizar');
+        const btnEliminar = getEl('btnEliminar');
+
+        if (usuarioActual.rol === 'consulta') {
+            if (btnRegistroAmp) btnRegistroAmp.style.display = 'none';
+            if (btnActualizar) btnActualizar.style.display = 'none';
+            if (btnEliminar) btnEliminar.style.display = 'none';
+        } else if (usuarioActual.rol !== 'admin') {
+            if (btnEliminar) btnEliminar.style.display = 'none';
+        }
+
+        await renderizarDetalle();
+    } catch (error) {
+        console.error('No se pudo cargar el detalle penal:', error);
+        await window.appAlert?.({
+            title: 'No se pudo cargar el asunto',
+            message: error.message || 'Ocurrió un problema al cargar el asunto penal.'
+        });
+        window.location.href = 'penal.html';
+    } finally {
+        await window.ocultarCargaVista?.('.container');
+    }
+});
+
+async function renderizarDetalle() {
+    const caso = casoActual;
+    const numeroCarpeta = caso.numero_expediente || caso.numero_carpeta || '---';
+    const delegacion = obtenerDelegacion(caso.delegacion_id);
+    const linkRequerimientos = getEl('btnVerRequerimientosPenal');
+    const btnRequerimientos = getEl('btnRequerimientos');
+    const btnRegistroAmp = getEl('btnRegistroAmp');
+    const btnActualizar = getEl('btnActualizar');
+
+    setText('breadcrumbExpediente', numeroCarpeta);
+    setText('numeroExpediente', numeroCarpeta);
+    setText('numeroExpedienteDetalle', numeroCarpeta);
+    setText('fechaCreacion', formatearFecha(caso.fecha_creacion || caso.fecha_inicio));
+
+    if (caso.fecha_actualizacion) {
+        const fechaActualizacionInfo = getEl('fechaActualizacionInfo');
+        if (fechaActualizacionInfo) fechaActualizacionInfo.style.display = '';
+        setText('fechaActualizacion', formatearFecha(caso.fecha_actualizacion));
+    }
+
+    const badgeEstatus = getEl('badgeEstatus');
+    if (badgeEstatus) {
+        if (caso.estatus === 'TRAMITE') {
+            badgeEstatus.textContent = 'En trámite';
+            badgeEstatus.className = 'badge-estatus badge-warning';
+        } else {
+            badgeEstatus.textContent = 'Concluido';
+            badgeEstatus.className = 'badge-estatus badge-success';
         }
     }
 
-    if (!casoActual) {
-        alert('Asunto no encontrado.');
-        window.location.href = 'penal.html';
-        return;
+    if (caso.id) {
+        const hrefRequerimientos = `listadoRequerimientosPenal.html?id=${encodeURIComponent(caso.id)}`;
+        const hrefRegistroAmp = `actualizarCasoPenal.html?id=${encodeURIComponent(caso.id)}`;
+        const hrefActuacion = `registroActuacionPenal.html?id=${encodeURIComponent(caso.id)}`;
+        const tieneConocimientoAmp = Boolean(caso.fecha_conocimiento_amp || caso.fecha_conocimiento_fiscal);
+        const puedeEditar = usuarioActual && usuarioActual.rol !== 'consulta';
+
+        if (linkRequerimientos) linkRequerimientos.href = hrefRequerimientos;
+        if (btnRequerimientos) btnRequerimientos.href = hrefRequerimientos;
+        if (btnRegistroAmp) {
+            btnRegistroAmp.href = hrefRegistroAmp;
+            btnRegistroAmp.style.display = puedeEditar && !tieneConocimientoAmp ? '' : 'none';
+        }
+        if (btnActualizar) {
+            btnActualizar.href = hrefActuacion;
+            btnActualizar.style.display = puedeEditar && tieneConocimientoAmp ? '' : 'none';
+        }
     }
 
-    // Botones de acción según rol
-    if (usuarioActual.rol === 'consulta') {
-        document.getElementById('btnEditar').style.display = 'none';
-        document.getElementById('btnActualizar').style.display = 'none';
-        document.getElementById('btnEliminar').style.display = 'none';
-    } else if (usuarioActual.rol !== 'admin') {
-        document.getElementById('btnEditar').style.display = 'none';
-        document.getElementById('btnEliminar').style.display = 'none';
-    }
+    setText('delegacion', delegacion ? delegacion.nombre : '---');
+    setText('fechaInicio', formatearFecha(caso.fecha_inicio || caso.fecha_presentacion_denuncia));
+    setText('delito', obtenerNombreDelitoLocal(caso.delito_id) || caso.delito_nombre || '---');
+    setText('areaGeneradora', caso.area_generadora_nombre || caso.area_generadora || caso.lugar_hechos || '---');
+    setText('cuantia', formatearCuantia(caso.cuantia, caso.sin_cuantificar));
+    setText('hechosDenunciante', caso.hechos_denunciante || '---');
 
-    renderizarDetalle();
-});
+    renderizarDenunciantesDetalle(caso);
+    setText('coadyuvancia', caso.es_coadyuvancia ? 'Sí' : 'No');
+    setText('probableResponsable', obtenerProbablesResponsablesDetalle(caso));
+    setText('datoRelevante', caso.dato_relevante || '---');
 
-function renderizarDetalle() {
-    const caso = casoActual;
+    setText('estatusActualDetalle', caso.estatus ? caso.estatus.replaceAll('_', ' ') : '---');
+    setText('fechaConocimientoAmp', formatearFecha(caso.fecha_conocimiento_amp));
+    setText('fechaJudicializacion', formatearFecha(caso.fecha_judicializacion));
+    setText('determinacionJudicial', caso.determinacion_judicial || '---');
+    setText('resumenRequerimientosPenal', construirResumenRequerimientos(caso));
 
-    // Breadcrumb y tarjeta principal
-    document.getElementById('breadcrumbExpediente').textContent = caso.numero_expediente;
-    document.getElementById('numeroExpediente').textContent = caso.numero_expediente;
-
-    // Fechas de registro
-    document.getElementById('fechaCreacion').textContent = formatearFecha(caso.fecha_creacion || caso.fecha_inicio);
-    if (caso.fecha_actualizacion) {
-        document.getElementById('fechaActualizacionInfo').style.display = '';
-        document.getElementById('fechaActualizacion').textContent = formatearFecha(caso.fecha_actualizacion);
-    }
-
-    // Badge estatus
-    const badgeEstatus = document.getElementById('badgeEstatus');
-    if (caso.estatus === 'TRAMITE') {
-        badgeEstatus.textContent = 'En Trámite';
-        badgeEstatus.className = 'badge-estatus badge-warning';
+    const seguimiento = caso.seguimiento;
+    if (seguimiento && seguimiento.fecha_actuacion) {
+        setText('fechaActuacion', formatearFecha(seguimiento.fecha_actuacion));
+        setText('tipoActuacion', seguimiento.tipo_actuacion || '---');
+        setText('descripcionActuacion', seguimiento.descripcion || '---');
     } else {
-        badgeEstatus.textContent = 'Concluido';
-        badgeEstatus.className = 'badge-estatus badge-success';
+        setHTML('ultimaActuacionCard', `
+            <div class="actuacion-desc-grupo">
+                <span class="actuacion-label">Última actuación registrada</span>
+                <div class="actuacion-desc">Sin actuaciones registradas.</div>
+            </div>
+        `);
     }
 
-    // Sección 1: Datos del registro
-    const delegacion = obtenerDelegacion(caso.delegacion_id);
-    document.getElementById('delegacion').textContent = delegacion ? delegacion.nombre : '---';
-    document.getElementById('fechaInicio').textContent = formatearFecha(caso.fecha_inicio);
-
-    const delitoNombre = obtenerNombreDelitoLocal(caso.delito_id);
-    document.getElementById('delito').textContent = delitoNombre || '---';
-
-    document.getElementById('abogadoResponsable').textContent = caso.abogado_responsable || '';
-    if (!caso.abogado_responsable) {
-        document.getElementById('abogadoResponsable').innerHTML = '<span class="info-vacio">Sin asignar</span>';
-    }
-
-    // Partes
-    document.getElementById('denunciante').textContent = getPersonaNombreLocal(caso.denunciante);
-    document.getElementById('probableResponsable').textContent = getPersonaNombreLocal(caso.probable_responsable);
-
-    // Sección 2: Estatus investigación y estado procesal
-    document.getElementById('estatusInvestigacionJSJ').textContent = caso.estatus_investigacion_jsj || '---';
-
-    const estadoProcesal = obtenerNombreEstadoProcesalLocal(caso.estado_procesal_id);
-    document.getElementById('estadoProcesal').textContent = estadoProcesal || '---';
-    document.getElementById('fechaConocimientoAmp').textContent = formatearFecha(caso.fecha_conocimiento_amp);
-    document.getElementById('fechaJudicializacion').textContent = formatearFecha(caso.fecha_judicializacion);
-    document.getElementById('determinacionJudicial').textContent = caso.determinacion_judicial || '---';
-
-    if (caso.acciones_pendientes) {
-        document.getElementById('accionesPendientes').textContent = caso.acciones_pendientes;
-    }
-
-    // Sección 3: Sentencia y conclusión
-    if (caso.sentencia) {
-        const badgeSentencia = caso.sentencia === 'FAVORABLE'
-            ? '<span class="badge badge-success">Favorable</span>'
-            : '<span class="badge badge-danger">Desfavorable</span>';
-        document.getElementById('sentencia').innerHTML = badgeSentencia;
-    } else {
-        document.getElementById('sentencia').innerHTML = '<span class="info-vacio">Sin sentencia</span>';
-    }
-    document.getElementById('fechaSentencia').textContent = formatearFecha(caso.fecha_sentencia);
-    document.getElementById('fechaConclusion').textContent = formatearFecha(caso.fecha_conclusion);
-
-    if (caso.dato_relevante) {
-        document.getElementById('datoRelevante').textContent = caso.dato_relevante;
-    }
-
-    // Sección 4: Seguimiento
-    const seg = caso.seguimiento;
-    if (seg && seg.fecha_actuacion) {
-        document.getElementById('fechaActuacion').textContent = formatearFecha(seg.fecha_actuacion);
-        document.getElementById('tipoActuacion').textContent = seg.tipo_actuacion || '---';
-        document.getElementById('descripcionActuacion').textContent = seg.descripcion || '---';
-    }
-
-    renderizarTimeline();
+    await Promise.all([
+        renderizarTimeline(),
+        renderizarDocumentosPenalDetalle()
+    ]);
 }
 
-function renderizarTimeline() {
-    const container = document.getElementById('timeline');
+async function renderizarTimeline() {
+    const container = getEl('timeline');
+    if (!container) return;
+
     let seguimientos = casoActual.seguimientos || [];
+
     if (seguimientos.length === 0 && casoActual.seguimiento && casoActual.seguimiento.fecha_actuacion) {
         seguimientos = [casoActual.seguimiento];
     }
@@ -164,112 +481,258 @@ function renderizarTimeline() {
         return;
     }
 
-    seguimientos.sort((a, b) => new Date(b.fecha_actuacion) - new Date(a.fecha_actuacion));
-    const visibles = historialExpandido ? seguimientos : seguimientos.slice(0, MAX_ACTUACIONES_VISIBLES);
-    const restantes = seguimientos.length - visibles.length;
+    let documentosPorSeguimiento = {};
 
-    container.innerHTML = visibles.map((seg, index) => `
-        <div class="timeline-item ${index === visibles.length - 1 ? 'is-last' : ''}">
-            <div class="timeline-rail" aria-hidden="true">
-                <span class="timeline-dot"></span>
-            </div>
-            <div class="timeline-card">
-                <div class="timeline-top">
-                    <div class="timeline-meta">
-                        <span class="timeline-date-pill">${formatearFecha(seg.fecha_actuacion)}</span>
-                        <span class="timeline-step">Actuacion ${index + 1}</span>
-                    </div>
-                    <span class="timeline-type-chip">${seg.tipo_actuacion || 'Sin tipo'}</span>
+    try {
+        const documentos = await obtenerDocumentosPenalApi(casoActual.id);
+        documentosPorSeguimiento = agruparDocumentosPorSeguimiento(documentos);
+    } catch (error) {
+        console.error('Error al cargar documentos del detalle penal:', error);
+    }
+
+    const seguimientosOrdenCronologico = [...seguimientos]
+        .sort((a, b) => {
+            const fechaA = new Date(a.fecha_actuacion);
+            const fechaB = new Date(b.fecha_actuacion);
+            const diferencia = fechaA - fechaB;
+            if (diferencia !== 0) return diferencia;
+            return (a.id ?? 0) - (b.id ?? 0);
+        })
+        .map((seguimiento, index) => ({
+            ...seguimiento,
+            numeroActuacion: index + 1
+        }))
+        .reverse();
+
+    const visibles = historialExpandido
+        ? seguimientosOrdenCronologico
+        : seguimientosOrdenCronologico.slice(0, MAX_ACTUACIONES_VISIBLES);
+    const restantes = seguimientosOrdenCronologico.length - visibles.length;
+
+    container.innerHTML = visibles.map((seguimiento, index) => {
+        const documento = (documentosPorSeguimiento[seguimiento.id] || [])[0] || null;
+
+        return `
+            <div class="timeline-item ${index === visibles.length - 1 ? 'is-last' : ''}">
+                <div class="timeline-rail" aria-hidden="true">
+                    <span class="timeline-dot"></span>
                 </div>
-                <div class="timeline-desc">${seg.descripcion || 'Sin descripcion registrada.'}</div>
+                <div class="timeline-card">
+                    <div class="timeline-top timeline-top-swap">
+                        <div class="timeline-meta timeline-meta-stack">
+                            <span class="timeline-date-pill">${formatearFecha(seguimiento.fecha_actuacion)}</span>
+                            <span class="timeline-step">Actuación ${seguimiento.numeroActuacion}</span>
+                        </div>
+                        <span class="timeline-type-chip">${seguimiento.tipo_actuacion || 'Sin tipo'}</span>
+                    </div>
+                    <div class="timeline-desc">${seguimiento.descripcion || 'Sin descripción registrada.'}</div>
+                    ${(documento || usuarioActual?.rol !== 'consulta') ? `
+                    <div class="timeline-card-actions timeline-card-actions-between">
+                        ${documento ? `
+                        <a class="timeline-doc-link" href="${window.construirUrlApiConToken?.(`api/downloadPenalDocument.php?id=${documento.id}&tipo=${encodeURIComponent(documento.documento_tipo || '')}`) || `api/downloadPenalDocument.php?id=${documento.id}&tipo=${encodeURIComponent(documento.documento_tipo || '')}`}" target="_blank" rel="noopener noreferrer">
+                            Ver PDF
+                        </a>
+                        <span class="timeline-doc-meta">${documento.nombre_original} - ${formatearTamanoArchivo(documento.tamano_bytes)}</span>
+                        ` : ''}
+                        ${usuarioActual?.rol !== 'consulta' ? `
+                        <button type="button" class="timeline-delete-btn" onclick="confirmarEliminarSeguimientoPenalDetalle(${seguimiento.id})">
+                            Eliminar
+                        </button>
+                        ` : ''}
+                    </div>
+                    ` : ''}
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
-    if (seguimientos.length > MAX_ACTUACIONES_VISIBLES) {
+    if (seguimientosOrdenCronologico.length > MAX_ACTUACIONES_VISIBLES) {
         container.innerHTML += `
             <div class="timeline-actions">
-                <button type="button" class="timeline-toggle-btn" onclick="toggleHistorialPenal()">
-                    ${historialExpandido ? 'Mostrar menos' : `Mostrar ${restantes} mas`}
+                <button type="button" class="timeline-toggle-btn" onclick="toggleHistorialPenalDetalle()">
+                    ${historialExpandido ? 'Mostrar menos' : `Mostrar ${restantes} más`}
                 </button>
             </div>
         `;
     }
 }
 
-function toggleHistorialPenal() {
+async function renderizarDocumentosPenalDetalle() {
+    const container = getEl('listaDocumentosPenalDetalle');
+    if (!container || !casoActual?.id) return;
+
+    try {
+        const documentos = await obtenerDocumentosPenalApi(casoActual.id);
+
+        if (documentos.length === 0) {
+            container.innerHTML = '<p class="empty-text">No hay documentos ligados a este asunto.</p>';
+            return;
+        }
+
+        const grupos = ordenarDocumentosPenal(documentos).reduce((acumulado, documento) => {
+            const grupo = clasificarGrupoDocumentoPenal(documento);
+            if (!acumulado[grupo]) acumulado[grupo] = [];
+            acumulado[grupo].push(documento);
+            return acumulado;
+        }, {});
+
+        container.innerHTML = ['inicial', 'actuaciones', 'requerimientos', 'otros']
+            .filter((grupo) => grupos[grupo]?.length)
+            .map((grupo) => `
+                <section class="documentos-grupo-penal">
+                    <div class="documentos-grupo-header">
+                        <h3>${obtenerTituloGrupoDocumentoPenal(grupo)}</h3>
+                        <span>${grupos[grupo].length} documento${grupos[grupo].length === 1 ? '' : 's'}</span>
+                    </div>
+                    <div class="documentos-grupo-lista">
+                        ${grupos[grupo].map(renderizarItemDocumentoPenal).join('')}
+                    </div>
+                </section>
+            `)
+            .join('');
+    } catch (error) {
+        console.error('Error al cargar documentos penales del detalle:', error);
+        container.innerHTML = '<p class="empty-text" style="color: var(--color-danger);">No se pudieron cargar los documentos.</p>';
+    }
+}
+
+function clasificarGrupoDocumentoPenal(documento) {
+    const tipo = String(documento.documento_tipo || '').toUpperCase();
+
+    if (tipo === 'ASUNTO') return 'inicial';
+    if (tipo === 'ACTUACION') return 'actuaciones';
+    if (tipo.startsWith('REQUERIMIENTO')) return 'requerimientos';
+
+    return 'otros';
+}
+
+function obtenerTituloGrupoDocumentoPenal(grupo) {
+    const titulos = {
+        inicial: 'Documento inicial',
+        actuaciones: 'Actuaciones',
+        requerimientos: 'Requerimientos ministeriales',
+        otros: 'Otros documentos'
+    };
+
+    return titulos[grupo] || titulos.otros;
+}
+
+function obtenerEtiquetaTipoDocumentoPenal(documento) {
+    const tipo = String(documento.documento_tipo || '').toUpperCase();
+    const etiquetas = {
+        ASUNTO: 'Documento inicial',
+        ACTUACION: 'Actuacion penal',
+        REQUERIMIENTO_INICIAL: 'Requerimiento inicial de fiscalia',
+        REQUERIMIENTO_INTERNO: 'Requerimiento interno',
+        REQUERIMIENTO_SOLICITUD: 'Documento de solicitud',
+        REQUERIMIENTO_CONTESTACION_ENVIADA: 'Contestacion enviada',
+        REQUERIMIENTO_RESPUESTA_FISCALIA: 'Respuesta de fiscalia',
+        REQUERIMIENTO_CONTESTACION: 'Contestacion final',
+        REQUERIMIENTO: 'Requerimiento ministerial'
+    };
+
+    return etiquetas[tipo] || 'Documento penal';
+}
+
+function ordenarDocumentosPenal(documentos) {
+    return [...(documentos || [])].sort((a, b) => {
+        const fechaA = new Date(a.created_at || 0).getTime();
+        const fechaB = new Date(b.created_at || 0).getTime();
+
+        if (fechaA !== fechaB) return fechaB - fechaA;
+
+        return Number(b.id || 0) - Number(a.id || 0);
+    });
+}
+
+function construirUrlDocumentoPenal(documento) {
+    const url = `api/downloadPenalDocument.php?id=${documento.id}&tipo=${encodeURIComponent(documento.documento_tipo || '')}`;
+    return window.construirUrlApiConToken?.(url) || url;
+}
+
+function renderizarItemDocumentoPenal(documento) {
+    return `
+        <div class="documento-item documento-item-detalle-penal">
+            <div class="documento-info">
+                <span class="documento-nombre">${documento.nombre_original || 'Documento PDF'}</span>
+                <span class="documento-meta">
+                    ${obtenerEtiquetaTipoDocumentoPenal(documento)}
+                    ${documento.created_at ? ` - ${formatearFecha(documento.created_at)}` : ''}
+                    ${documento.tamano_bytes ? ` - ${formatearTamanoArchivo(documento.tamano_bytes)}` : ''}
+                </span>
+            </div>
+            <a class="btn btn-secondary" href="${construirUrlDocumentoPenal(documento)}" target="_blank" rel="noopener noreferrer">
+                Ver PDF
+            </a>
+        </div>
+    `;
+}
+
+function toggleHistorialPenalDetalle() {
     historialExpandido = !historialExpandido;
     renderizarTimeline();
 }
 
-// =====================================================
-// ACCIONES
-// =====================================================
+async function confirmarEliminarSeguimientoPenalDetalle(trackingId) {
+    if (!trackingId) return;
 
-function editarDatos() {
-    window.location.href = `editarCasoPenal.html?id=${casoActual.id}`;
-}
+    const confirmacion = await window.appConfirm?.({
+        title: 'Eliminar actuación',
+        message: '¿Deseas eliminar esta actuación del historial?',
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar'
+    });
 
-function abrirActualizacion() {
-    window.location.href = `actualizarCasoPenal.html?id=${casoActual.id}`;
-}
-
-async function eliminarCaso() {
-    if (!confirm('¿Estás seguro de que deseas eliminar este asunto? Esta acción no se puede deshacer.')) return;
+    if (!confirmacion) return;
 
     try {
-        await eliminarCasoPenal(casoActual.id);
-        eliminarCacheCasoPenal(casoActual.id);
-        alert('Asunto eliminado.');
-        window.location.href = 'penal.html';
-    } catch (err) {
-        console.error('Error al eliminar:', err);
-        alert('Error al eliminar el asunto: ' + err.message);
+        await eliminarSeguimientoPenalApi(trackingId);
+        const casoRecargado = await obtenerCasoPenalDetalle(casoActual.id);
+        if (casoRecargado) {
+            casoActual = casoRecargado;
+            await renderizarDetalle();
+        }
+        await window.appAlert?.({
+            title: 'Cambio guardado',
+            message: 'Actuación eliminada correctamente.'
+        });
+    } catch (error) {
+        console.error('Error al eliminar actuación penal:', error);
+        await window.appAlert?.({
+            title: 'No se pudo eliminar la actuación',
+            message: error.message || 'Ocurrió un problema al eliminar la actuación.'
+        });
     }
 }
 
-// =====================================================
-// HELPERS
-// =====================================================
+window.confirmarEliminarSeguimientoPenalDetalle = confirmarEliminarSeguimientoPenalDetalle;
+window.toggleHistorialPenalDetalle = toggleHistorialPenalDetalle;
 
-function getPersonaNombreLocal(persona) {
-    if (!persona) return '---';
-    if (typeof persona === 'string') {
-        try { return getPersonaNombreLocal(JSON.parse(persona)); } catch (e) { return '---'; }
-    }
-    if (persona.tipo_persona === 'FISICA') {
-        return `${persona.nombres || ''} ${persona.apellido_paterno || ''} ${persona.apellido_materno || ''}`.trim() || '---';
-    }
-    if (persona.tipo_persona === 'MORAL') {
-        return persona.empresa || '---';
-    }
-    return '---';
+function eliminarCaso() {
+    window.appConfirm?.({
+        title: 'Eliminar asunto',
+        message: '¿Estás seguro de que deseas eliminar este asunto? Esta acción no se puede deshacer.',
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar'
+    }).then(confirmacion => {
+        if (!confirmacion) return;
+
+        return eliminarCasoPenalApi(casoActual.id)
+            .then(async () => {
+                await window.appAlert?.({
+                    title: 'Cambio guardado',
+                    message: 'Asunto eliminado.'
+                });
+                window.location.href = 'penal.html';
+            })
+            .catch(async error => {
+                console.error('Error al eliminar asunto penal:', error);
+                await window.appAlert?.({
+                    title: 'No se pudo eliminar el asunto',
+                    message: error.message || 'Ocurrió un problema al eliminar el asunto.'
+                });
+            });
+    });
 }
 
-function obtenerNombreDelitoLocal(id) {
-    if (!id) return null;
-    if (catalogosCargados && catalogosDB.delitos.length > 0) {
-        const d = catalogosDB.delitos.find(d => d.id === id);
-        return d ? d.nombre : null;
-    }
-    const delitos = {
-        1: 'ABUSO DE CONFIANZA', 5: 'COHECHO', 7: 'DAÑOS', 13: 'FALSIFICACIÓN DE DOCUMENTOS',
-        17: 'FRAUDE', 20: 'HOMICIDIO POR OMISIÓN EN AGRAVIO', 22: 'LESIONES', 27: 'ROBO',
-        35: 'SUPLANTACION DE IDENTIDAD'
-    };
-    return delitos[id] || null;
-}
-
-function obtenerNombreEstadoProcesalLocal(id) {
-    if (!id) return null;
-    if (catalogosCargados && catalogosDB.estadosProcesales.length > 0) {
-        const e = catalogosDB.estadosProcesales.find(e => e.id === id);
-        return e ? e.nombre : null;
-    }
-    const estados = {
-        1: 'Etapa de investigación',
-        2: 'Etapa intermedia o etapa de preparación a juicio',
-        3: 'Etapa de juicio oral'
-    };
-    return estados[id] || null;
-}
+window.eliminarCaso = eliminarCaso;

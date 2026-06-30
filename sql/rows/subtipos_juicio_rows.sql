@@ -1,0 +1,1 @@
+INSERT INTO "public"."subtipos_juicio" ("id", "tipo_juicio_id", "nombre", "jurisdiccion") VALUES (11, 1, 'Oral', 'LOCAL'), (12, 1, 'Escrito', 'AMBAS'), (201, 20, 'Oral', 'FEDERAL'), (202, 20, 'Escrito', 'AMBAS'), (221, 22, 'Concursos Mercantiles', 'FEDERAL'), (222, 22, 'Especial de Fianzas', 'FEDERAL');

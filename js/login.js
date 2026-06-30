@@ -1,79 +1,120 @@
-// =====================================================
-// LOGIN.JS - Funcionalidad de inicio de sesion
-// =====================================================
-
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     const loginForm = document.getElementById('loginForm');
-    const errorMsg = document.getElementById('loginError');
+    mostrarMensajeSesionExpirada();
 
-    const sesionActiva = sessionStorage.getItem('usuario');
-    if (sesionActiva) {
-        window.location.href = 'casos.html';
-        return;
-    }
+    await verificarSesionActiva();
 
-    loginForm.addEventListener('submit', function (e) {
-        e.preventDefault();
+    loginForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
 
         const usuario = document.getElementById('usuario').value.trim();
         const password = document.getElementById('password').value;
 
-        if (errorMsg) errorMsg.style.display = 'none';
+        ocultarError();
 
         if (!usuario || !password) {
             mostrarError('Por favor completa todos los campos');
             return;
         }
 
-        realizarLogin(usuario, password);
+        await realizarLogin(usuario, password);
     });
 });
 
+function mostrarMensajeSesionExpirada() {
+    const mensaje = sessionStorage.getItem('session_expired_message');
+    if (!mensaje) {
+        return;
+    }
+
+    sessionStorage.removeItem('session_expired_message');
+    mostrarError(mensaje);
+}
+
+async function verificarSesionActiva() {
+    const usuarioSesion = sessionStorage.getItem('usuario');
+    if (!usuarioSesion) {
+        return;
+    }
+
+    try {
+        const response = await fetch('api/session.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.ok) {
+            const user = result.data?.user || {};
+
+            sessionStorage.setItem('usuario', JSON.stringify({
+                id: user.id ?? null,
+                usuario: user.usuario ?? '',
+                nombre_completo: user.nombreCompleto ?? '',
+                rol: user.rol ?? '',
+                delegacion_id: user.delegacionId ?? null,
+                alcance_global: Boolean(user.alcanceGlobal),
+                permiso_civil_mercantil: Boolean(user.permisoCivilMercantil),
+                permiso_penal: Boolean(user.permisoPenal),
+                es_abogado: Boolean(user.esAbogado),
+                es_jefe: Boolean(user.esJefe),
+                session_token: user.sessionToken ?? ''
+            }));
+
+            window.location.href = 'casos.html';
+        }
+    } catch (error) {
+        console.error('No se pudo verificar la sesion activa:', error);
+    }
+}
+
 async function realizarLogin(usuario, password) {
     const btnSubmit = document.querySelector('button[type="submit"]');
+
     btnSubmit.disabled = true;
     btnSubmit.textContent = 'Iniciando sesion...';
 
     try {
-        let usuarioEncontrado = null;
+        const response = await fetch('api/login.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                usuario,
+                password
+            })
+        });
 
-        if (typeof buscarUsuario === 'function') {
-            usuarioEncontrado = await buscarUsuario(usuario, password);
-        }
+        const result = await response.json();
 
-        if (!usuarioEncontrado) {
-            const usuariosStr = localStorage.getItem('usuarios');
-            const usuarios = usuariosStr ? JSON.parse(usuariosStr) : [];
-            usuarioEncontrado = usuarios.find(u =>
-                u.usuario === usuario && u.password === password
-            );
-        }
-
-        if (!usuarioEncontrado) {
-            mostrarError('Usuario o contrasena incorrectos');
+        if (!response.ok || !result.ok) {
+            mostrarError(result.message || 'No fue posible iniciar sesion');
             return;
         }
 
-        if (!usuarioEncontrado.activo) {
-            mostrarError('Esta cuenta se encuentra desactivada. Contacta al administrador.');
-            return;
-        }
+        const user = result.data?.user || {};
 
-        const usuarioSesion = {
-            id: usuarioEncontrado.id,
-            usuario: usuarioEncontrado.usuario,
-            nombre_completo: usuarioEncontrado.nombre_completo,
-            rol: usuarioEncontrado.rol,
-            delegacion_id: usuarioEncontrado.delegacion_id,
-            permiso_civil_mercantil: usuarioEncontrado.permiso_civil_mercantil,
-            permiso_penal: usuarioEncontrado.permiso_penal
-        };
+        sessionStorage.setItem('usuario', JSON.stringify({
+            id: user.id ?? null,
+            usuario: user.usuario ?? '',
+            nombre_completo: user.nombreCompleto ?? '',
+            rol: user.rol ?? '',
+            delegacion_id: user.delegacionId ?? null,
+            alcance_global: Boolean(user.alcanceGlobal),
+            permiso_civil_mercantil: Boolean(user.permisoCivilMercantil),
+            permiso_penal: Boolean(user.permisoPenal),
+            es_abogado: Boolean(user.esAbogado),
+            es_jefe: Boolean(user.esJefe),
+            session_token: user.sessionToken ?? ''
+        }));
 
-        sessionStorage.setItem('usuario', JSON.stringify(usuarioSesion));
         window.location.href = 'casos.html';
     } catch (error) {
         console.error('Error durante login:', error);
-        mostrarError('No fue posible iniciar sesion. Revisa la conexion con Supabase.');
+        mostrarError('No fue posible iniciar sesion. Verifica la conexion con la API local.');
     } finally {
         btnSubmit.disabled = false;
         btnSubmit.textContent = 'Acceder';
@@ -82,15 +123,35 @@ async function realizarLogin(usuario, password) {
 
 function mostrarError(mensaje) {
     const errorMsg = document.getElementById('loginError');
+
     if (errorMsg) {
         errorMsg.textContent = mensaje;
         errorMsg.style.display = 'block';
-    } else {
-        alert(mensaje);
+        return;
+    }
+
+    alert(mensaje);
+}
+
+function ocultarError() {
+    const errorMsg = document.getElementById('loginError');
+
+    if (errorMsg) {
+        errorMsg.textContent = '';
+        errorMsg.style.display = 'none';
     }
 }
 
-function cerrarSesion() {
-    sessionStorage.removeItem('usuario');
-    window.location.href = 'login.html';
+async function cerrarSesion() {
+    try {
+        await fetch('api/logout.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+    } catch (error) {
+        console.error('Error al cerrar sesion:', error);
+    } finally {
+        sessionStorage.removeItem('usuario');
+        window.location.href = 'login.html';
+    }
 }

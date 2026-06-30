@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Asunto - Sistema de Gestión de Juicios</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
 </head>
 <body>
-    <header class="header-gob app-header" data-home-href="casos.html" data-module="Civil / Mercantil" data-back-href="casos.html" data-back-label="Volver a asuntos"></header>
+    <header class="header-gob app-header" data-home-href="casos.html" data-module="Civil / Mercantil" data-back-href="casos.html" data-back-label="Volver a asuntos" data-header-variant="modern" data-show-module-nav="false"></header>
 
     <div class="container">
         <div class="breadcrumb">
@@ -24,9 +29,9 @@
         </div>
 
         <form id="formNuevoCaso" class="card">
-            <!-- SECCION 1: Informacion General -->
+            <!-- SECCION 1: Información General -->
             <div class="form-section">
-                <h3 class="form-section-title">Informacion General</h3>
+                <h3 class="form-section-title">Información General</h3>
 
                 <div class="form-grid">
                     <div class="form-group">
@@ -37,15 +42,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label required">Area Generadora</label>
+                        <label class="form-label required">Área Generadora</label>
                         <select id="area" class="form-select" required disabled>
-                            <option value="">Primero seleccione delegacion</option>
+                            <option value="">Primero seleccione delegación</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label required">Jurisdiccion</label>
+                    <label class="form-label required">Jurisdicción</label>
                     <div class="form-radio-group">
                         <div class="form-radio">
                             <input type="radio" id="local" name="jurisdiccion" value="LOCAL" required>
@@ -60,7 +65,7 @@
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label required">Tipo de Juicio</label>
+                        <label class="form-label required">Materia</label>
                         <select id="tipoJuicio" class="form-select" required disabled>
                             <option value="">Primero seleccione jurisdicción</option>
                             <option value="CIVIL">Civil</option>
@@ -70,14 +75,14 @@
                     </div>
 
                     <div class="form-group" id="grupoSubtipo">
-                        <label class="form-label required">Subtipo</label>
+                        <label class="form-label required">Tipo de Procedimiento</label>
                         <select id="subtipoJuicio" class="form-select" required disabled>
-                            <option value="">Primero seleccione tipo</option>
+                            <option value="">Primero seleccione materia</option>
                         </select>
                     </div>
 
                     <div class="form-group" id="grupSubsubtipo" style="display: none;">
-                        <label class="form-label">Sub-subtipo</label>
+                        <label class="form-label">Via</label>
                         <select id="subsubtipoJuicio" class="form-select">
                             <option value="">Ninguno</option>
                         </select>
@@ -87,12 +92,12 @@
 
             <!-- SECCION 2: Expediente -->
             <div class="form-section">
-                <h3 class="form-section-title">Identificacion del Expediente</h3>
+                <h3 class="form-section-title">Identificación del Expediente</h3>
 
                 <div id="campoLocal" style="display: none;">
                     <div class="form-group">
-                        <label class="form-label required">Numero de Juicio (Local)</label>
-                        <input type="text" id="numeroLocal" class="form-input" maxlength="30" placeholder="Alfanumerico, maximo 30 caracteres">
+                        <label class="form-label required">Número de Asunto (Local)</label>
+                        <input type="text" id="numeroLocal" class="form-input" maxlength="30" placeholder="Alfanumérico, máximo 30 caracteres">
                         <small style="color: var(--color-text-light);">Ejemplo: CIV-2024-ORD-123</small>
                     </div>
                 </div>
@@ -100,7 +105,7 @@
                 <div id="campoFederal" style="display: none;">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label required">Numero de Juicio (6 digitos)</label>
+                            <label class="form-label required">Número de Asunto (6 dígitos)</label>
                             <input
                                 type="text"
                                 id="numeroFederal"
@@ -108,11 +113,11 @@
                                 maxlength="6"
                                 placeholder="123456"
                                 pattern="[0-9]{6}"
-                                title="Solo numeros, exactamente 6 digitos"
+                                title="Solo números, exactamente 6 dígitos"
                             >
                         </div>
                         <div class="form-group">
-                            <label class="form-label required">Ano (4 digitos)</label>
+                            <label class="form-label required">Año (4 dígitos)</label>
                             <input
                                 type="text"
                                 id="anoFederal"
@@ -120,7 +125,7 @@
                                 maxlength="4"
                                 placeholder="2024"
                                 pattern="[0-9]{4}"
-                                title="Solo numeros, exactamente 4 digitos"
+                                title="Solo números, exactamente 4 dígitos"
                             >
                         </div>
                     </div>
@@ -146,7 +151,7 @@
                 </div>
             </div>
 
-            <!-- SECCION 4: Posicion IMSS -->
+            <!-- SECCION 4: Posición IMSS -->
             <div class="form-section">
                 <h3 class="form-section-title">Calidad del IMSS</h3>
 
@@ -169,7 +174,7 @@
                 </div>
             </div>
 
-            <!-- SECCION 5: Actores (dinamico) -->
+            <!-- SECCION 5: Actores (dinámico) -->
             <div class="form-section" id="seccionActor" style="display: none;">
                 <h3 class="form-section-title">Actor(es)</h3>
 
@@ -238,30 +243,32 @@
                     <div class="importe-container">
                         <div class="form-checkbox" style="margin-bottom: 8px;">
                             <input type="checkbox" id="sinCuantia">
-                            <label for="sinCuantia">Sin cuantia</label>
+                            <label for="sinCuantia">Sin cuantía</label>
                         </div>
                         <input type="text" id="importeDemandado" class="form-input" placeholder="0.00">
                     </div>
                 </div>
             </div>
 
-            <!-- SECCION 9: Abogado y Pronostico -->
+            <!-- SECCION 9: Abogado y Pronóstico -->
             <div class="form-section">
-                <h3 class="form-section-title">Asignacion</h3>
+                <h3 class="form-section-title">Asignación</h3>
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Abogado Responsable</label>
-                        <input type="text" id="abogadoResponsable" class="form-input" placeholder="Nombre del abogado responsable">
+                        <label class="form-label required">Abogado Responsable</label>
+                        <select id="abogadoResponsable" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Pronostico</label>
+                        <label class="form-label">Pronóstico</label>
                         <select id="pronostico" class="form-select">
                             <option value="">Seleccione...</option>
                             <option value="FAVORABLE">Favorable</option>
                             <option value="DESFAVORABLE">Desfavorable</option>
-                            <option value="SIN PRONOSTICO">Sin Pronostico</option>
+                            <option value="SIN PRONOSTICO">Sin Pronóstico</option>
                         </select>
                     </div>
                 </div>
@@ -275,10 +282,8 @@
         </form>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabaseClient.js"></script>
-    <script src="js/supabaseService.js"></script>
     <script src="js/headerComponent.js"></script>
+    <script src="js/textLimiter.js"></script>
     <script src="js/editarCaso.js"></script>
 </body>
 </html>

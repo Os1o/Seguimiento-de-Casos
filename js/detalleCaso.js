@@ -1,31 +1,252 @@
-// =====================================================
+﻿// =====================================================
 // DETALLE DEL CASO
 // =====================================================
 
 let casoActual = null;
+let usuarioActual = null;
+let historialExpandido = false;
+const MAX_ACTUALIZACIONES_VISIBLES = 5;
+let catalogos = {
+    delegaciones: [],
+    areas: {},
+    organosJurisdiccionales: [],
+    prestaciones: [],
+    abogadosResponsables: []
+};
 
-function sincronizarCatalogosCivilDetalle() {
-    window.catalogos = {
-        delegaciones: catalogosDB.delegaciones || [],
-        areas: catalogosDB.areas || {},
-        tribunales: catalogosDB.tribunales || [],
-        prestaciones: catalogosDB.prestaciones || []
+function obtenerDelegacionCivilDetalle(id) {
+    if (!id) return null;
+    return (catalogos.delegaciones || []).find(delegacion => delegacion.id == id) || null;
+}
+
+function actualizarHeaderCivilDetalle(usuario) {
+    if (!usuario) return;
+
+    setTextoSeguro('nombreUsuario', usuario.nombre_completo);
+
+    const badgeRol = document.getElementById('badgeRol');
+    if (badgeRol) {
+        const rolesTexto = { admin: 'Admin', jefe: 'Jefe', editor: 'Editor', consulta: 'Consulta' };
+        badgeRol.textContent = rolesTexto[usuario.rol] || usuario.rol || '';
+        badgeRol.className = 'badge-rol badge-rol-' + (usuario.rol || '');
+    }
+
+    const infoOOAD = document.getElementById('infoOOAD');
+    if (infoOOAD) {
+        if (usuario.delegacion_id) {
+            const delegacion = obtenerDelegacionCivilDetalle(usuario.delegacion_id);
+            infoOOAD.textContent = delegacion?.nombre || 'Todas las JSJ';
+        } else {
+            infoOOAD.textContent = 'Todas las JSJ';
+        }
+    }
+}
+
+function puedeReasignarAbogadoCivil(usuario, caso = casoActual) {
+    if (!usuario || !caso) {
+        return false;
+    }
+
+    if (usuario.rol === 'admin') {
+        return true;
+    }
+
+    if (usuario.rol !== 'editor' || !Boolean(usuario.es_jefe)) {
+        return false;
+    }
+
+    return parseInt(usuario.delegacion_id, 10) === parseInt(caso.delegacion_id, 10);
+}
+
+function agruparPorClave(items, key) {
+    return (items || []).reduce((acc, item) => {
+        const groupKey = item[key];
+        if (!acc[groupKey]) {
+            acc[groupKey] = [];
+        }
+
+        acc[groupKey].push(item);
+        return acc;
+    }, {});
+}
+
+async function cargarCatalogosDetalle() {
+    const response = await fetch('api/getCatalogs.php', {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar los catalogos');
+    }
+
+    const data = result.data || {};
+    catalogos = {
+        delegaciones: data.delegaciones || [],
+        areas: agruparPorClave(data.areas || [], 'delegacion_id'),
+        organosJurisdiccionales: data.organosJurisdiccionales || [],
+        prestaciones: data.prestaciones || [],
+        abogadosResponsables: data.abogadosResponsables || []
     };
+
+    window.catalogos = catalogos;
+}
+
+async function obtenerCasoCivilDetalle(id) {
+    const response = await fetch(`api/getCivilCase.php?id=${encodeURIComponent(id)}`, {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudo cargar el caso');
+    }
+
+    return result.data?.case || null;
+}
+
+async function obtenerDocumentosCivilApi(expedienteId) {
+    const response = await fetch(`api/getCivilDocuments.php?expediente_id=${encodeURIComponent(expedienteId)}`, {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar los documentos');
+    }
+
+    return result.data?.documentos || [];
+}
+
+async function eliminarSeguimientoCivilApi(id) {
+    const response = await fetch('api/deleteCivilTracking.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ id })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudo eliminar el seguimiento');
+    }
+
+    return result.data || {};
+}
+
+async function refrescarSesionDetalleCivil() {
+    const usuarioStr = sessionStorage.getItem('usuario');
+    if (!usuarioStr) {
+        window.location.href = 'login.html';
+        return null;
+    }
+
+    const usuarioLocal = JSON.parse(usuarioStr);
+
+    try {
+        const response = await fetch('api/session.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+
+        if (response.ok && result.ok) {
+            const user = result.data?.user || {};
+            const usuario = {
+                id: user.id ?? null,
+                usuario: user.usuario ?? '',
+                nombre_completo: user.nombreCompleto ?? '',
+                rol: user.rol ?? '',
+                delegacion_id: user.delegacionId ?? null,
+                alcance_global: Boolean(user.alcanceGlobal),
+                permiso_civil_mercantil: Boolean(user.permisoCivilMercantil),
+                permiso_penal: Boolean(user.permisoPenal),
+                es_abogado: Boolean(user.esAbogado),
+                es_jefe: Boolean(user.esJefe),
+                session_token: user.sessionToken ?? ''
+            };
+
+            sessionStorage.setItem('usuario', JSON.stringify(usuario));
+            return usuario;
+        }
+    } catch (error) {
+        console.error('No se pudo refrescar la sesion del detalle civil:', error);
+    }
+
+    return usuarioLocal;
+}
+
+async function reasignarAbogadoCivilApi(caseId, abogadoResponsableId) {
+    const response = await fetch('api/reassignCivilLawyer.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            case_id: caseId,
+            abogado_responsable_id: abogadoResponsableId
+        })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudo reasignar el abogado');
+    }
+
+    return result.data || {};
+}
+
+function formatearTamanoArchivo(bytes) {
+    if (!bytes || Number.isNaN(Number(bytes))) {
+        return '0 KB';
+    }
+
+    const size = Number(bytes);
+
+    if (size >= 1024 * 1024) {
+        return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    return `${Math.max(1, Math.round(size / 1024))} KB`;
+}
+
+function agruparDocumentosPorSeguimiento(documentos) {
+    return (documentos || []).reduce((acc, documento) => {
+        const seguimientoId = documento.seguimiento_id || 0;
+        if (!acc[seguimientoId]) {
+            acc[seguimientoId] = [];
+        }
+
+        acc[seguimientoId].push(documento);
+        return acc;
+    }, {});
 }
 
 // Verificar sesion
 document.addEventListener('DOMContentLoaded', async function () {
-    const usuarioStr = sessionStorage.getItem('usuario');
+    const usuario = await refrescarSesionDetalleCivil();
+    if (!usuario) return;
+    usuarioActual = usuario;
+    actualizarHeaderCivilDetalle(usuario);
+    window.mostrarCargaVista?.('.container');
 
-    if (!usuarioStr) {
-        window.location.href = 'login.html';
+    if (!usuario.permiso_civil_mercantil && usuario.rol !== 'admin') {
+        window.location.href = usuario.permiso_penal ? 'penal.html' : 'login.html';
         return;
     }
 
-    const usuario = JSON.parse(usuarioStr);
-    setTextoSeguro('nombreUsuario', usuario.nombre_completo);
-
-    // Ocultar botones de acción según rol
+    // Ocultar botones de accion según rol
     if (usuario.rol === 'consulta') {
         const btnEditar = document.getElementById('btnEditar');
         const btnActualizar = document.getElementById('btnActualizar');
@@ -37,50 +258,72 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     try {
-        await cargarCatalogos();
-        sincronizarCatalogosCivilDetalle();
-    } catch (err) {
-        console.warn('No se pudieron cargar catalogos desde Supabase:', err);
-        window.catalogos = { delegaciones: [], areas: {}, tribunales: [], prestaciones: [] };
-    }
+        try {
+            await cargarCatalogosDetalle();
+            actualizarHeaderCivilDetalle(usuario);
+        } catch (err) {
+            console.warn('No se pudieron cargar catalogos desde la API local:', err);
+            window.catalogos = { delegaciones: [], areas: {}, organosJurisdiccionales: [], prestaciones: [], abogadosResponsables: [] };
+        }
 
-    await cargarDetalleCaso();
+        await cargarDetalleCaso();
+        configurarControlesReasignacionAbogado();
+    } finally {
+        await window.ocultarCargaVista?.('.container');
+    }
 });
 
-function cerrarSesion() {
-    sessionStorage.removeItem('usuario');
-    window.location.href = 'login.html';
+async function cerrarSesion() {
+    try {
+        await fetch('api/logout.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+    } catch (error) {
+        console.error('Error al cerrar sesion:', error);
+    } finally {
+        sessionStorage.removeItem('usuario');
+        window.location.href = 'login.html';
+    }
 }
+
+window.cerrarSesion = cerrarSesion;
 
 async function cargarDetalleCaso() {
     const urlParams = new URLSearchParams(window.location.search);
     const casoId = parseInt(urlParams.get('id'));
 
     if (!casoId) {
-        alert('No se especificó un asunto');
+        await window.appAlert?.({
+            title: 'Asunto no disponible',
+            message: 'No se especificó un asunto.'
+        });
         window.location.href = 'casos.html';
         return;
     }
 
     try {
-        casoActual = await obtenerCasoCivil(casoId);
+        casoActual = await obtenerCasoCivilDetalle(casoId);
     } catch (err) {
-        console.warn('No se pudo cargar desde Supabase, usando cache local:', err);
+        console.warn('No se pudo cargar desde la API local, usando cache local:', err);
         const casosGuardados = localStorage.getItem('casos');
         const casos = casosGuardados ? JSON.parse(casosGuardados) : (typeof casosFake !== 'undefined' ? casosFake : []);
         casoActual = casos.find(c => c.id === casoId);
     }
 
     if (!casoActual) {
-        alert('Asunto no encontrado');
+        await window.appAlert?.({
+            title: 'Asunto no encontrado',
+            message: 'No se encontró el asunto solicitado.'
+        });
         window.location.href = 'casos.html';
         return;
     }
 
-    renderizarCaso();
+    await renderizarCaso();
 }
 
-// === FUNCIÓN AUXILIAR: Setear texto con null check ===
+// === FUNCION AUXILIAR: Setear texto con null check ===
 function setTextoSeguro(id, texto) {
     const el = document.getElementById(id);
     if (el) {
@@ -88,7 +331,7 @@ function setTextoSeguro(id, texto) {
     }
 }
 
-// === FUNCIÓN AUXILIAR: Setear HTML con null check ===
+// === FUNCION AUXILIAR: Setear HTML con null check ===
 function setHtmlSeguro(id, html) {
     const el = document.getElementById(id);
     if (el) {
@@ -96,7 +339,186 @@ function setHtmlSeguro(id, html) {
     }
 }
 
-function renderizarCaso() {
+function obtenerNumeroPadreAcumulacion() {
+    if (!casoActual?.acumulado_a) {
+        return null;
+    }
+
+    const casosGuardados = localStorage.getItem('casos');
+    const casos = casosGuardados ? JSON.parse(casosGuardados) : (typeof casosFake !== 'undefined' ? casosFake : []);
+    const casoPadre = casos.find(c => c.id === casoActual.acumulado_a);
+
+    return casoPadre?.numero_expediente || `ID ${casoActual.acumulado_a}`;
+}
+
+function esCasoAcumulado() {
+    return Boolean(casoActual?.acumulado_a);
+}
+
+function actualizarBloqueoPorAcumulacion() {
+    const estaAcumulado = esCasoAcumulado();
+    const btnEditar = document.getElementById('btnEditar');
+    const btnActualizar = document.getElementById('btnActualizar');
+    const alerta = document.getElementById('caseAccumulationAlert');
+    const alertaTexto = document.getElementById('caseAccumulationAlertText');
+
+    if (estaAcumulado) {
+        const numeroPadre = obtenerNumeroPadreAcumulacion();
+
+        if (btnEditar) btnEditar.style.display = 'none';
+        if (btnActualizar) btnActualizar.style.display = 'none';
+
+        if (alerta && alertaTexto) {
+            alertaTexto.textContent = `Este asunto esta acumulado al expediente ${numeroPadre}. No puede editarse ni actualizarse mientras permanezca acumulado.`;
+            alerta.style.display = 'block';
+        }
+
+        return;
+    }
+
+    if (alerta) {
+        alerta.style.display = 'none';
+    }
+
+    if (usuarioActual?.rol === 'consulta') {
+        if (btnEditar) btnEditar.style.display = 'none';
+        if (btnActualizar) btnActualizar.style.display = 'none';
+        return;
+    }
+
+    if (usuarioActual?.rol === 'editor') {
+        if (btnEditar) btnEditar.style.display = 'none';
+    }
+}
+
+function configurarControlesReasignacionAbogado() {
+    const acciones = document.getElementById('responsableActions');
+    const boton = document.getElementById('btnReasignarAbogado');
+    const guardar = document.getElementById('btnGuardarReasignacionAbogado');
+    const modal = document.getElementById('modalReasignarAbogado');
+
+    if (!acciones || !boton || !guardar || !modal) {
+        return;
+    }
+
+    acciones.style.display = puedeReasignarAbogadoCivil(usuarioActual, casoActual) ? 'block' : 'none';
+
+    if (!boton.dataset.bound) {
+        boton.addEventListener('click', abrirModalReasignarAbogado);
+        boton.dataset.bound = 'true';
+    }
+
+    if (!guardar.dataset.bound) {
+        guardar.addEventListener('click', guardarReasignacionAbogado);
+        guardar.dataset.bound = 'true';
+    }
+
+    if (!modal.dataset.bound) {
+        modal.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                cerrarModalReasignarAbogado();
+            }
+        });
+        modal.dataset.bound = 'true';
+    }
+}
+
+function llenarOpcionesReasignacionAbogado() {
+    const select = document.getElementById('selectReasignarAbogado');
+    if (!select) {
+        return;
+    }
+
+    const abogados = Array.isArray(catalogos.abogadosResponsables) ? catalogos.abogadosResponsables : [];
+    const abogadosDisponibles = usuarioActual?.rol === 'admin'
+        ? abogados
+        : abogados.filter(abogado => parseInt(abogado.delegacion_id, 10) === parseInt(usuarioActual?.delegacion_id, 10));
+
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    abogadosDisponibles.forEach(abogado => {
+        const option = document.createElement('option');
+        option.value = String(abogado.id);
+        option.textContent = abogado.nombre_completo;
+        select.appendChild(option);
+    });
+
+    if (casoActual?.abogado_responsable_id) {
+        select.value = String(casoActual.abogado_responsable_id);
+    }
+}
+
+function abrirModalReasignarAbogado() {
+    if (!puedeReasignarAbogadoCivil(usuarioActual, casoActual)) {
+        return;
+    }
+
+    setTextoSeguro('reasignarNumeroAsunto', casoActual?.numero_expediente || '---');
+    setTextoSeguro('reasignarAbogadoActual', casoActual?.abogado_responsable_nombre || 'Sin asignar');
+    llenarOpcionesReasignacionAbogado();
+
+    const modal = document.getElementById('modalReasignarAbogado');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function cerrarModalReasignarAbogado() {
+    const modal = document.getElementById('modalReasignarAbogado');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function guardarReasignacionAbogado() {
+    if (!casoActual?.id) {
+        return;
+    }
+
+    const select = document.getElementById('selectReasignarAbogado');
+    const botonGuardar = document.getElementById('btnGuardarReasignacionAbogado');
+    const nuevoId = parseInt(select?.value || '', 10);
+
+    if (!nuevoId) {
+        await window.appAlert?.({
+            title: 'Seleccion requerida',
+            message: 'Selecciona un abogado responsable.'
+        });
+        return;
+    }
+
+    if (nuevoId === parseInt(casoActual.abogado_responsable_id || 0, 10)) {
+        cerrarModalReasignarAbogado();
+        return;
+    }
+
+    try {
+        if (botonGuardar) {
+            botonGuardar.disabled = true;
+        }
+
+        await reasignarAbogadoCivilApi(casoActual.id, nuevoId);
+        cerrarModalReasignarAbogado();
+        await cargarDetalleCaso();
+        configurarControlesReasignacionAbogado();
+        await window.appAlert?.({
+            title: 'Cambio guardado',
+            message: 'El abogado responsable fue reasignado correctamente.'
+        });
+    } catch (error) {
+        console.error('No se pudo reasignar el abogado responsable:', error);
+        await window.appAlert?.({
+            title: 'No se pudo reasignar',
+            message: error.message || 'Ocurrio un error al reasignar el abogado responsable.'
+        });
+    } finally {
+        if (botonGuardar) {
+            botonGuardar.disabled = false;
+        }
+    }
+}
+
+async function renderizarCaso() {
     if (!casoActual) return;
 
     // === HEADER ===
@@ -109,7 +531,9 @@ function renderizarCaso() {
         badgeEstatus.className = 'badge-estatus ' + (casoActual.estatus === 'TRAMITE' ? 'badge-tramite' : 'badge-concluido');
     }
 
-    // Fecha creación
+    actualizarBloqueoPorAcumulacion();
+
+    // Fecha creacion
     if (casoActual.fecha_creacion) {
         const fecha = new Date(casoActual.fecha_creacion);
         const ddC = String(fecha.getDate()).padStart(2, '0');
@@ -120,7 +544,7 @@ function renderizarCaso() {
         setTextoSeguro('fechaCreacion', `${ddC}/${mmC}/${yyyyC} ${hhC}:${minC}`);
     }
 
-    // Fecha actualización (CON NULL CHECK - ESTO ERA EL ERROR)
+    // Fecha actualizacion (CON NULL CHECK - ESTO ERA EL ERROR)
     const fechaActInfo = document.getElementById('fechaActualizacionInfo');
     const fechaAct = document.getElementById('fechaActualizacion');
     
@@ -152,18 +576,17 @@ function renderizarCaso() {
 
     setTextoSeguro('jurisdiccion', casoActual.jurisdiccion || '---');
 
-    // Tipo de juicio completo
-    let tipoCompleto = casoActual.tipo_juicio || '';
-    if (casoActual.subtipo_juicio) tipoCompleto += ' - ' + casoActual.subtipo_juicio;
-    if (casoActual.sub_subtipo_juicio) tipoCompleto += ' - ' + casoActual.sub_subtipo_juicio;
-    tipoCompleto += casoActual.jurisdiccion === 'FEDERAL' ? ' (Federal)' : ' (Local)';
-    setTextoSeguro('tipoJuicio', tipoCompleto || '---');
+    setTextoSeguro('materia', casoActual.tipo_juicio || '---');
+    setTextoSeguro('tipoProcedimiento', casoActual.subtipo_juicio || '---');
+    setTextoSeguro('viaProcedimiento', casoActual.sub_subtipo_juicio || '---');
 
     if (typeof catalogos !== 'undefined') {
-        const tribunal = catalogos.tribunales?.find(t => t.id === casoActual.tribunal_id);
-        setTextoSeguro('tribunal', tribunal?.nombre || '---');
+        const organo = catalogos.organosJurisdiccionales?.find(t => t.id === casoActual.organo_jurisdiccional_id);
+        setTextoSeguro('tribunal', casoActual.organo_jurisdiccional_nombre || organo?.nombre || '---');
+        setTextoSeguro('circuitoTribunal', casoActual.organo_jurisdiccional_circuito || organo?.circuito || '---');
     } else {
-        setTextoSeguro('tribunal', casoActual.tribunal || '---');
+        setTextoSeguro('tribunal', casoActual.organo_jurisdiccional_nombre || '---');
+        setTextoSeguro('circuitoTribunal', '---');
     }
 
     setTextoSeguro('fechaInicio', formatearFecha(casoActual.fecha_inicio));
@@ -239,7 +662,11 @@ function renderizarCaso() {
         if (casoActual.importe_demandado === 0 || !casoActual.importe_demandado) {
             importeElem.innerHTML = '<span class="sin-cuantia">Sin cuantía</span>';
         } else {
-            importeElem.innerHTML = '<span class="info-value-importe">$' + casoActual.importe_demandado.toLocaleString('es-MX', { minimumFractionDigits: 2 }) + ' MXN</span>';
+            const importeFormateado = Number(casoActual.importe_demandado).toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            importeElem.innerHTML = '<span class="info-value-importe">$' + importeFormateado + ' MXN</span>';
         }
     }
 
@@ -257,7 +684,7 @@ function renderizarCaso() {
     }
 
     // Abogado Responsable
-    const abogado = casoActual.abogado_responsable || (casoActual.seguimiento?.abogado_responsable) || null;
+    const abogado = casoActual.abogado_responsable_nombre || null;
     const abogadoElem = document.getElementById('abogadoResponsable');
     if (abogadoElem) {
         if (abogado) {
@@ -269,6 +696,7 @@ function renderizarCaso() {
             abogadoElem.innerHTML = '<span class="info-vacio">Sin asignar</span>';
         }
     }
+    configurarControlesReasignacionAbogado();
 
     // Pronóstico
     const pronostico = casoActual.pronostico || (casoActual.seguimiento?.pronostico) || null;
@@ -344,7 +772,7 @@ function renderizarCaso() {
     }
 
     // === SEGUIMIENTO DEL ASUNTO ===
-    renderizarSeguimiento();
+    await renderizarSeguimiento();
 
     // Verificar botón actualizar
     verificarBotonActualizar();
@@ -404,7 +832,7 @@ function renderizarPartesCompactas(tipo, partes) {
     const lista = document.getElementById(`${tipoLower}Info`) || document.getElementById(`${tipoLower}sInfo`);
     const count = document.getElementById(`${tipoLower}Count`) || document.getElementById(`${tipoLower}sCount`);
     
-    // Validación básica de elementos
+    // Validacion básica de elementos
     if (!seccion || !lista) {
         console.warn(`No se encontró seccion o lista para ${tipo}`);
         return;
@@ -483,7 +911,7 @@ function obtenerPrestacionesDelCaso() {
     return [];
 }
 
-function renderizarSeguimiento() {
+async function renderizarSeguimiento() {
     if (!casoActual) return;
     
     const seg = casoActual.seguimiento || {};
@@ -518,22 +946,142 @@ function renderizarSeguimiento() {
     }
 
     // Documentos adjuntos (nuevo formato)
-    const docsContainer = document.getElementById('documentosAdjuntos');
-    if (docsContainer && casoActual.documentos && Array.isArray(casoActual.documentos) && casoActual.documentos.length > 0) {
-        docsContainer.innerHTML = casoActual.documentos.map((doc, i) => {
-            const ext = (doc.nombre || '').split('.').pop()?.toUpperCase() || 'PDF';
-            return `
-                <div class="documento-item" onclick="abrirPDF(${i}); return false;" style="cursor: pointer;">
-                    <span class="documento-icon">${ext}</span>
-                    <span>${doc.nombre || 'Documento'}</span>
+    await renderizarTimelineCivil();
+}
+
+async function renderizarTimelineCivil() {
+    const container = document.getElementById('timelineCivil');
+    if (!container) return;
+
+    let seguimientos = casoActual.seguimientos || [];
+    if (seguimientos.length === 0 && casoActual.seguimiento && casoActual.seguimiento.fecha_actuacion) {
+        seguimientos = [casoActual.seguimiento];
+    }
+
+    if (seguimientos.length === 0) {
+        container.innerHTML = '<div class="timeline-empty">Sin actualizaciones registradas</div>';
+        return;
+    }
+
+    let documentosPorSeguimiento = {};
+
+    try {
+        const documentos = await obtenerDocumentosCivilApi(casoActual.id);
+        documentosPorSeguimiento = agruparDocumentosPorSeguimiento(documentos);
+    } catch (error) {
+        console.error('Error al cargar documentos del detalle:', error);
+    }
+
+    const seguimientosOrdenados = [...seguimientos]
+        .sort((a, b) => {
+            const fechaA = new Date(a.fecha_actuacion);
+            const fechaB = new Date(b.fecha_actuacion);
+            const diferencia = fechaA - fechaB;
+
+            if (diferencia !== 0) {
+                return diferencia;
+            }
+
+            return (a.id ?? 0) - (b.id ?? 0);
+        })
+        .map((seguimiento, index) => ({
+            ...seguimiento,
+            numeroActualizacion: index + 1
+        }))
+        .reverse();
+
+    const visibles = historialExpandido
+        ? seguimientosOrdenados
+        : seguimientosOrdenados.slice(0, MAX_ACTUALIZACIONES_VISIBLES);
+    const restantes = seguimientosOrdenados.length - visibles.length;
+
+    container.innerHTML = visibles.map((seguimiento, index) => {
+        const documentos = documentosPorSeguimiento[seguimiento.id] || [];
+        const documento = documentos[0] || null;
+
+        return `
+            <div class="timeline-item ${index === visibles.length - 1 ? 'is-last' : ''}">
+                <div class="timeline-rail" aria-hidden="true">
+                    <span class="timeline-dot"></span>
                 </div>
-            `;
-        }).join('');
+                <div class="timeline-card">
+                    <div class="timeline-top timeline-top-swap">
+                        <div class="timeline-meta timeline-meta-stack">
+                            <span class="timeline-date-pill">${formatearFecha(seguimiento.fecha_actuacion)}</span>
+                            <span class="timeline-step">Actualizacion ${seguimiento.numeroActualizacion}</span>
+                        </div>
+                        <span class="timeline-type-chip">${seguimiento.tipo_actuacion || 'Sin tipo'}</span>
+                    </div>
+                    <div class="timeline-desc">${seguimiento.descripcion || 'Sin descripcion registrada.'}</div>
+                    ${(documento || usuarioActual?.rol !== 'consulta') ? `
+                        <div class="timeline-card-actions timeline-card-actions-between">
+                            ${documento ? `
+                            <a class="timeline-doc-link" href="${window.construirUrlApiConToken?.(`api/downloadCivilDocument.php?id=${documento.id}`) || `api/downloadCivilDocument.php?id=${documento.id}`}" target="_blank">
+                                Ver PDF
+                            </a>
+                            <span class="timeline-doc-meta">${documento.nombre_original} · ${formatearTamanoArchivo(documento.tamano_bytes)}</span>
+                            ` : ''}
+                            ${usuarioActual?.rol !== 'consulta' ? `
+                            <button type="button" class="timeline-delete-btn" onclick="confirmarEliminarSeguimientoCivilDetalle(${seguimiento.id})">
+                                Eliminar
+                            </button>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (seguimientosOrdenados.length > MAX_ACTUALIZACIONES_VISIBLES) {
+        container.innerHTML += `
+            <div class="timeline-actions">
+                <button type="button" class="timeline-toggle-btn" onclick="toggleHistorialCivilDetalle()">
+                    ${historialExpandido ? 'Mostrar menos' : `Mostrar ${restantes} mas`}
+                </button>
+            </div>
+        `;
     }
 }
 
+function toggleHistorialCivilDetalle() {
+    historialExpandido = !historialExpandido;
+    renderizarTimelineCivil();
+}
+
+async function confirmarEliminarSeguimientoCivilDetalle(trackingId) {
+    if (!trackingId) return;
+
+    const confirmacion = await window.appConfirm?.({
+        title: 'Eliminar actualización',
+        message: '¿Deseas eliminar esta actualización? Si tiene PDF ligado, también se eliminará.',
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar'
+    });
+    if (!confirmacion) {
+        return;
+    }
+
+    try {
+        await eliminarSeguimientoCivilApi(trackingId);
+        await cargarDetalleCaso();
+        await window.appAlert?.({
+            title: 'Cambio guardado',
+            message: 'Actualización eliminada correctamente.'
+        });
+    } catch (error) {
+        console.error('Error al eliminar seguimiento civil:', error);
+        await window.appAlert?.({
+            title: 'No se pudo eliminar la actualización',
+            message: error.message || 'Ocurrió un error al eliminar la actualización.'
+        });
+    }
+}
+
+window.confirmarEliminarSeguimientoCivilDetalle = confirmarEliminarSeguimientoCivilDetalle;
+
 function verificarBotonActualizar() {
-    // La actualización siempre puede recibir nuevos datos
+    // La actualizacion siempre puede recibir nuevos datos
 }
 
 function volver() {
@@ -541,12 +1089,28 @@ function volver() {
 }
 
 function editarDatos() {
+    if (esCasoAcumulado()) {
+        window.appAlert?.({
+            title: 'Asunto acumulado',
+            message: `Este asunto esta acumulado al expediente ${obtenerNumeroPadreAcumulacion()}. Debe desacumularse primero.`
+        });
+        return;
+    }
+
     if (casoActual?.id) {
         window.location.href = `editarCaso.html?id=${casoActual.id}`;
     }
 }
 
 function abrirActualizacion() {
+    if (esCasoAcumulado()) {
+        window.appAlert?.({
+            title: 'Asunto acumulado',
+            message: `Este asunto esta acumulado al expediente ${obtenerNumeroPadreAcumulacion()}. Debe desacumularse primero.`
+        });
+        return;
+    }
+
     if (casoActual?.id) {
         window.location.href = `actualizarCaso.html?id=${casoActual.id}`;
     }
@@ -578,10 +1142,15 @@ function abrirPDF(index) {
             window.open(blobUrl, '_blank');
         } catch (e) {
             console.error('Error al abrir PDF:', e);
-            alert('No se pudo abrir el documento');
+            window.appAlert?.({
+                title: 'No se pudo abrir el documento',
+                message: 'Intenta de nuevo en unos momentos.'
+            });
         }
     }
 }
+
+window.cerrarModalReasignarAbogado = cerrarModalReasignarAbogado;
 
 function formatearFecha(fecha) {
     if (!fecha) return '---';
@@ -603,3 +1172,5 @@ function formatearFecha(fecha) {
     const yyyy = d.getFullYear();
     return `${dd}/${mm}/${yyyy}`;
 }
+
+

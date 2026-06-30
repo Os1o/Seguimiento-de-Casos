@@ -1,4 +1,4 @@
-// =====================================================
+﻿// =====================================================
 // FORMULARIO.JS - Logica para CREAR nuevos casos
 // =====================================================
 
@@ -6,69 +6,312 @@ let contadorActores = 0;
 let contadorDemandados = 0;
 let contadorCodemandados = 0;
 let usuarioActual = null;
+let catalogos = {
+    delegaciones: [],
+    areas: {},
+    organosJurisdiccionales: [],
+    prestaciones: [],
+    abogadosResponsables: [],
+    tiposJuicio: {}
+};
+let limitadorPrestacionesNotas = null;
 
-function verificarSesion() {
+function obtenerDelegacionCivilFormulario(id) {
+    if (!id) return null;
+    return (catalogos.delegaciones || []).find(delegacion => delegacion.id == id) || null;
+}
+
+function obtenerAbogadosDisponiblesFormulario(usuario, delegacionId) {
+    const abogados = Array.isArray(catalogos.abogadosResponsables) ? catalogos.abogadosResponsables : [];
+
+    if (usuario?.rol === 'admin') {
+        return abogados;
+    }
+
+    const delegacionUsuario = usuario?.delegacion_id ? parseInt(usuario.delegacion_id, 10) : null;
+    return abogados.filter(abogado => parseInt(abogado.delegacion_id, 10) === delegacionUsuario);
+}
+
+function llenarAbogadosResponsablesFormulario(usuario, delegacionId, abogadoSeleccionadoId = null) {
+    const select = document.getElementById('abogadoResponsable');
+    if (!select) return;
+
+    const abogadosDisponibles = obtenerAbogadosDisponiblesFormulario(usuario, delegacionId);
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    abogadosDisponibles.forEach(abogado => {
+        const option = document.createElement('option');
+        option.value = abogado.id;
+        option.textContent = abogado.nombre_completo;
+        select.appendChild(option);
+    });
+
+    const esAbogadoEditor = usuario?.rol === 'editor' && Boolean(usuario?.es_abogado);
+    if (esAbogadoEditor) {
+        select.value = usuario.id || '';
+        select.disabled = true;
+        return;
+    }
+
+    select.disabled = false;
+
+    if (abogadoSeleccionadoId) {
+        select.value = String(abogadoSeleccionadoId);
+    } else if (autoseleccionarSiEsUnica(select)) {
+        select.dispatchEvent(new Event('change'));
+    }
+}
+
+function actualizarHeaderCivilFormulario(usuario) {
+    if (!usuario) return;
+
+    const nombreUsuarioEl = document.getElementById('nombreUsuario');
+    if (nombreUsuarioEl) {
+        nombreUsuarioEl.textContent = usuario.nombre_completo;
+    }
+
+    const badgeRol = document.getElementById('badgeRol');
+    if (badgeRol) {
+        const rolesTexto = { admin: 'Admin', jefe: 'Jefe', editor: 'Editor', consulta: 'Consulta' };
+        badgeRol.textContent = rolesTexto[usuario.rol] || usuario.rol || '';
+        badgeRol.className = 'badge-rol badge-rol-' + (usuario.rol || '');
+    }
+
+    const infoOOAD = document.getElementById('infoOOAD');
+    if (infoOOAD) {
+        if (usuario.delegacion_id) {
+            const delegacion = obtenerDelegacionCivilFormulario(usuario.delegacion_id);
+            infoOOAD.textContent = delegacion?.nombre || 'Todas las JSJ';
+        } else {
+            infoOOAD.textContent = 'Todas las JSJ';
+        }
+    }
+}
+
+function agruparPorClave(items, key) {
+    return (items || []).reduce((acc, item) => {
+        const groupKey = item[key];
+        if (!acc[groupKey]) {
+            acc[groupKey] = [];
+        }
+
+        acc[groupKey].push(item);
+        return acc;
+    }, {});
+}
+
+function normalizarTextoOrdenNatural(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .trim();
+}
+
+function construirClaveOrdenNaturalOrgano(nombre) {
+    const ordinales = {
+        PRIMER: '0001',
+        PRIMERO: '0001',
+        SEGUNDO: '0002',
+        TERCER: '0003',
+        TERCERO: '0003',
+        CUARTO: '0004',
+        QUINTO: '0005',
+        SEXTO: '0006',
+        SEPTIMO: '0007',
+        OCTAVO: '0008',
+        NOVENO: '0009',
+        DECIMO: '0010',
+        UNDECIMO: '0011',
+        DUODECIMO: '0012',
+        DECIMOTERCERO: '0013',
+        DECIMOCUARTO: '0014',
+        DECIMOQUINTO: '0015',
+        DECIMOSEXTO: '0016',
+        DECIMOSEPTIMO: '0017',
+        DECIMOOCTAVO: '0018',
+        DECIMONOVENO: '0019',
+        VIGESIMO: '0020',
+        TRIGESIMO: '0030'
+    };
+
+    let texto = normalizarTextoOrdenNatural(nombre);
+
+    Object.entries(ordinales).forEach(([palabra, numero]) => {
+        const patron = new RegExp(`\\b${palabra}\\b`, 'g');
+        texto = texto.replace(patron, numero);
+    });
+
+    return texto;
+}
+
+function compararOrganosJurisdiccionales(a, b) {
+    const claveA = construirClaveOrdenNaturalOrgano(a?.nombre);
+    const claveB = construirClaveOrdenNaturalOrgano(b?.nombre);
+    return claveA.localeCompare(claveB, 'es', { sensitivity: 'base' });
+}
+
+async function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
     if (!usuarioStr) {
         window.location.href = 'login.html';
         return null;
     }
-    return JSON.parse(usuarioStr);
+
+    const usuarioLocal = JSON.parse(usuarioStr);
+
+    try {
+        const response = await fetch('api/session.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+        const result = await response.json();
+
+        if (response.ok && result.ok) {
+            const user = result.data?.user || {};
+            const usuario = {
+                id: user.id ?? null,
+                usuario: user.usuario ?? '',
+                nombre_completo: user.nombreCompleto ?? '',
+                rol: user.rol ?? '',
+                delegacion_id: user.delegacionId ?? null,
+                alcance_global: Boolean(user.alcanceGlobal),
+                permiso_civil_mercantil: Boolean(user.permisoCivilMercantil),
+                permiso_penal: Boolean(user.permisoPenal),
+                es_abogado: Boolean(user.esAbogado),
+                es_jefe: Boolean(user.esJefe),
+                session_token: user.sessionToken ?? ''
+            };
+
+            sessionStorage.setItem('usuario', JSON.stringify(usuario));
+            return usuario;
+        }
+    } catch (error) {
+        console.error('No se pudo refrescar la sesión del formulario civil:', error);
+    }
+
+    return usuarioLocal;
 }
 
-function cerrarSesion() {
-    sessionStorage.removeItem('usuario');
-    window.location.href = 'login.html';
+async function cerrarSesion() {
+    try {
+        await fetch('api/logout.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+    } catch (error) {
+        console.error('Error al cerrar sesion:', error);
+    } finally {
+        sessionStorage.removeItem('usuario');
+        window.location.href = 'login.html';
+    }
 }
 
-function sincronizarCatalogosCivil() {
-    const tiposJuicio = {};
+window.cerrarSesion = cerrarSesion;
 
-    Object.entries(catalogosDB.tiposJuicio || {}).forEach(([materia, tipos]) => {
-        tiposJuicio[materia] = (tipos || []).map(tipo => ({
+async function cargarCatalogosCivilDesdeApi() {
+    const response = await fetch('api/getCatalogs.php', {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar los catalogos');
+    }
+
+    const data = result.data || {};
+    const tiposJuicioAgrupados = agruparPorClave(data.tiposJuicio || [], 'materia');
+    const subtiposPorTipo = agruparPorClave(data.subtiposJuicio || [], 'tipo_juicio_id');
+
+    Object.keys(tiposJuicioAgrupados).forEach(materia => {
+        tiposJuicioAgrupados[materia] = tiposJuicioAgrupados[materia].map(tipo => ({
             ...tipo,
-            subtipos: catalogosDB.subtiposJuicio[tipo.id] || []
+            subtipos: subtiposPorTipo[tipo.id] || []
         }));
     });
 
-    window.catalogos = {
-        delegaciones: catalogosDB.delegaciones || [],
-        areas: catalogosDB.areas || {},
-        tribunales: catalogosDB.tribunales || [],
-        prestaciones: catalogosDB.prestaciones || [],
-        tiposJuicio
+    catalogos = {
+        delegaciones: data.delegaciones || [],
+        areas: agruparPorClave(data.areas || [], 'delegacion_id'),
+        organosJurisdiccionales: data.organosJurisdiccionales || [],
+        prestaciones: data.prestaciones || [],
+        abogadosResponsables: data.abogadosResponsables || [],
+        tiposJuicio: tiposJuicioAgrupados
     };
+
+    window.catalogos = catalogos;
+
+    return catalogos;
+}
+
+async function guardarCasoCivilApi(caso) {
+    const response = await fetch('api/saveCivilCase.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(caso)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudo guardar el asunto');
+    }
+
+    return result.data?.case ?? null;
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-    const usuario = verificarSesion();
+    const usuario = await verificarSesion();
     if (!usuario) return;
     usuarioActual = usuario;
+    window.mostrarCargaVista?.('.container');
+
+    if (!usuario.permiso_civil_mercantil && usuario.rol !== 'admin') {
+        window.location.href = usuario.permiso_penal ? 'penal.html' : 'login.html';
+        return;
+    }
 
     // Proteger ruta: consulta no puede crear
-    if (usuario.rol === 'consulta') {
+    if (usuario.rol === 'consulta' || usuario.rol === 'jefe') {
         window.location.href = 'casos.html';
         return;
     }
 
-    document.getElementById('nombreUsuario').textContent = usuario.nombre_completo;
+    actualizarHeaderCivilFormulario(usuario);
 
     try {
-        await cargarCatalogos();
-        sincronizarCatalogosCivil();
-    } catch (err) {
-        console.error('No se pudieron cargar los catalogos desde Supabase:', err);
-        window.catalogos = { delegaciones: [], areas: {}, tribunales: [], prestaciones: [], tiposJuicio: {} };
-    }
+        try {
+            await cargarCatalogosCivilDesdeApi();
+            actualizarHeaderCivilFormulario(usuario);
+        } catch (err) {
+            console.error('No se pudieron cargar los catalogos desde la API local:', err);
+            window.catalogos = { delegaciones: [], areas: {}, organosJurisdiccionales: [], prestaciones: [], abogadosResponsables: [], tiposJuicio: {} };
+        }
 
-    configurarEventListeners(usuario);
-    inicializarFormulario(usuario);
+        configurarEventListeners(usuario);
+        inicializarFormulario(usuario);
+        window.initSearchableSelect?.('tribunal', {
+            placeholder: 'Seleccione...',
+            searchPlaceholder: 'Buscar tribunal o juzgado...'
+        });
+        limitadorPrestacionesNotas = window.setupExpandableTextLimiter?.({
+            fieldId: 'prestacionesNotas'
+        }) || null;
+    } finally {
+        await window.ocultarCargaVista?.('.container');
+    }
 });
 
 function inicializarFormulario(usuario) {
     llenarDelegaciones(usuario);
     llenarTribunales(usuario);
     llenarPrestaciones();
+    llenarAbogadosResponsablesFormulario(usuario, document.getElementById('delegacion').value || usuario?.delegacion_id || null);
 }
 
 function llenarDelegaciones(usuario) {
@@ -84,7 +327,7 @@ function llenarDelegaciones(usuario) {
     if (usuario && usuario.rol !== 'admin' && usuario.delegacion_id) {
         select.value = usuario.delegacion_id;
         select.disabled = true;
-        // Disparar change para cargar áreas
+        // Disparar change para cargar Ã¡reas
         select.dispatchEvent(new Event('change'));
     }
 }
@@ -93,17 +336,19 @@ function llenarTribunales(usuario, delegacionId) {
     const select = document.getElementById('tribunal');
     select.innerHTML = '<option value="">Seleccione...</option>';
 
-    // Determinar por cuál delegación filtrar
     let filtroDeleg = delegacionId || null;
     if (!filtroDeleg && usuario && usuario.rol !== 'admin' && usuario.delegacion_id) {
         filtroDeleg = usuario.delegacion_id;
     }
 
-    const tribunalesFiltrados = filtroDeleg
-        ? catalogos.tribunales.filter(t => t.delegacion_id === parseInt(filtroDeleg))
-        : catalogos.tribunales;
+    const organosFiltrados = filtroDeleg
+        ? catalogos.organosJurisdiccionales.filter(t => t.delegacion_id === parseInt(filtroDeleg, 10))
+        : catalogos.organosJurisdiccionales;
 
-    tribunalesFiltrados.forEach(t => {
+    organosFiltrados
+        .slice()
+        .sort(compararOrganosJurisdiccionales)
+        .forEach(t => {
         const option = document.createElement('option');
         option.value = t.id;
         option.textContent = t.nombre;
@@ -112,7 +357,7 @@ function llenarTribunales(usuario, delegacionId) {
 }
 
 function llenarPrestaciones() {
-    // Llenar select de prestación principal
+    // Llenar select de prestaciÃ³n principal
     const selectPrincipal = document.getElementById('prestacionPrincipal');
     if (selectPrincipal) {
         selectPrincipal.innerHTML = '<option value="">Seleccione...</option>';
@@ -190,7 +435,7 @@ function actualizarPrestacionesTags() {
         if (!prest) return;
         const tag = document.createElement('span');
         tag.className = 'multiselect-tag';
-        tag.innerHTML = `${prest.nombre} <span class="multiselect-tag-remove" onclick="event.stopPropagation(); quitarPrestacion(${prest.id})">✕</span>`;
+        tag.innerHTML = `${prest.nombre} <span class="multiselect-tag-remove" onclick="event.stopPropagation(); quitarPrestacion(${prest.id})">&times;</span>`;
         tagsContainer.appendChild(tag);
     });
 }
@@ -211,16 +456,16 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Determina si un subtipo es visible según la jurisdicción seleccionada
+// Determina si un subtipo es visible segÃºn la jurisdicciÃ³n seleccionada
 function subtipoVisibleParaJurisdiccion(st, jurisdiccion) {
-    if (!jurisdiccion) return true; // Sin jurisdicción seleccionada, mostrar todos
+    if (!jurisdiccion) return true; // Sin jurisdicciÃ³n seleccionada, mostrar todos
 
-    // Si el subtipo tiene jurisdicción directa
+    // Si el subtipo tiene jurisdicciÃ³n directa
     if (st.jurisdiccion) {
         return st.jurisdiccion === 'AMBAS' || st.jurisdiccion === jurisdiccion;
     }
 
-    // Si tiene sub-subtipos, mostrar si al menos uno aplica a la jurisdicción
+    // Si tiene sub-subtipos, mostrar si al menos uno aplica a la jurisdicciÃ³n
     if (st.subtipos && st.subtipos.length > 0) {
         return st.subtipos.some(ss => ss.jurisdiccion === 'AMBAS' || ss.jurisdiccion === jurisdiccion);
     }
@@ -247,8 +492,9 @@ function configurarEventListeners(usuario) {
             selectArea.disabled = true;
         }
 
-        // Actualizar tribunales según la delegación seleccionada
+        // Actualizar tribunales segÃºn la delegaciÃ³n seleccionada
         llenarTribunales(usuario, delegacionId);
+        llenarAbogadosResponsablesFormulario(usuario, delegacionId);
     });
 
     // Cambio de jurisdiccion muestra campos correspondientes
@@ -284,13 +530,18 @@ function configurarEventListeners(usuario) {
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
     });
 
-    // Cambio de tipo de juicio actualiza subtipos (filtrados por jurisdicción)
+    // Cambio de tipo de juicio actualiza subtipos (filtrados por jurisdicciÃ³n)
     document.getElementById('tipoJuicio').addEventListener('change', function() {
         const tipo = this.value;
         const selectSubtipo = document.getElementById('subtipoJuicio');
+        const grupoSubsub = document.getElementById('grupSubsubtipo');
+        const selectSubsub = document.getElementById('subsubtipoJuicio');
         selectSubtipo.innerHTML = '<option value="">Seleccione...</option>';
+        selectSubsub.innerHTML = '<option value="">Seleccione...</option>';
+        selectSubsub.required = false;
+        grupoSubsub.style.display = 'none';
 
-        // Obtener jurisdicción seleccionada
+        // Obtener jurisdicciÃ³n seleccionada
         const jurisdiccionRadio = document.querySelector('input[name="jurisdiccion"]:checked');
         const jurisdiccion = jurisdiccionRadio ? jurisdiccionRadio.value : '';
 
@@ -309,15 +560,15 @@ function configurarEventListeners(usuario) {
                     selectSubtipo.appendChild(option);
                 });
 
-            // AMPARO INDIRECTO: siempre Federal, auto-seleccionar único subtipo
+            // AMPARO INDIRECTO: siempre Federal, auto-seleccionar Ãºnico subtipo
             if (tipo === 'AMPARO INDIRECTO') {
-                // Forzar jurisdicción Federal
+                // Forzar jurisdicciÃ³n Federal
                 const radioFederal = document.getElementById('federal');
                 if (radioFederal) {
                     radioFederal.checked = true;
                     radioFederal.dispatchEvent(new Event('change'));
                 }
-                // Auto-seleccionar el único subtipo
+                // Auto-seleccionar el Ãºnico subtipo
                 if (selectSubtipo.options.length === 2) {
                     selectSubtipo.value = selectSubtipo.options[1].value;
                 }
@@ -328,13 +579,15 @@ function configurarEventListeners(usuario) {
                 const grupoSubtipo = document.getElementById('grupoSubtipo');
                 if (grupoSubtipo) grupoSubtipo.style.display = '';
             }
+
+            if (autoseleccionarSiEsUnica(selectSubtipo)) {
+                selectSubtipo.dispatchEvent(new Event('change'));
+            }
         } else {
             selectSubtipo.disabled = true;
             const grupoSubtipo = document.getElementById('grupoSubtipo');
             if (grupoSubtipo) grupoSubtipo.style.display = '';
         }
-
-        document.getElementById('grupSubsubtipo').style.display = 'none';
     });
 
     // Cambio de subtipo puede mostrar sub-subtipos
@@ -346,7 +599,7 @@ function configurarEventListeners(usuario) {
         const jurisdiccionRadio = document.querySelector('input[name="jurisdiccion"]:checked');
         const jurisdiccion = jurisdiccionRadio ? jurisdiccionRadio.value : '';
 
-        // Filtrar sub-subtipos según jurisdicción seleccionada
+        // Filtrar sub-subtipos segÃºn jurisdicciÃ³n seleccionada
         const subtiposFiltrados = subtipos.filter(ss => {
             if (!jurisdiccion || !ss.jurisdiccion) return true;
             return ss.jurisdiccion === 'AMBAS' || ss.jurisdiccion === jurisdiccion;
@@ -357,16 +610,20 @@ function configurarEventListeners(usuario) {
 
         if (subtiposFiltrados.length > 0) {
             grupoSubsub.style.display = 'block';
-            selectSubsub.innerHTML = '<option value="">Ninguno</option>';
+            selectSubsub.required = true;
+            selectSubsub.innerHTML = '<option value="">Seleccione...</option>';
             subtiposFiltrados.forEach(ss => {
                 const option = document.createElement('option');
                 option.value = ss.id;
                 option.textContent = ss.nombre;
                 selectSubsub.appendChild(option);
             });
+
+            autoseleccionarSiEsUnica(selectSubsub);
         } else {
             grupoSubsub.style.display = 'none';
             selectSubsub.value = '';
+            selectSubsub.required = false;
         }
     });
 
@@ -637,20 +894,26 @@ async function guardarCaso(e) {
 
     const caso = construirObjetoCaso();
 
-    if (!validarCasoSupabase(caso)) {
+    if (!await validarCasoCivil(caso)) {
         return;
     }
 
     try {
-        const casoGuardado = await guardarCasoCivil(caso);
+        const casoGuardado = await guardarCasoCivilApi(caso);
         const casos = JSON.parse(localStorage.getItem('casos') || '[]');
         casos.unshift({ ...caso, ...casoGuardado, seguimiento: {} });
         localStorage.setItem('casos', JSON.stringify(casos));
-        alert('Asunto guardado exitosamente');
+        await window.appAlert({
+            title: 'Cambios guardados',
+            message: 'El registro se guard\u00f3 correctamente.'
+        });
         window.location.href = 'casos.html';
     } catch (err) {
         console.error('Error al guardar asunto civil:', err);
-        alert('No se pudo guardar el asunto: ' + err.message);
+        await window.appAlert({
+            title: 'No se pudo guardar el asunto',
+            message: err.message || 'Ocurri\u00f3 un problema al guardar el asunto.'
+        });
     }
 }
 
@@ -684,7 +947,7 @@ function construirObjetoCaso() {
     // Codemandados
     const codemandados = obtenerPersonasDinamicas('codemandado_');
 
-    // Prestación principal (single select)
+    // PrestaciÃ³n principal (single select)
     const prestacionPrincipal = parseInt(document.getElementById('prestacionPrincipal').value) || null;
 
     // Prestaciones secundarias (multiselect) - excluir la principal si fue seleccionada
@@ -716,7 +979,7 @@ function construirObjetoCaso() {
         sub_subtipo_juicio: subsubtipoSelect.value ? subsubtipoSelect.options[subsubtipoSelect.selectedIndex].text : null,
         numero_expediente: numeroExpediente,
         acumulado_a: null,
-        tribunal_id: parseInt(document.getElementById('tribunal').value),
+        organo_jurisdiccional_id: parseInt(document.getElementById('tribunal').value),
         fecha_inicio: document.getElementById('fechaInicio').value,
         imss_es: imssEs,
         actor: actores.length > 0 ? actores : null,
@@ -726,7 +989,7 @@ function construirObjetoCaso() {
         prestaciones_secundarias: prestacionesSecundarias,
         prestaciones_notas: (document.getElementById('prestacionesNotas').value || '').toUpperCase() || null,
         importe_demandado: importeDemandado,
-        abogado_responsable: (document.getElementById('abogadoResponsable').value || '').toUpperCase() || null,
+        abogado_responsable_id: parseInt(document.getElementById('abogadoResponsable').value, 10) || null,
         pronostico: document.getElementById('pronostico').value || null,
         estatus: 'TRAMITE',
         fecha_vencimiento: null
@@ -779,37 +1042,77 @@ function obtenerPersonasDinamicas(prefijo) {
 
 function validarCaso(caso) {
     if (!caso.prestacion_principal) {
-        alert('Debe seleccionar una prestación principal');
+        window.appAlert({
+            title: 'Prestaci\u00f3n principal requerida',
+            message: 'Debe seleccionar una prestaci\u00f3n principal.'
+        });
         return false;
     }
 
     return true;
 }
-function validarCasoSupabase(caso) {
-    if (!caso.delegacion_id || !caso.area_generadora_id || !caso.tribunal_id || !caso.fecha_inicio) {
-        alert('Completa todos los campos obligatorios');
+async function validarCasoCivil(caso) {
+    if (!caso.delegacion_id || !caso.area_generadora_id || !caso.organo_jurisdiccional_id || !caso.fecha_inicio) {
+        await window.appAlert({
+            title: 'Campos obligatorios',
+            message: 'Completa todos los campos obligatorios.'
+        });
         return false;
     }
 
     if (!caso.numero_expediente) {
-        alert('Debe capturar el numero de expediente');
+        await window.appAlert({
+            title: 'N\u00famero de expediente requerido',
+            message: 'Debe capturar el n\u00famero de expediente.'
+        });
         return false;
     }
 
     if (caso.imss_es !== 'ACTOR' && (!caso.actor || caso.actor.length === 0)) {
-        alert('Debe capturar al menos un actor');
+        await window.appAlert({
+            title: 'Actor requerido',
+            message: 'Debe capturar al menos un actor.'
+        });
         return false;
     }
 
     if (caso.imss_es !== 'DEMANDADO' && (!caso.demandados || caso.demandados.length === 0)) {
-        alert('Debe capturar al menos un demandado');
+        await window.appAlert({
+            title: 'Demandado requerido',
+            message: 'Debe capturar al menos un demandado.'
+        });
         return false;
     }
 
     if (!caso.prestacion_principal) {
-        alert('Debe seleccionar una prestacion principal');
+        await window.appAlert({
+            title: 'Prestaci\u00f3n principal requerida',
+            message: 'Debe seleccionar una prestaci\u00f3n principal.'
+        });
+        return false;
+    }
+
+    if (!caso.abogado_responsable_id) {
+        await window.appAlert({
+            title: 'Abogado responsable requerido',
+            message: 'Debe seleccionar un abogado responsable.'
+        });
         return false;
     }
 
     return true;
 }
+
+function obtenerOpcionesReales(select) {
+    return Array.from(select.options || []).filter(option => option.value !== '');
+}
+
+function autoseleccionarSiEsUnica(select) {
+    const opcionesReales = obtenerOpcionesReales(select);
+    if (opcionesReales.length === 1) {
+        select.value = opcionesReales[0].value;
+        return true;
+    }
+    return false;
+}
+

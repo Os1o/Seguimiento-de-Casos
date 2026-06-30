@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requerimientos ministeriales - Sistema de Gestion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
+</head>
+<body class="modern-header-page penal-intake-page">
+    <header class="header-gob app-header" data-home-href="penal.html" data-module="Penal" data-back-href="listadoRequerimientosPenal.html" data-back-label="Volver al listado" data-header-variant="modern" data-show-module-nav="false"></header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="penal.html">Asuntos Penales</a>
+            <span class="breadcrumb-separator">></span>
+            <a href="listadoRequerimientosPenal.html" data-requerimientos-list-link>Listado de requerimientos</a>
+            <span class="breadcrumb-separator">></span>
+            <span>Requerimientos ministeriales</span>
+        </div>
+
+        <section class="penal-req-shell">
+            <div class="penal-req-hero">
+                <div class="penal-req-hero-copy">
+                    <h1 class="penal-req-title">Requerimientos ministeriales</h1>
+                </div>
+            </div>
+
+            <div class="card penal-req-summary">
+                <div class="penal-req-summary-head">
+                    <h2>Referencia del asunto</h2>
+                </div>
+
+                <div class="penal-req-summary-grid">
+                    <div class="info-item">
+                        <span class="info-label">No. de carpeta</span>
+                        <span class="info-value" id="reqRefNumeroCarpeta">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Delito que se investiga</span>
+                        <span class="info-value" id="reqRefDelito">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">OOAD</span>
+                        <span class="info-value" id="reqRefOoad">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="penal-req-phasebar" aria-label="Fases del requerimiento">
+                <div class="penal-req-phase-pill is-active">
+                    <span>01</span>
+                    <strong>Alta inicial</strong>
+                </div>
+                <div class="penal-req-phase-pill is-locked" id="phasePillTwo">
+                    <span>02</span>
+                    <strong>Seguimiento interno</strong>
+                </div>
+                <div class="penal-req-phase-pill is-locked" id="phasePillThree">
+                    <span>03</span>
+                    <strong>Contestacion final</strong>
+                </div>
+            </div>
+
+            <form id="formRequerimientosPenal" class="penal-req-flow">
+                <section class="card penal-req-form penal-req-phase" data-phase="1">
+                    <div class="penal-req-form-title">
+                        <h2>Fase 1. Alta inicial del requerimiento</h2>
+                    </div>
+
+                    <div class="penal-req-block">
+                        <div class="penal-req-block-head">
+                            <h3>Requerimiento inicial de la fiscalia</h3>
+                        </div>
+
+                        <div class="form-grid penal-req-grid-top">
+                            <div class="form-group">
+                                <label class="form-label required" for="folioReferenciaReq">Folio o referencia</label>
+                                <input type="text" id="folioReferenciaReq" class="form-input" placeholder="Folio, oficio o referencia del requerimiento">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required" for="autoridadEmisora">Autoridad / Fiscalia / MP emisor</label>
+                                <input type="text" id="autoridadEmisora" class="form-input" placeholder="Nombre de la autoridad emisora">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required" for="fechaRecepcionFiscalia">Fecha de recepcion</label>
+                                <input type="date" id="fechaRecepcionFiscalia" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="form-grid penal-req-grid-bottom">
+                            <div class="form-group">
+                                <label class="form-label required" for="fechaLimiteAtencionReq">Fecha limite de atencion</label>
+                                <input type="date" id="fechaLimiteAtencionReq" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required" for="documentoFiscaliaInicial">Documento inicial</label>
+                                <input type="file" id="documentoFiscaliaInicial" class="form-input" accept=".pdf">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="penal-req-block">
+                        <div class="penal-req-block-head">
+                            <h3>Solicitudes iniciales del requerimiento</h3>
+                        </div>
+
+                        <div class="penal-req-block-copy">
+                            <p>Aqui se registran todas las solicitudes contenidas en el requerimiento inicial. En la siguiente fase se dara seguimiento individual a cada una.</p>
+                        </div>
+
+                        <div id="solicitudesInicialesList" class="penal-req-items">
+                            <article class="penal-req-item-card penal-req-item-seed" data-seed-item>
+                                <div class="penal-req-item-top">
+                                    <div>
+                                        <span class="penal-req-item-index">Solicitud 01</span>
+                                        <h4>Captura inicial de solicitud</h4>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label required">Titulo o solicitud</label>
+                                    <input type="text" class="form-input req-solicitud-titulo" placeholder="Nombre corto de la solicitud">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label required">Descripcion de lo solicitado</label>
+                                    <textarea class="form-textarea req-solicitud-descripcion" placeholder="Detalle de la informacion o documento requerido..."></textarea>
+                                </div>
+                            </article>
+                        </div>
+
+                        <div class="penal-req-item-actions penal-req-item-actions-start">
+                            <button type="button" class="btn btn-secondary" id="btnAgregarSolicitudInicial">Agregar otra solicitud</button>
+                        </div>
+                    </div>
+
+                    <div class="penal-req-actions">
+                        <a href="listadoRequerimientosPenal.html" class="btn btn-secondary" data-requerimientos-list-link>Regresar</a>
+                        <button type="button" class="btn btn-success" id="btnGuardarFaseUno">Guardar y continuar</button>
+                    </div>
+                </section>
+
+                <section class="card penal-req-form penal-req-phase is-locked" data-phase="2" id="faseSeguimientoInterno">
+                    <div class="penal-req-phase-lock">
+                        <span class="material-symbols-outlined">lock</span>
+                        <strong>Esta fase se habilita despues de guardar la fase 1.</strong>
+                    </div>
+
+                    <div class="penal-req-form-title">
+                        <h2>Fase 2. Requerimiento interno y seguimiento</h2>
+                    </div>
+
+                    <div class="penal-req-guidance">
+                        <strong>Esta fase no es obligatoria al guardar el alta inicial.</strong>
+                        <span>Capture el requerimiento interno solo cuando el asunto ya haya sido turnado a un área del IMSS para su atención.</span>
+                    </div>
+
+                    <div class="penal-req-block">
+                        <div class="penal-req-block-head">
+                            <h3>Requerimiento interno</h3>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group penal-req-date-group">
+                                <label class="form-label required" for="fechaInicioInterno">Fecha de inicio</label>
+                                <input type="date" id="fechaInicioInterno" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label required" for="areaResponsableReq">Area responsable</label>
+                                <select id="areaResponsableReq" class="form-select">
+                                    <option value="">Seleccione...</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="documentoRequerimientoInterno">Documento del requerimiento interno</label>
+                                <input type="file" id="documentoRequerimientoInterno" class="form-input" accept=".pdf,application/pdf">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="penal-req-block">
+                        <div class="penal-req-block-head">
+                            <h3>Seguimiento de solicitudes</h3>
+                        </div>
+
+                        <div class="penal-req-block-copy">
+                            <p>Las solicitudes capturadas en la fase 1 se muestran aqui para registrar su atencion, la documentacion recibida y su desahogo.</p>
+                        </div>
+
+                        <div id="seguimientoSolicitudesList" class="penal-req-items"></div>
+                    </div>
+
+                    <div class="penal-req-actions">
+                        <a href="listadoRequerimientosPenal.html" class="btn btn-secondary" data-requerimientos-list-link>Regresar</a>
+                        <button type="button" class="btn btn-secondary" id="btnGuardarFaseDosSalir">Guardar y volver al listado</button>
+                        <button type="button" class="btn btn-success" id="btnGuardarFaseDos">Guardar seguimiento</button>
+                        <button type="button" class="btn btn-primary" id="btnContinuarFaseTres">Continuar a contestación final</button>
+                    </div>
+                </section>
+
+                <section class="card penal-req-form penal-req-phase is-locked" data-phase="3" id="faseContestacionFinal">
+                    <div class="penal-req-phase-lock">
+                        <span class="material-symbols-outlined">lock</span>
+                        <strong>Esta fase se habilita despues de guardar el seguimiento interno.</strong>
+                    </div>
+
+                    <div class="penal-req-form-title">
+                        <h2>Fase 3. Contestacion final</h2>
+                    </div>
+
+                    <div class="penal-req-block">
+                        <div class="penal-req-block-head">
+                            <h3>Contestacion enviada por el IMSS</h3>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label required" for="fechaEnvioRespuestaFinal">Fecha de envio de la contestacion</label>
+                                <input type="date" id="fechaEnvioRespuestaFinal" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required" for="archivoRespuestaFinal">Documento enviado por el IMSS</label>
+                                <input type="file" id="archivoRespuestaFinal" class="form-input" accept=".pdf,application/pdf">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="penal-req-block">
+                        <div class="penal-req-block-head">
+                            <h3>Respuesta recibida de la fiscalia</h3>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label required" for="fechaRespuestaFiscaliaFinal">Fecha de recepcion de la respuesta</label>
+                                <input type="date" id="fechaRespuestaFiscaliaFinal" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required" for="archivoFiscaliaFinal">Documento de respuesta de la fiscalia</label>
+                                <input type="file" id="archivoFiscaliaFinal" class="form-input" accept=".pdf,application/pdf">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="notaRespuestaFinal">Observaciones de cierre</label>
+                            <textarea id="notaRespuestaFinal" class="form-textarea" placeholder="Anote observaciones relevantes sobre la contestacion y la respuesta recibida."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="penal-req-actions">
+                        <a href="listadoRequerimientosPenal.html" class="btn btn-secondary" data-requerimientos-list-link>Regresar</a>
+                        <button type="button" class="btn btn-success" id="btnGuardarFaseTres">Guardar contestacion final</button>
+                    </div>
+                </section>
+            </form>
+        </section>
+    </div>
+
+    <script src="js/headerComponent.js"></script>
+    <script src="js/requerimientosMinisterialesPenal.js"></script>
+</body>
+</html>

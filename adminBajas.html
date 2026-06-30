@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expedientes Dados de Baja - Sistema de Gestion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
+</head>
+
+<body>
+    <header class="header-gob app-header" data-home-href="casos.html" data-module="Bajas" data-back-href="casos.html" data-back-label="Volver a asuntos" data-admin-link="true" data-header-variant="modern" data-show-module-nav="false"></header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="casos.html">Asuntos</a>
+            <span class="breadcrumb-separator">></span>
+            <span>Administracion</span>
+            <span class="breadcrumb-separator">></span>
+            <span>Dados de baja</span>
+        </div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Expedientes Dados de Baja</h1>
+                <p class="page-subtitle">Consulta y restauracion de expedientes civiles / mercantiles y penales inactivos.</p>
+            </div>
+        </div>
+
+        <div class="card auditoria-filtros-card" style="margin-bottom:24px;">
+            <div class="bajas-filtros-layout">
+                <div class="bajas-filtros-grupo">
+                    <div class="form-group bajas-filtro bajas-filtro-busqueda">
+                        <label class="form-label">Expediente</label>
+                        <input type="text" id="busquedaExpedienteBajas" class="form-input" placeholder="Buscar por numero de expediente">
+                    </div>
+                    <div class="form-group bajas-filtro bajas-filtro-modulo">
+                        <label class="form-label">Modulo</label>
+                        <select id="filtroModuloBajas" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="CIVIL">Civil</option>
+                            <option value="PENAL">Penal</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group bajas-filtro bajas-filtro-acciones">
+                    <button id="btnRecargarBajas" class="btn btn-primary" type="button" onclick="cargarExpedientesBaja()">Actualizar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-container">
+                <table class="table" style="table-layout:auto; min-width:900px;">
+                    <thead>
+                        <tr>
+                            <th>Modulo</th>
+                            <th>Expediente</th>
+                            <th>JSJ</th>
+                            <th>Fecha baja</th>
+                            <th>Dado de baja por</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaBajasBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/headerComponent.js"></script>
+    <script src="js/adminBajas.js"></script>
+</body>
+
+</html>

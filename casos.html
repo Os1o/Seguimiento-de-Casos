@@ -1,26 +1,31 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asuntos Civiles, Mercantiles y Procedimientos Especiales - Sistema de Gestión</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
 </head>
 
-<body>
+<body class="modern-header-page">
     <!-- Header -->
-    <header class="header-gob app-header" data-home-href="casos.html" data-module="Civil / Mercantil" data-admin-link="true"></header>
+    <header class="header-gob app-header" data-home-href="casos.html" data-module="Civil / Mercantil" data-admin-link="true" data-header-variant="modern" data-main-view="true"></header>
 
     <!-- Contenido Principal -->
     <div class="container">
-        <!-- Módulo switcher -->
+        <!-- MÃ³dulo switcher -->
         <div class="modulo-switcher">
             <a href="casos.html" class="modulo-tab modulo-tab-active">Civil / Mercantil</a>
             <a href="penal.html" class="modulo-tab" id="linkPenal">Penal</a>
         </div>
 
-        <!-- Encabezado de Página -->
+        <!-- Encabezado de PÃ¡gina -->
         <div class="page-header">
             <div>
                 <h1 class="page-title">Asuntos Civiles, Mercantiles y Procedimientos Especiales</h1>
@@ -31,7 +36,7 @@
             </a>
         </div>
 
-        <!-- Dashboard: Contadores + Gráfica -->
+        <!-- Dashboard: Contadores + Grafica -->
         <div class="dashboard-row">
             <div class="contador-card">
                 <div class="contador-numero" id="totalCasos" style="color: var(--color-secondary);">0</div>
@@ -57,13 +62,25 @@
         <!-- Indicador de filtro de dona -->
         <div id="indicadorFiltroDona" style="display:none; background: #fff3cd; padding: 8px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; color: #856404;"></div>
 
-        <!-- Búsqueda -->
-        <div class="toolbar">
-            <div class="toolbar-left">
-                <input type="text" id="searchInput" class="search-input"
-                    placeholder="Buscar por asunto, actor o demandado...">
-                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
-                    Limpiar Filtros
+        <!-- Busqueda -->
+        <div class="toolbar toolbar-modern-search">
+            <div class="toolbar-modern-search-wrap">
+                <span class="toolbar-modern-search-icon material-symbols-outlined" aria-hidden="true">search</span>
+                <input type="text" id="searchInput" class="search-input toolbar-modern-search-input"
+                    placeholder="Buscar por asunto, tribunal, actor o deman...">
+            </div>
+            <div class="toolbar-modern-actions">
+                <div class="toolbar-filter-wrap">
+                    <button type="button" class="toolbar-modern-action toolbar-modern-action-filter" id="btnResumenFiltros" onclick="toggleResumenFiltros(event)">
+                        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+                        <span>Filtros</span>
+                        <span class="toolbar-modern-action-badge" id="badgeResumenFiltros" hidden>0</span>
+                    </button>
+                    <div id="panelResumenFiltros" class="toolbar-filter-panel" hidden></div>
+                </div>
+                <button type="button" class="toolbar-modern-action" onclick="limpiarFiltros()">
+                    <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+                    <span>Limpiar</span>
                 </button>
             </div>
         </div>
@@ -74,6 +91,7 @@
         -->
 
         <!-- Tabla de Asuntos -->
+        <div class="table-scroll-shell">
         <div class="table-container">
             <table class="table" id="tablaCasos">
                 <colgroup>
@@ -90,7 +108,6 @@
                     <col class="col-importe">
                     <col class="col-imss">
                     <col class="col-acumulados">
-                    <col class="col-actualizacion">
                     <col class="col-acciones">
                 </colgroup>
                 <thead>
@@ -103,33 +120,33 @@
                             <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus"
                                 onclick="toggleFiltro('filtroEstatus', this)"><span class="filtro-btn-nombre">Estatus <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
-                        <th>Núm. asunto</th>
+                        <th>Num. asunto</th>
                         <th class="th-filtrable">
-                            <button id="btn_filtroTipo" class="filtro-btn-custom" data-nombre="Tipo"
-                                onclick="toggleFiltro('filtroTipo', this)"><span class="filtro-btn-nombre">Tipo <span class="filtro-flecha">&#9660;</span></span></button>
+                            <button id="btn_filtroTipo" class="filtro-btn-custom" data-nombre="Materia"
+                                onclick="toggleFiltro('filtroTipo', this)"><span class="filtro-btn-nombre">Materia <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
                         <th class="th-filtrable">
                             <button id="btn_filtroJurisdiccion" class="filtro-btn-custom"
                                 data-nombre="Tribunal / Juzgado"
                                 onclick="toggleFiltro('filtroJurisdiccion', this)"><span class="filtro-btn-nombre">Tribunal / Juzgado <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
-                        <th>Fecha inicio</th>
+                        <th class="th-break-header"><span>Fecha<br>inicio</span></th>
                         <th>Actor</th>
                         <th>Demandado</th>
                         <th>Codemandado</th>
-                        <th>Prestación Principal</th>
+                        <th class="th-break-header"><span>Prestación<br>principal</span></th>
                         <th>Importe</th>
                         <th class="th-filtrable">
                             <button id="btn_filtroPosicionIMSS" class="filtro-btn-custom" data-nombre="Calidad IMSS"
                                 onclick="toggleFiltro('filtroPosicionIMSS', this)"><span class="filtro-btn-nombre">Calidad IMSS <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
                         <th>Acumulados</th>
-                        <th>Últ. actualización</th>
                         <th class="th-sticky-right"></th>
                     </tr>
                 </thead>
                 <tbody id="tablaCasosBody"></tbody>
             </table>
+        </div>
         </div>
 
         <!-- Panel flotante de filtro (fuera de la tabla) -->
@@ -137,7 +154,7 @@
             <div id="filtroPanelLista" class="filtro-panel-lista"></div>
         </div>
 
-        <!-- Paginación -->
+        <!-- PaginaciÃ³n -->
         <div id="paginacion" class="paginacion" style="display:none;"></div>
 
         <!-- Mensaje si no hay asuntos -->
@@ -148,11 +165,11 @@
         </div>
 
 
-        <!-- Actividad Reciente ESTO PARA OTRA SECCIÓN, SE DEJARÁ PARA FUTURA IMPLEMENTACIÓN 
+        <!-- Actividad Reciente ESTO PARA OTRA SECCIÃ“N, SE DEJARÃ PARA FUTURA IMPLEMENTACIÃ“N 
         <div class="seccion-actividad">
             <h3 class="seccion-actividad-titulo">Actividad Reciente</h3>
             <div id="actividadReciente" class="actividad-lista">
-                 //Se llena dinámicamente desde casos.js 
+                 //Se llena dinÃ¡micamente desde casos.js 
             </div>
         </div>-->
 
@@ -164,7 +181,7 @@
         <div class="card" style="max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h3 style="margin: 0; color: var(--color-primary);">Asuntos Acumulados</h3>
-                <button onclick="cerrarModalAcumulados()" class="btn-secondary" style="padding: 8px 16px;">✕</button>
+                <button onclick="cerrarModalAcumulados()" class="btn-secondary" style="padding: 8px 16px;">[x]</button>
             </div>
             <div id="listaAcumulados"></div>
         </div>
@@ -174,9 +191,9 @@
     <div id="modalAcumular"
         style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
         <div class="card" style="max-width: 500px; width: 90%;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div class="modal-header" style="margin-bottom: 16px;">
                 <h3 style="margin: 0; color: var(--color-primary);">Acumular Asunto</h3>
-                <button onclick="cerrarModalAcumular()" class="btn-secondary" style="padding: 8px 16px;">✕</button>
+                <button type="button" onclick="cerrarModalAcumular()" class="btn-close" aria-label="Cerrar">&times;</button>
             </div>
             <p style="margin-bottom: 8px;">Asunto: <strong id="acumularExpediente">-</strong></p>
             <p style="margin-bottom: 12px; font-size: 13px; color: var(--color-text-light);">Materia: <strong id="acumularMateria">-</strong> | JSJ: <strong id="acumularJSJ">-</strong></p>
@@ -202,12 +219,10 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabaseClient.js"></script>
-    <script src="js/supabaseService.js"></script>
     <script src="js/headerComponent.js"></script>
     <script src="js/casos.js"></script>
 </body>
 
 </html>
+
 

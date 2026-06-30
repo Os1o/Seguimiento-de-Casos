@@ -1,26 +1,27 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asuntos Penales - Sistema de Gestión</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
 </head>
 
-<body>
-    <!-- Header -->
-    <header class="header-gob app-header" data-home-href="penal.html" data-module="Penal" data-admin-link="true"></header>
+<body class="modern-header-page modern-dashboard-page">
+    <header class="header-gob app-header" data-home-href="penal.html" data-module="Penal" data-admin-link="true" data-header-variant="modern" data-main-view="true"></header>
 
-    <!-- Contenido Principal -->
     <div class="container">
-        <!-- Módulo switcher -->
         <div class="modulo-switcher">
-            <a href="casos.html" class="modulo-tab">Civil / Mercantil</a>
+            <a href="casos.html" class="modulo-tab" id="linkCivil">Civil / Mercantil</a>
             <a href="penal.html" class="modulo-tab modulo-tab-active">Penal</a>
         </div>
 
-        <!-- Encabezado de Página -->
         <div class="page-header">
             <div>
                 <h1 class="page-title">Asuntos Penales</h1>
@@ -31,99 +32,134 @@
             </a>
         </div>
 
-        <!-- Dashboard: Contadores + Gráfica -->
-        <div class="dashboard-row">
-            <div class="contador-card">
-                <div class="contador-numero" id="totalCasos" style="color: var(--color-secondary);">0</div>
-                <div class="contador-label">Total Asuntos</div>
+        <div class="penal-summary-strip" aria-label="Resumen de asuntos penales">
+            <div class="penal-summary-item penal-summary-item-export">
+                <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">folder</span>
+                <div class="penal-summary-copy">
+                    <div class="penal-summary-label">Total registros</div>
+                    <div class="penal-summary-value" id="totalCasos">0</div>
+                </div>
+                <button type="button" class="metric-export-button" aria-label="Exportar reporte" title="Exportar reporte">
+                    <span>Exportar Reporte</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">download</span>
+                </button>
             </div>
-            <div class="contador-card">
-                <div class="contador-numero" id="casosFavorables" style="color: var(--color-success);">0</div>
-                <div class="contador-label">Favorable</div>
+            <div class="penal-summary-item">
+                <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">pending_actions</span>
+                <div class="penal-summary-copy">
+                    <div class="penal-summary-label">En trámite</div>
+                    <div class="penal-summary-value" id="casosTramite">0</div>
+                </div>
             </div>
-            <div class="contador-card">
-                <div class="contador-numero" id="casosDesfavorables" style="color: var(--color-danger, #dc2626);">0</div>
-                <div class="contador-label">Desfavorable</div>
+            <div class="penal-summary-item">
+                <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">task_alt</span>
+                <div class="penal-summary-copy">
+                    <div class="penal-summary-label">Concluidos</div>
+                    <div class="penal-summary-value" id="casosConcluidos">0</div>
+                </div>
             </div>
-            <div class="contador-card grafica-card">
-                <div class="grafica-label">Sentencia de Asuntos</div>
-                <div class="grafica-dona-row">
-                    <canvas id="chartSentencia" width="110" height="110"></canvas>
-                    <div class="grafica-leyenda" id="leyendaSentencia"></div>
+            <div class="penal-summary-item">
+                <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">handshake</span>
+                <div class="penal-summary-copy">
+                    <div class="penal-summary-label">Con coadyuvancia</div>
+                    <div class="penal-summary-value" id="casosCoadyuvancia">0</div>
+                </div>
+            </div>
+            <div class="penal-summary-item">
+                <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">notification_important</span>
+                <div class="penal-summary-copy">
+                    <div class="penal-summary-label">Con acciones pendientes</div>
+                    <div class="penal-summary-value" id="casosPendientes">0</div>
+                </div>
+            </div>
+            <div class="penal-summary-item">
+                <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">help</span>
+                <div class="penal-summary-copy">
+                    <div class="penal-summary-label">Sin conocimiento AMP</div>
+                    <div class="penal-summary-value" id="casosSinConocimientoAmp">0</div>
                 </div>
             </div>
         </div>
 
-        <!-- Indicador de filtro de dona -->
-        <div id="indicadorFiltroDona" style="display:none; background: #fff3cd; padding: 8px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; color: #856404;"></div>
-
-        <!-- Búsqueda -->
-        <div class="toolbar">
-            <div class="toolbar-left">
-                <input type="text" id="searchInput" class="search-input"
+        <div class="toolbar toolbar-modern-search">
+            <div class="toolbar-modern-search-wrap">
+                <span class="toolbar-modern-search-icon material-symbols-outlined" aria-hidden="true">search</span>
+                <input type="text" id="searchInput" class="search-input toolbar-modern-search-input"
                     placeholder="Buscar por asuntos, denunciante o probable responsable...">
-                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
-                    Limpiar Filtros
+            </div>
+            <div class="toolbar-modern-actions">
+                <div class="toolbar-filter-wrap">
+                    <button type="button" class="toolbar-modern-action toolbar-modern-action-filter" id="btnResumenFiltros" onclick="toggleResumenFiltros(event)">
+                        <span class="material-symbols-outlined" aria-hidden="true">filter_list</span>
+                        <span>Filtros</span>
+                        <span class="toolbar-modern-action-badge" id="badgeResumenFiltros" hidden>0</span>
+                    </button>
+                    <div id="panelResumenFiltros" class="toolbar-filter-panel" hidden></div>
+                </div>
+                <button type="button" class="toolbar-modern-action" onclick="limpiarFiltros()">
+                    <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+                    <span>Limpiar</span>
                 </button>
             </div>
         </div>
 
-        <!-- Tabla de Asuntos Penales -->
+        <div class="table-scroll-shell">
         <div class="table-container">
-            <table class="table" id="tablaCasos">
+            <table class="table table-casos-penal table-casos-penal-redisenada" id="tablaCasos">
                 <colgroup>
-                    <col class="col-delegacion">
                     <col style="width: 150px;">
-                    <col class="col-expediente">
-                    <col style="width: 120px;">
-                    <col style="width: 130px;">
-                    <col style="width: 130px;">
-                    <col style="width: 130px;">
-                    <col style="width: 100px;">
-                    <col style="width: 100px;">
-                    <col class="col-actualizacion">
+                    <col style="width: 108px;">
+                    <col style="width: 245px;">
+                    <col style="width: 82px;">
+                    <col style="width: 220px;">
+                    <col style="width: 220px;">
+                    <col style="width: 220px;">
+                    <col style="width: 150px;">
+                    <col style="width: 140px;">
+                    <col style="width: 182px;">
+                    <col style="width: 125px;">
+                    <col style="width: 145px;">
+                    <col style="width: 110px;">
                     <col class="col-acciones">
                 </colgroup>
                 <thead>
                     <tr>
                         <th class="th-filtrable">
                             <button id="btn_filtroDelegacion" class="filtro-btn-custom" data-nombre="JSJ"
-                                onclick="toggleFiltro('filtroDelegacion', this)"><span class="filtro-btn-nombre">JSJ <span class="filtro-flecha">&#9660;</span></span></button>
+                                onclick="toggleFiltro('filtroDelegacion', this)"><span class="filtro-btn-nombre">OOAD <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
                         <th class="th-filtrable">
-                            <button id="btn_filtroEstatusJSJ" class="filtro-btn-custom" data-nombre="Estatus Inv."
-                                onclick="toggleFiltro('filtroEstatusJSJ', this)"><span class="filtro-btn-nombre">Estatus Investigación <span class="filtro-flecha">&#9660;</span></span></button>
+                            <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus"
+                                onclick="toggleFiltro('filtroEstatus', this)"><span class="filtro-btn-nombre">Estatus <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
-                        <th>Num. asunto</th>
+                        <th>No. de carpeta</th>
+                        <th>Año</th>
                         <th class="th-filtrable">
                             <button id="btn_filtroDelito" class="filtro-btn-custom" data-nombre="Delito"
                                 onclick="toggleFiltro('filtroDelito', this)"><span class="filtro-btn-nombre">Delito <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
                         <th>Denunciante</th>
                         <th>Probable Responsable</th>
-                        <th class="th-filtrable">
-                            <button id="btn_filtroEstadoProcesal" class="filtro-btn-custom" data-nombre="Estado Procesal"
-                                onclick="toggleFiltro('filtroEstadoProcesal', this)"><span class="filtro-btn-nombre">Estado Procesal <span class="filtro-flecha">&#9660;</span></span></button>
-                        </th>
-                        <th>Sentencia</th>
-                        <th>Fecha inicio</th>
-                        <th>Ult. actualizacion</th>
+                        <th class="th-break-header"><span>Cuantía</span></th>
+                        <th>Fase actual</th>
+                        <th class="th-break-header"><span>Acciones<br>pendientes</span></th>
+                        <th class="th-break-header"><span>Fecha de<br>presentación</span></th>
+                        <th class="th-break-header"><span>Fecha conocimiento<br>AMP</span></th>
+                        <th>Coadyuvancia</th>
                         <th class="th-sticky-right"></th>
                     </tr>
                 </thead>
                 <tbody id="tablaCasosBody"></tbody>
             </table>
         </div>
+        </div>
 
-        <!-- Panel flotante de filtro -->
         <div id="filtroPanel" style="display:none; position:fixed; z-index:9999;">
             <div id="filtroPanelLista" class="filtro-panel-lista"></div>
         </div>
 
-        <!-- Paginación -->
         <div id="paginacion" class="paginacion" style="display:none;"></div>
 
-        <!-- Mensaje si no hay asuntos -->
         <div id="mensajeVacio" class="card text-center" style="display: none; padding: 40px;">
             <p style="font-size: 18px; color: var(--color-text-light);">
                 No se encontraron asuntos con los filtros aplicados
@@ -131,12 +167,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabaseClient.js"></script>
-    <script src="js/supabaseService.js"></script>
     <script src="js/headerComponent.js"></script>
     <script src="js/casosPenal.js"></script>
 </body>
 
 </html>
-

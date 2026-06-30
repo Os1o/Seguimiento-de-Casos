@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de actuación penal - Sistema de Gestión</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/stylesNew.css">
+</head>
+
+<body class="modern-header-page penal-intake-page">
+    <header class="header-gob app-header" data-home-href="penal.html" data-module="Penal"
+        data-back-href="detalleCasoPenal.html" data-back-label="Volver al detalle" data-header-variant="modern"
+        data-show-module-nav="false"></header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="penal.html">Asuntos Penales</a>
+            <span class="breadcrumb-separator">></span>
+            <a href="detalleCasoPenal.html" id="breadcrumbDetalleAsunto">Detalle del asunto</a>
+            <span class="breadcrumb-separator">></span>
+            <span>Registro de actuación penal</span>
+        </div>
+
+        <section class="penal-act-shell">
+            <div class="penal-act-hero">
+                <div class="penal-act-hero-copy">
+                    <h1 class="penal-act-title">Registro de actuación penal</h1>
+                </div>
+            </div>
+
+            <div class="card penal-act-summary">
+                <div class="penal-act-summary-head">
+                    <h2>Referencia del asunto</h2>
+                </div>
+
+                <div class="penal-act-summary-grid">
+                    <div class="info-item">
+                        <span class="info-label">No. de carpeta</span>
+                        <span class="info-value" id="resumenNumeroCarpeta">---</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Delito que se investiga</span>
+                        <span class="info-value" id="resumenDelito">---</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Estatus actual</span>
+                        <span class="info-value" id="resumenEstatus">TRÁMITE</span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="formRegistroActuacionPenal" class="card penal-act-form">
+                <div class="penal-act-form-head">
+                    <h3>Datos de la actuación</h3>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label required" for="fechaActuacionSecundaria">Fecha de actuación</label>
+                        <input type="date" id="fechaActuacionSecundaria" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required" for="etapaActuacionPenal">Etapa</label>
+                        <select id="etapaActuacionPenal" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required" for="descripcionActuacionPenal">Descripción de lo sucedido</label>
+                    <textarea id="descripcionActuacionPenal" class="form-textarea"
+                        placeholder="Captura la actuación o movimiento procesal ocurrido..." rows="7" maxlength="500"
+                        required></textarea>
+                    <small class="form-hint">Hasta 500 caracteres.</small>
+                </div>
+
+                <div class="penal-act-upload-card">
+                    <div class="penal-act-upload-head">
+                        <h4>Documento de la actuación</h4>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="archivoActuacionPenal">Archivo PDF</label>
+                            <input type="file" id="archivoActuacionPenal" class="form-input" accept=".pdf">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="penal-act-upload-card">
+                    <div class="penal-act-upload-head">
+                        <h4>Historial de actuaciones</h4>
+                    </div>
+
+                    <div class="penal-detail-timeline-scroll">
+                        <div id="historialActuacionesPenal" class="timeline">
+                            <div class="timeline-empty">Sin actuaciones registradas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="penal-act-actions">
+                    <a href="detalleCasoPenal.html" class="btn btn-secondary">Cancelar</a>
+                    <a href="listadoRequerimientosPenal.html" class="btn btn-secondary">Ver requerimientos</a>
+                    <button type="submit" class="btn btn-success">Guardar actuación</button>
+                </div>
+            </form>
+        </section>
+    </div>
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const asuntoId = params.get('id');
+            if (!asuntoId) return;
+
+            const detalleHref = `detalleCasoPenal.html?id=${encodeURIComponent(asuntoId)}`;
+            document.querySelector('.app-header')?.setAttribute('data-back-href', detalleHref);
+            document.getElementById('breadcrumbDetalleAsunto')?.setAttribute('href', detalleHref);
+        })();
+    </script>
+    <script src="js/headerComponent.js"></script>
+    <script src="js/registroActuacionPenal.js"></script>
+</body>
+
+</html>
