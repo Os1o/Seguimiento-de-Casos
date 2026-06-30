@@ -27,7 +27,7 @@ try {
     $pdo = getDatabaseConnection();
     $scopeStmt = $pdo->prepare('
         SELECT delegacion_id, activo
-        FROM expedientes_penal
+        FROM penal_asuntos
         WHERE id = :id
         LIMIT 1
     ');
@@ -46,18 +46,18 @@ try {
     }
 
     $stmt = $pdo->prepare('
-        UPDATE expedientes_penal
+        UPDATE penal_asuntos
         SET
             activo = TRUE,
             deleted_at = NULL,
             deleted_by = NULL,
-            fecha_actualizacion = :fecha_actualizacion
+            updated_at = :updated_at
         WHERE id = :id
           AND activo = FALSE
     ');
     $stmt->execute([
         'id' => $id,
-        'fecha_actualizacion' => date('c'),
+        'updated_at' => date('c'),
     ]);
 
     if ($stmt->rowCount() === 0) {
@@ -67,11 +67,11 @@ try {
     auditLog($pdo, $user, [
         'modulo' => 'PENAL',
         'accion' => 'RESTAURAR',
-        'entidad' => 'EXPEDIENTE_PENAL',
+        'entidad' => 'PENAL_ASUNTO',
         'entidad_id' => $id,
         'expediente_id' => $id,
         'delegacion_id' => $existingCase['delegacion_id'] ?? null,
-        'descripcion' => 'Restauracion de expediente penal',
+        'descripcion' => 'Restauracion de asunto penal',
     ]);
 
     sendSuccess('Caso penal restaurado correctamente');

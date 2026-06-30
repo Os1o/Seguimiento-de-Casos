@@ -45,19 +45,19 @@ try {
         $partes[] = "
             SELECT
                 'PENAL' AS modulo,
-                ep.id,
-                ep.numero_expediente,
-                ep.delegacion_id,
+                pa.id,
+                pa.numero_carpeta AS numero_expediente,
+                pa.delegacion_id,
                 d.nombre AS delegacion_nombre,
-                ep.deleted_at,
-                ep.deleted_by,
+                pa.deleted_at,
+                pa.deleted_by,
                 u.nombre_completo AS deleted_by_nombre
-            FROM expedientes_penal ep
+            FROM penal_asuntos pa
             LEFT JOIN delegaciones d
-                ON d.id = ep.delegacion_id
+                ON d.id = pa.delegacion_id
             LEFT JOIN usuarios u
-                ON u.id = ep.deleted_by
-            WHERE ep.activo = FALSE
+                ON u.id = pa.deleted_by
+            WHERE pa.activo = FALSE
         ";
     }
 
