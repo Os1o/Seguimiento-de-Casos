@@ -100,14 +100,14 @@
                         <div class="penal-preview-card-head">
                             <h4>Cuant&iacute;a</h4>
                         </div>
-                        <div class="penal-cuantia-grid">
+                        <div class="form-grid">
                             <div class="form-group">
-                                <label class="form-label required">Monto</label>
-                                <input type="text" id="cuantiaMonto" class="form-input" placeholder="Monto o cantidad" inputmode="decimal" required>
+                                <label class="form-label">Monto</label>
+                                <input type="text" id="cuantiaMonto" class="form-input" placeholder="Monto o cantidad">
                             </div>
-                            <div class="form-group">
+                            <div class="form-group penal-cuantia-toggle-wrap">
                                 <label class="form-label">Captura de cuant&iacute;a</label>
-                                <label class="penal-qrr-toggle penal-qrr-toggle-wide" for="sinCuantificar">
+                                <label class="penal-qrr-toggle" for="sinCuantificar">
                                     <input type="checkbox" id="sinCuantificar">
                                     <span class="penal-qrr-box"></span>
                                     <span class="penal-qrr-copy">
@@ -209,9 +209,12 @@
                 <div id="probablesResponsablesWrap" class="penal-preview-card penal-preview-card-full">
                     <div class="penal-preview-card-head">
                         <h4>Probables responsables</h4>
+                        <span class="penal-preview-chip">Edici&oacute;n activa</span>
                     </div>
-                    <div id="listaProbablesResponsables" class="penal-dynamic-list"></div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="btnAgregarProbableResponsable">Agregar probable responsable</button>
+                    <div id="listaProbablesResponsables"></div>
+                    <button type="button" id="btnAgregarProbableResponsable" class="btn-add">
+                        + Agregar probable responsable
+                    </button>
                 </div>
 
                 <div class="form-group">
@@ -224,6 +227,16 @@
                         <h4>Documento inicial</h4>
                     </div>
                     <div class="form-grid">
+                        <div class="form-group form-grid-full" id="documentoActualPenalWrap" hidden>
+                            <label class="form-label">Documento actual</label>
+                            <div class="documento-item documento-item-detalle-penal">
+                                <div class="documento-info">
+                                    <span class="documento-nombre" id="documentoActualPenalNombre">Documento PDF</span>
+                                    <span class="documento-meta" id="documentoActualPenalMeta"></span>
+                                </div>
+                                <a class="btn btn-secondary" id="documentoActualPenalLink" href="#" target="_blank" rel="noopener noreferrer">Ver PDF</a>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label class="form-label">Archivo inicial</label>
                             <input type="file" id="archivoInicialPenal" class="form-input" accept=".pdf,application/pdf">
