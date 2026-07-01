@@ -7,6 +7,7 @@ const ELIMINAR_REQUERIMIENTO_API = 'api/penal/requerimientos/delete.php';
 const RESTAURAR_REQUERIMIENTO_API = 'api/penal/requerimientos/restore.php';
 
 let permisosListadoRequerimientos = {
+    puedeEditar: false,
     puedeEliminar: false,
     puedeRestaurar: false,
 };
@@ -306,7 +307,7 @@ function renderRequerimiento(requerimiento) {
             ? `<button type="button" class="btn btn-secondary" data-restore-requerimiento="${Number(requerimiento.id)}">Restaurar requerimiento</button>`
             : '')
         : `
-            <a href="requerimientosMinisterialesPenal.html?id=${encodeURIComponent(requerimiento.asunto_id || obtenerParametroUrl('id'))}&requerimiento_id=${encodeURIComponent(requerimiento.id)}" class="btn btn-primary">Actualizar requerimiento</a>
+            ${permisosListadoRequerimientos.puedeEditar ? `<a href="requerimientosMinisterialesPenal.html?id=${encodeURIComponent(requerimiento.asunto_id || obtenerParametroUrl('id'))}&requerimiento_id=${encodeURIComponent(requerimiento.id)}" class="btn btn-primary">Actualizar requerimiento</a>` : ''}
             ${permisosListadoRequerimientos.puedeEliminar ? `<button type="button" class="btn btn-danger-outline" data-delete-requerimiento="${Number(requerimiento.id)}">Eliminar requerimiento</button>` : ''}
         `;
 
@@ -501,7 +502,8 @@ function inicializarAccionesRequerimientos(asuntoId) {
     });
 }
 
-async function cargarListadoRequerimientos(asuntoId) {
+async function cargarListadoRequerimientos(asuntoId, options = {}) {
+    const { showBlockLoader = false } = options;
     const summaryGrid = document.querySelector('.penal-req-summary-grid');
     const statsGrid = document.querySelector('.penal-req-list-stats');
     const group = document.querySelector('.penal-req-list-group');
@@ -514,6 +516,10 @@ async function cargarListadoRequerimientos(asuntoId) {
                 <h3>Cargando requerimientos...</h3>
             </div>
         `;
+    }
+
+    if (showBlockLoader) {
+        window.mostrarCargaBloque?.('.penal-req-list-group');
     }
 
     try {
@@ -530,6 +536,7 @@ async function cargarListadoRequerimientos(asuntoId) {
         const permisos = payload.permisos || {};
 
         permisosListadoRequerimientos = {
+            puedeEditar: Boolean(permisos.puede_editar_requerimientos || permisos.puede_modificar_cerrados),
             puedeEliminar: Boolean(permisos.puede_eliminar_requerimientos || permisos.puede_modificar_cerrados),
             puedeRestaurar: Boolean(permisos.puede_restaurar_requerimientos || permisos.puede_modificar_cerrados),
         };
@@ -556,6 +563,10 @@ async function cargarListadoRequerimientos(asuntoId) {
     } catch (error) {
         console.error('No se pudo cargar el listado de requerimientos:', error);
         mostrarErrorListado(error.message || 'Error inesperado.');
+    } finally {
+        if (showBlockLoader) {
+            await window.ocultarCargaBloque?.('.penal-req-list-group');
+        }
     }
 }
 
@@ -590,9 +601,14 @@ async function inicializarListadoRequerimientosPenal() {
     if (deletedToggle && !deletedToggle.dataset.bound) {
         deletedToggle.dataset.bound = '1';
         deletedToggle.addEventListener('change', () => {
-            cargarListadoRequerimientos(asuntoId);
+            cargarListadoRequerimientos(asuntoId, { showBlockLoader: true });
         });
     }
 
-    await cargarListadoRequerimientos(asuntoId);
+    window.mostrarCargaVista?.('.container');
+    try {
+        await cargarListadoRequerimientos(asuntoId);
+    } finally {
+        await window.ocultarCargaVista?.('.container');
+    }
 }

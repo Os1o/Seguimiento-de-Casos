@@ -179,6 +179,14 @@ function formatearTamanoArchivo(bytes) {
 
 function formatearFecha(valor) {
     if (!valor) return '---';
+    const fechaTexto = String(valor).trim();
+    const matchFechaLocal = fechaTexto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (matchFechaLocal) {
+        const [, anio, mes, dia] = matchFechaLocal;
+        const fechaLocal = new Date(Number(anio), Number(mes) - 1, Number(dia));
+        return fechaLocal.toLocaleDateString('es-MX');
+    }
+
     const fecha = new Date(valor);
     if (Number.isNaN(fecha.getTime())) return String(valor);
     return fecha.toLocaleDateString('es-MX');
@@ -415,12 +423,14 @@ async function renderizarDetalle() {
         const hrefActuacion = `registroActuacionPenal.html?id=${encodeURIComponent(caso.id)}`;
         const tieneConocimientoAmp = Boolean(caso.fecha_conocimiento_amp || caso.fecha_conocimiento_fiscal);
         const puedeEditar = usuarioActual && usuarioActual.rol !== 'consulta';
+        const esAdmin = usuarioActual?.rol === 'admin';
+        const puedeEditarAmp = usuarioActual && (!tieneConocimientoAmp || esAdmin) && usuarioActual.rol !== 'consulta';
 
         if (linkRequerimientos) linkRequerimientos.href = hrefRequerimientos;
         if (btnRequerimientos) btnRequerimientos.href = hrefRequerimientos;
         if (btnRegistroAmp) {
             btnRegistroAmp.href = hrefRegistroAmp;
-            btnRegistroAmp.style.display = puedeEditar && !tieneConocimientoAmp ? '' : 'none';
+            btnRegistroAmp.style.display = puedeEditarAmp ? '' : 'none';
         }
         if (btnActualizar) {
             btnActualizar.href = hrefActuacion;

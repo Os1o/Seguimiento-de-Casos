@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error('No se encontró el asunto penal');
         }
 
-        if (asuntoAmpActual.fecha_conocimiento_amp || asuntoAmpActual.fecha_conocimiento_fiscal) {
+        if ((asuntoAmpActual.fecha_conocimiento_amp || asuntoAmpActual.fecha_conocimiento_fiscal) && usuarioAmpActual.rol !== 'admin') {
             await window.appAlert?.({
                 title: 'Registro AMP ya capturado',
                 message: 'Este asunto ya tiene registrada la fecha de conocimiento del AMP.'

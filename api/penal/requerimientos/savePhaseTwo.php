@@ -9,14 +9,8 @@ const REQ_PHASE_TWO_MAX_FILE_BYTES = 10 * 1024 * 1024;
 function canModifyClosedReqData(array $user): bool
 {
     $role = strtolower((string)($user['rol'] ?? ''));
-    $isBossRaw = $user['esJefe'] ?? $user['es_jefe'] ?? false;
-    $isBoss = $isBossRaw === true
-        || $isBossRaw === 1
-        || $isBossRaw === '1'
-        || $isBossRaw === 't'
-        || $isBossRaw === 'true';
 
-    return $role === 'admin' || ($role === 'editor' && $isBoss);
+    return $role === 'admin';
 }
 
 function readPhaseTwoPayload(): array
@@ -175,9 +169,21 @@ try {
         SELECT
             pr.id,
             pr.asunto_id,
+            pr.fecha_inicio_interno,
+            pr.area_responsable_id,
+            doc_interno.id AS documento_interno_id,
             pa.delegacion_id,
             pa.numero_carpeta
         FROM penal_requerimientos pr
+        LEFT JOIN LATERAL (
+            SELECT d.id
+            FROM penal_requerimiento_documentos d
+            WHERE d.requerimiento_id = pr.id
+              AND d.tipo_documento = \'INTERNO_IMSS\'
+              AND d.activo = TRUE
+            ORDER BY d.created_at DESC, d.id DESC
+            LIMIT 1
+        ) doc_interno ON TRUE
         INNER JOIN penal_asuntos pa
             ON pa.id = pr.asunto_id
            AND pa.deleted_at IS NULL
@@ -198,7 +204,20 @@ try {
     );
 
     $areaStmt = $pdo->prepare('SELECT id FROM areas WHERE id = :id LIMIT 1');
-    $areaStmt->execute(['id' => $payload['area_responsable_id']]);
+    $fechaInicioInterno = $payload['fecha_inicio_interno'];
+    $areaResponsableId = $payload['area_responsable_id'];
+
+    if (!$canModifyClosedData) {
+        if (!empty($requerimiento['fecha_inicio_interno'])) {
+            $fechaInicioInterno = (string) $requerimiento['fecha_inicio_interno'];
+        }
+
+        if (!empty($requerimiento['area_responsable_id'])) {
+            $areaResponsableId = (int) $requerimiento['area_responsable_id'];
+        }
+    }
+
+    $areaStmt->execute(['id' => $areaResponsableId]);
 
     if (!$areaStmt->fetchColumn()) {
         sendError('El area responsable seleccionada no existe', 400);
@@ -272,6 +291,9 @@ try {
     }
 
     $documentoInterno = validateOptionalPhaseTwoPdf('documento_interno', 'Documento del requerimiento interno');
+    if (!$canModifyClosedData && !empty($requerimiento['documento_interno_id'])) {
+        $documentoInterno = null;
+    }
     $solicitudFiles = [];
     $existingSolicitudDocs = [];
 
@@ -327,8 +349,8 @@ try {
         WHERE id = :id
     ');
     $updateReqStmt->execute([
-        'fechaInicioInterno' => $payload['fecha_inicio_interno'],
-        'areaResponsableId' => $payload['area_responsable_id'],
+        'fechaInicioInterno' => $fechaInicioInterno,
+        'areaResponsableId' => $areaResponsableId,
         'faseActual' => 'SEGUIMIENTO_INTERNO',
         'id' => $payload['requerimiento_id'],
     ]);

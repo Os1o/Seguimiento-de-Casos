@@ -79,7 +79,7 @@ try {
         sendError('Asunto penal no encontrado', 404);
     }
 
-    if (!empty($asunto['fecha_conocimiento_amp'])) {
+    if (!empty($asunto['fecha_conocimiento_amp']) && !isAdminUser($user)) {
         sendError('La fecha de conocimiento del AMP ya fue registrada para este asunto', 400);
     }
 

@@ -9,14 +9,8 @@ const REQ_PHASE_THREE_MAX_FILE_BYTES = 10 * 1024 * 1024;
 function canModifyClosedReqData(array $user): bool
 {
     $role = strtolower((string)($user['rol'] ?? ''));
-    $isBossRaw = $user['esJefe'] ?? $user['es_jefe'] ?? false;
-    $isBoss = $isBossRaw === true
-        || $isBossRaw === 1
-        || $isBossRaw === '1'
-        || $isBossRaw === 't'
-        || $isBossRaw === 'true';
 
-    return $role === 'admin' || ($role === 'editor' && $isBoss);
+    return $role === 'admin';
 }
 
 function validateReqPhaseThreeDate(string $value, string $fieldName): string
@@ -133,6 +127,7 @@ $pdo = null;
 try {
     $user = requirePenalWriteAccess();
     $pdo = getDatabaseConnection();
+    $canModifyClosedData = canModifyClosedReqData($user);
 
     $requerimientoId = filter_input(INPUT_POST, 'requerimiento_id', FILTER_VALIDATE_INT);
     if (!$requerimientoId) {
@@ -143,7 +138,7 @@ try {
     $fechaRespuestaFiscalia = validateOptionalReqPhaseThreeDate((string)($_POST['fecha_respuesta_fiscalia'] ?? ''), 'Fecha de recepcion de la respuesta');
     $observacionesFinales = trim((string)($_POST['observaciones_finales'] ?? ''));
 
-    $documentoContestacion = getReqPhaseThreeUploadedPdf('documento_contestacion', 'Documento enviado por el IMSS', true);
+    $documentoContestacion = getReqPhaseThreeUploadedPdf('documento_contestacion', 'Documento enviado por el IMSS', false);
     $documentoFiscalia = getReqPhaseThreeUploadedPdf('documento_respuesta_fiscalia', 'Documento de respuesta de la fiscalia', false);
 
     if (($fechaRespuestaFiscalia === null) !== ($documentoFiscalia === null)) {
@@ -168,15 +163,57 @@ try {
     ensureWriteDelegacionAccess($user, (int)$requerimiento['delegacion_id']);
 
     $existingContestacionStmt = $pdo->prepare(
-        'SELECT COUNT(*)
-           FROM penal_requerimiento_contestaciones
-          WHERE requerimiento_id = :requerimiento_id
-            AND activo = TRUE'
+        'SELECT
+             c.id,
+             c.fecha_envio_respuesta,
+             c.fecha_respuesta_fiscalia,
+             c.observaciones_finales,
+             doc_cont.id AS documento_contestacion_id,
+             doc_resp.id AS documento_respuesta_id
+           FROM penal_requerimiento_contestaciones c
+           LEFT JOIN LATERAL (
+             SELECT d.id
+               FROM penal_requerimiento_contestacion_documentos d
+              WHERE d.contestacion_id = c.id
+                AND d.tipo_documento = \'CONTESTACION_ENVIADA\'
+                AND d.activo = TRUE
+              ORDER BY d.created_at DESC, d.id DESC
+              LIMIT 1
+           ) doc_cont ON TRUE
+           LEFT JOIN LATERAL (
+             SELECT d.id
+               FROM penal_requerimiento_contestacion_documentos d
+              WHERE d.contestacion_id = c.id
+                AND d.tipo_documento = \'RESPUESTA_FISCALIA\'
+                AND d.activo = TRUE
+              ORDER BY d.created_at DESC, d.id DESC
+              LIMIT 1
+           ) doc_resp ON TRUE
+          WHERE c.requerimiento_id = :requerimiento_id
+            AND c.activo = TRUE
+          ORDER BY c.created_at DESC, c.id DESC
+          LIMIT 1'
     );
     $existingContestacionStmt->execute([':requerimiento_id' => $requerimientoId]);
+    $existingContestacion = $existingContestacionStmt->fetch(PDO::FETCH_ASSOC) ?: null;
 
-    if ((int)$existingContestacionStmt->fetchColumn() > 0 && !canModifyClosedReqData($user)) {
-        sendError('La contestacion final ya fue registrada y no puede modificarse con este perfil', 403);
+    if (!$existingContestacion && $documentoContestacion === null) {
+        sendError('Documento enviado por el IMSS es obligatorio', 400);
+    }
+
+    if ($existingContestacion && !$canModifyClosedData) {
+        $hasContestacionDoc = !empty($existingContestacion['documento_contestacion_id']);
+        $hasFiscaliaDate = !empty($existingContestacion['fecha_respuesta_fiscalia']);
+        $hasFiscaliaDoc = !empty($existingContestacion['documento_respuesta_id']);
+
+        if (!$hasContestacionDoc && $documentoContestacion === null) {
+            sendError('Documento enviado por el IMSS es obligatorio', 400);
+        }
+
+        if (($hasFiscaliaDate || $hasFiscaliaDoc) && ($fechaRespuestaFiscalia !== null || $documentoFiscalia !== null)) {
+            $fechaRespuestaFiscalia = $hasFiscaliaDate ? (string)$existingContestacion['fecha_respuesta_fiscalia'] : $fechaRespuestaFiscalia;
+            $documentoFiscalia = $hasFiscaliaDoc ? null : $documentoFiscalia;
+        }
     }
 
     $pdo->beginTransaction();
@@ -208,15 +245,6 @@ try {
          )
          RETURNING id'
     );
-    $insertContestacion->execute([
-        ':requerimiento_id' => $requerimientoId,
-        ':numero_orden' => $numeroOrden,
-        ':fecha_envio_respuesta' => $fechaEnvioRespuesta,
-        ':fecha_respuesta_fiscalia' => $fechaRespuestaFiscalia,
-        ':observaciones_finales' => $observacionesFinales !== '' ? $observacionesFinales : null,
-        ':usuario_id' => (int)$user['id'],
-    ]);
-    $contestacionId = (int)$insertContestacion->fetchColumn();
 
     $insertDoc = $pdo->prepare(
         'INSERT INTO penal_requerimiento_contestacion_documentos (
@@ -239,6 +267,97 @@ try {
              :usuario_id
          )'
     );
+
+    if ($existingContestacion) {
+        $contestacionId = (int)$existingContestacion['id'];
+        $effectiveFechaEnvio = $canModifyClosedData || empty($existingContestacion['fecha_envio_respuesta'])
+            ? $fechaEnvioRespuesta
+            : (string)$existingContestacion['fecha_envio_respuesta'];
+        $effectiveFechaFiscalia = $canModifyClosedData || empty($existingContestacion['fecha_respuesta_fiscalia'])
+            ? $fechaRespuestaFiscalia
+            : (string)$existingContestacion['fecha_respuesta_fiscalia'];
+        $effectiveObservaciones = $canModifyClosedData || trim((string)($existingContestacion['observaciones_finales'] ?? '')) === ''
+            ? ($observacionesFinales !== '' ? $observacionesFinales : null)
+            : (string)$existingContestacion['observaciones_finales'];
+
+        $updateContestacion = $pdo->prepare(
+            'UPDATE penal_requerimiento_contestaciones
+                SET fecha_envio_respuesta = :fecha_envio_respuesta,
+                    fecha_respuesta_fiscalia = :fecha_respuesta_fiscalia,
+                    observaciones_finales = :observaciones_finales
+              WHERE id = :id'
+        );
+        $updateContestacion->execute([
+            ':fecha_envio_respuesta' => $effectiveFechaEnvio,
+            ':fecha_respuesta_fiscalia' => $effectiveFechaFiscalia,
+            ':observaciones_finales' => $effectiveObservaciones,
+            ':id' => $contestacionId,
+        ]);
+
+        if (($canModifyClosedData || empty($existingContestacion['documento_contestacion_id'])) && $documentoContestacion !== null) {
+            $storedContestacion = storeReqPhaseThreeDocument($documentoContestacion, $requerimientoId, $contestacionId, 'contestacion_imss');
+            $storedFiles[] = $storedContestacion['absolute_path'];
+            $insertDoc->execute([
+                ':contestacion_id' => $contestacionId,
+                ':tipo_documento' => 'CONTESTACION_ENVIADA',
+                ':nombre_original' => $storedContestacion['nombre_original'],
+                ':nombre_guardado' => $storedContestacion['nombre_guardado'],
+                ':ruta_archivo' => $storedContestacion['ruta_archivo'],
+                ':mime_type' => $storedContestacion['mime_type'],
+                ':tamano_bytes' => $storedContestacion['tamano_bytes'],
+                ':usuario_id' => (int)$user['id'],
+            ]);
+        }
+
+        if (($canModifyClosedData || empty($existingContestacion['documento_respuesta_id'])) && $documentoFiscalia !== null) {
+            $storedFiscalia = storeReqPhaseThreeDocument($documentoFiscalia, $requerimientoId, $contestacionId, 'respuesta_fiscalia');
+            $storedFiles[] = $storedFiscalia['absolute_path'];
+            $insertDoc->execute([
+                ':contestacion_id' => $contestacionId,
+                ':tipo_documento' => 'RESPUESTA_FISCALIA',
+                ':nombre_original' => $storedFiscalia['nombre_original'],
+                ':nombre_guardado' => $storedFiscalia['nombre_guardado'],
+                ':ruta_archivo' => $storedFiscalia['ruta_archivo'],
+                ':mime_type' => $storedFiscalia['mime_type'],
+                ':tamano_bytes' => $storedFiscalia['tamano_bytes'],
+                ':usuario_id' => (int)$user['id'],
+            ]);
+        }
+
+        $updateReq = $pdo->prepare(
+            "UPDATE penal_requerimientos
+                SET fase_actual = 'CONTESTACION_FINAL',
+                    updated_at = NOW()
+              WHERE id = :id"
+        );
+        $updateReq->execute([':id' => $requerimientoId]);
+
+        auditLog($pdo, $user, [
+            'modulo' => 'Penal',
+            'accion' => $canModifyClosedData ? 'Edicion de contestacion final de requerimiento' : 'Actualizacion de contestacion final de requerimiento',
+            'entidad' => 'penal_requerimientos',
+            'entidad_id' => $requerimientoId,
+            'descripcion' => 'Se actualizo la contestacion final del requerimiento para la carpeta ' . (string)$requerimiento['numero_carpeta'],
+        ]);
+
+        $pdo->commit();
+
+        sendSuccess('Contestacion final guardada correctamente', [
+            'requerimiento_id' => $requerimientoId,
+            'contestacion_id' => $contestacionId,
+            'fase_actual' => 'CONTESTACION_FINAL',
+        ]);
+    }
+
+    $insertContestacion->execute([
+        ':requerimiento_id' => $requerimientoId,
+        ':numero_orden' => $numeroOrden,
+        ':fecha_envio_respuesta' => $fechaEnvioRespuesta,
+        ':fecha_respuesta_fiscalia' => $fechaRespuestaFiscalia,
+        ':observaciones_finales' => $observacionesFinales !== '' ? $observacionesFinales : null,
+        ':usuario_id' => (int)$user['id'],
+    ]);
+    $contestacionId = (int)$insertContestacion->fetchColumn();
 
     $storedContestacion = storeReqPhaseThreeDocument($documentoContestacion, $requerimientoId, $contestacionId, 'contestacion_imss');
     $storedFiles[] = $storedContestacion['absolute_path'];
@@ -276,23 +395,21 @@ try {
     );
     $updateReq->execute([':id' => $requerimientoId]);
 
-    auditLog(
-        $pdo,
-        (int)$user['id'],
-        'Penal',
-        'Contestacion final de requerimiento',
-        'penal_requerimientos',
-        $requerimientoId,
-        'Se registro la contestacion final del requerimiento para la carpeta ' . (string)$requerimiento['numero_carpeta']
-    );
+    auditLog($pdo, $user, [
+        'modulo' => 'Penal',
+        'accion' => 'Contestacion final de requerimiento',
+        'entidad' => 'penal_requerimientos',
+        'entidad_id' => $requerimientoId,
+        'descripcion' => 'Se registro la contestacion final del requerimiento para la carpeta ' . (string)$requerimiento['numero_carpeta'],
+    ]);
 
     $pdo->commit();
 
-    sendSuccess([
+    sendSuccess('Contestacion final guardada correctamente', [
         'requerimiento_id' => $requerimientoId,
         'contestacion_id' => $contestacionId,
         'numero_orden' => $numeroOrden,
-    ], 'Contestacion final guardada correctamente');
+    ]);
 } catch (Throwable $e) {
     if ($pdo instanceof PDO && $pdo->inTransaction()) {
         $pdo->rollBack();

@@ -321,7 +321,7 @@ function validatePenalUpdatePayload(PDO $pdo, array $user, array $current, array
 }
 
 try {
-    $user = requirePenalWriteAccess();
+    $user = requireAdmin();
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         sendError('Metodo no permitido', 405);

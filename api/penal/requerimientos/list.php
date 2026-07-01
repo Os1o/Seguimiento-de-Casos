@@ -17,14 +17,8 @@ function mapReqPhaseLabel(?string $phase): string
 function canModifyClosedReqData(array $user): bool
 {
     $role = strtolower((string)($user['rol'] ?? ''));
-    $isBossRaw = $user['esJefe'] ?? $user['es_jefe'] ?? false;
-    $isBoss = $isBossRaw === true
-        || $isBossRaw === 1
-        || $isBossRaw === '1'
-        || $isBossRaw === 't'
-        || $isBossRaw === 'true';
 
-    return $role === 'admin' || ($role === 'editor' && $isBoss);
+    return $role === 'admin';
 }
 
 function fetchReqDocuments(PDO $pdo, int $requerimientoId): array
@@ -114,11 +108,43 @@ function fetchReqSolicitudes(PDO $pdo, int $requerimientoId): array
 function fetchReqContestaciones(PDO $pdo, int $requerimientoId): array
 {
     $stmt = $pdo->prepare('
-        SELECT id, numero_orden, fecha_envio_respuesta, fecha_respuesta_fiscalia, observaciones_finales, created_at
-        FROM penal_requerimiento_contestaciones
-        WHERE requerimiento_id = :requerimiento_id
-          AND activo = TRUE
-        ORDER BY numero_orden ASC, id ASC
+        SELECT
+            c.id,
+            c.numero_orden,
+            c.fecha_envio_respuesta,
+            c.fecha_respuesta_fiscalia,
+            c.observaciones_finales,
+            c.created_at,
+            doc_cont.id AS documento_contestacion_id,
+            doc_cont.nombre_original AS documento_contestacion_nombre,
+            doc_cont.ruta_archivo AS documento_contestacion_ruta,
+            doc_cont.created_at AS documento_contestacion_created_at,
+            doc_resp.id AS documento_respuesta_id,
+            doc_resp.nombre_original AS documento_respuesta_nombre,
+            doc_resp.ruta_archivo AS documento_respuesta_ruta,
+            doc_resp.created_at AS documento_respuesta_created_at
+        FROM penal_requerimiento_contestaciones c
+        LEFT JOIN LATERAL (
+            SELECT d.*
+            FROM penal_requerimiento_contestacion_documentos d
+            WHERE d.contestacion_id = c.id
+              AND d.tipo_documento = \'CONTESTACION_ENVIADA\'
+              AND d.activo = TRUE
+            ORDER BY d.created_at DESC, d.id DESC
+            LIMIT 1
+        ) doc_cont ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT d.*
+            FROM penal_requerimiento_contestacion_documentos d
+            WHERE d.contestacion_id = c.id
+              AND d.tipo_documento = \'RESPUESTA_FISCALIA\'
+              AND d.activo = TRUE
+            ORDER BY d.created_at DESC, d.id DESC
+            LIMIT 1
+        ) doc_resp ON TRUE
+        WHERE c.requerimiento_id = :requerimiento_id
+          AND c.activo = TRUE
+        ORDER BY c.numero_orden ASC, c.id ASC
     ');
     $stmt->execute(['requerimiento_id' => $requerimientoId]);
 
@@ -129,6 +155,18 @@ function fetchReqContestaciones(PDO $pdo, int $requerimientoId): array
             'fecha_envio_respuesta' => $row['fecha_envio_respuesta'],
             'fecha_respuesta_fiscalia' => $row['fecha_respuesta_fiscalia'],
             'observaciones_finales' => $row['observaciones_finales'],
+            'documento_contestacion' => !empty($row['documento_contestacion_id']) ? [
+                'id' => (int) $row['documento_contestacion_id'],
+                'nombre_original' => (string) $row['documento_contestacion_nombre'],
+                'ruta_archivo' => (string) $row['documento_contestacion_ruta'],
+                'created_at' => $row['documento_contestacion_created_at'],
+            ] : null,
+            'documento_respuesta_fiscalia' => !empty($row['documento_respuesta_id']) ? [
+                'id' => (int) $row['documento_respuesta_id'],
+                'nombre_original' => (string) $row['documento_respuesta_nombre'],
+                'ruta_archivo' => (string) $row['documento_respuesta_ruta'],
+                'created_at' => $row['documento_respuesta_created_at'],
+            ] : null,
             'created_at' => $row['created_at'],
         ];
     }, $stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -275,6 +313,7 @@ try {
         'requerimientos' => $requirements,
         'permisos' => [
             'puede_modificar_cerrados' => $canManageRequirements,
+            'puede_editar_requerimientos' => $canManageRequirements,
             'puede_eliminar_requerimientos' => $canManageRequirements,
             'puede_restaurar_requerimientos' => $canManageRequirements,
             'mostrando_eliminados' => $includeDeleted,

@@ -4,26 +4,11 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 
-function canManagePenalRequirement(array $user): bool
-{
-    $role = strtolower((string) ($user['rol'] ?? ''));
-
-    if ($role === 'admin') {
-        return true;
-    }
-
-    return $role === 'editor' && (bool) ($user['es_jefe'] ?? false);
-}
-
 try {
-    $user = requirePenalWriteAccess();
+    $user = requireAdmin();
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         sendError('Metodo no permitido', 405);
-    }
-
-    if (!canManagePenalRequirement($user)) {
-        sendError('No tienes permiso para eliminar requerimientos', 403);
     }
 
     $payload = json_decode((string) file_get_contents('php://input'), true);

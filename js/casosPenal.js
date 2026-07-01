@@ -1124,7 +1124,7 @@ function renderizarTabla() {
                             <div class="menu-item" onclick="verRequerimientos(${caso.id})">
                                 Requerimientos ministeriales
                             </div>
-                            ${usuarioActual && usuarioActual.rol !== 'consulta' && !tieneConocimientoAmp ? `
+                            ${usuarioActual && (usuarioActual.rol === 'admin' || (usuarioActual.rol !== 'consulta' && !tieneConocimientoAmp)) ? `
                             <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
                                 Registro AMP
                             </div>` : ''}

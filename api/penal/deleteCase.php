@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../bootstrap.php';
 
 try {
-    $user = requirePenalWriteAccess();
+    $user = requireAdmin();
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         sendError('Metodo no permitido', 405);

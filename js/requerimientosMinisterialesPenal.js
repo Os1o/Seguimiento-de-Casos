@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const asuntoId = urlParams.get('id');
     const requerimientoId = urlParams.get('requerimiento_id');
+    let usuarioActual = null;
     let requerimientoActual = null;
     let requerimientoGuardadoId = requerimientoId || null;
     let puedeModificarCerrados = false;
@@ -31,7 +32,219 @@ document.addEventListener('DOMContentLoaded', () => {
         link.href = listadoUrl;
     });
 
+    const mostrarCargaRequerimiento = () => window.mostrarCargaVista?.('.container');
+    const ocultarCargaRequerimiento = () => window.ocultarCargaVista?.('.container');
+    const textoSinArchivo = 'SIN ARCHIVOS SELECCIONADOS';
+    const usuarioEsAdmin = () => usuarioActual?.rol === 'admin';
+    const tieneValorGuardado = (value) => value !== null && value !== undefined && String(value).trim() !== '';
+    const obtenerUltimaContestacion = (requerimiento) => (
+        Array.isArray(requerimiento?.contestaciones) && requerimiento.contestaciones.length > 0
+            ? requerimiento.contestaciones[requerimiento.contestaciones.length - 1]
+            : null
+    );
+    const bloquearCampoGuardado = (field, value) => {
+        if (!field || usuarioEsAdmin() || !tieneValorGuardado(value)) {
+            return;
+        }
+
+        if (field.tagName === 'SELECT' || field.type === 'file') {
+            field.disabled = true;
+            return;
+        }
+
+        field.readOnly = true;
+    };
+    const verificarSesionRequerimiento = async () => {
+        const usuarioStr = sessionStorage.getItem('usuario');
+        if (usuarioStr) {
+            return JSON.parse(usuarioStr);
+        }
+
+        const response = await fetch('api/session.php', {
+            method: 'GET',
+            credentials: 'same-origin',
+        });
+        const result = await response.json();
+
+        if (!response.ok || !result.ok) {
+            window.location.href = 'login.html';
+            return null;
+        }
+
+        const user = result.data?.user || {};
+        const usuario = {
+            id: user.id ?? null,
+            usuario: user.usuario ?? '',
+            nombre_completo: user.nombreCompleto ?? '',
+            rol: user.rol ?? '',
+            delegacion_id: user.delegacionId ?? null,
+            permiso_civil_mercantil: Boolean(user.permisoCivilMercantil),
+            permiso_penal: Boolean(user.permisoPenal),
+            es_jefe: Boolean(user.esJefe),
+            session_token: user.sessionToken ?? '',
+        };
+
+        sessionStorage.setItem('usuario', JSON.stringify(usuario));
+        return usuario;
+    };
+    const obtenerDocumentoPorTipo = (documentos, tipo) => (
+        Array.isArray(documentos)
+            ? documentos.find((documento) => documento.tipo_documento === tipo) || null
+            : null
+    );
+    const obtenerTipoDescargaDocumento = (documento, tipoFallback = '') => {
+        const tipoExplicito = documento?.documento_tipo || '';
+        if (tipoExplicito) {
+            return tipoExplicito;
+        }
+
+        const tipoDocumento = documento?.tipo_documento || '';
+        if (tipoDocumento === 'INICIAL_FISCALIA') {
+            return 'REQUERIMIENTO_INICIAL';
+        }
+
+        if (tipoDocumento === 'INTERNO_IMSS') {
+            return 'REQUERIMIENTO_INTERNO';
+        }
+
+        return tipoFallback;
+    };
+    const construirUrlDocumentoRequerimiento = (documento, tipoFallback = '') => {
+        if (!documento?.id) {
+            return '';
+        }
+
+        const tipoDocumento = obtenerTipoDescargaDocumento(documento, tipoFallback);
+        const url = `api/downloadPenalDocument.php?id=${documento.id}&tipo=${encodeURIComponent(tipoDocumento || '')}`;
+        return window.construirUrlApiConToken?.(url) || url;
+    };
+    const actualizarEstadoArchivo = (input, statusElement, linkElement) => {
+        if (!input || !statusElement || !linkElement) {
+            return;
+        }
+
+        const selectedFile = input.files?.[0] || null;
+        if (selectedFile) {
+            input.style.width = 'auto';
+            input.style.maxWidth = '240px';
+            linkElement.hidden = true;
+            linkElement.removeAttribute('href');
+            linkElement.textContent = '';
+            statusElement.hidden = true;
+            statusElement.textContent = textoSinArchivo;
+            return;
+        }
+
+        const existingName = input.dataset.documentoNombre || '';
+        const existingUrl = input.dataset.documentoUrl || '';
+        if (existingName && existingUrl) {
+            input.style.width = 'auto';
+            input.style.maxWidth = '240px';
+            statusElement.hidden = true;
+            statusElement.textContent = textoSinArchivo;
+            linkElement.hidden = false;
+            linkElement.href = existingUrl;
+            linkElement.textContent = existingName;
+            return;
+        }
+
+        input.style.width = 'auto';
+        input.style.maxWidth = '240px';
+        linkElement.hidden = true;
+        linkElement.removeAttribute('href');
+        linkElement.textContent = '';
+        statusElement.hidden = false;
+        statusElement.textContent = textoSinArchivo;
+    };
+    const configurarEstadoArchivo = ({ input, statusElement, linkElement, documento = null, tipoDocumento = '' }) => {
+        if (!input || !statusElement || !linkElement) {
+            return;
+        }
+
+        input.dataset.documentoNombre = documento?.nombre_original || '';
+        input.dataset.documentoUrl = construirUrlDocumentoRequerimiento(documento, tipoDocumento);
+
+        if (!input.dataset.fileStatusBound) {
+            input.dataset.fileStatusBound = '1';
+            input.addEventListener('change', () => actualizarEstadoArchivo(input, statusElement, linkElement));
+        }
+
+        actualizarEstadoArchivo(input, statusElement, linkElement);
+    };
+    const configurarEstadoArchivoPorId = ({ inputId, statusId, linkId, documento = null, tipoDocumento = '' }) => {
+        configurarEstadoArchivo({
+            input: document.getElementById(inputId),
+            statusElement: document.getElementById(statusId),
+            linkElement: document.getElementById(linkId),
+            documento,
+            tipoDocumento,
+        });
+    };
+    const mostrarDocumentosActuales = (requerimiento) => {
+        const documentos = requerimiento?.documentos || [];
+        const contestacion = obtenerUltimaContestacion(requerimiento);
+
+        configurarEstadoArchivoPorId({
+            inputId: 'documentoFiscaliaInicial',
+            statusId: 'documentoFiscaliaInicialStatus',
+            linkId: 'documentoFiscaliaInicialLink',
+            documento: obtenerDocumentoPorTipo(documentos, 'INICIAL_FISCALIA'),
+            tipoDocumento: 'REQUERIMIENTO_INICIAL',
+        });
+
+        configurarEstadoArchivoPorId({
+            inputId: 'documentoRequerimientoInterno',
+            statusId: 'documentoRequerimientoInternoStatus',
+            linkId: 'documentoRequerimientoInternoLink',
+            documento: obtenerDocumentoPorTipo(documentos, 'INTERNO_IMSS'),
+            tipoDocumento: 'REQUERIMIENTO_INTERNO',
+        });
+
+        configurarEstadoArchivoPorId({
+            inputId: 'archivoRespuestaFinal',
+            statusId: 'archivoRespuestaFinalStatus',
+            linkId: 'archivoRespuestaFinalLink',
+            documento: contestacion?.documento_contestacion || null,
+            tipoDocumento: 'REQUERIMIENTO_CONTESTACION_ENVIADA',
+        });
+
+        configurarEstadoArchivoPorId({
+            inputId: 'archivoFiscaliaFinal',
+            statusId: 'archivoFiscaliaFinalStatus',
+            linkId: 'archivoFiscaliaFinalLink',
+            documento: contestacion?.documento_respuesta_fiscalia || null,
+            tipoDocumento: 'REQUERIMIENTO_RESPUESTA_FISCALIA',
+        });
+    };
+    const inicializarEstadosArchivo = () => {
+        mostrarDocumentosActuales(null);
+    };
+    const aplicarBloqueosCamposGuardadosFaseDosTres = (requerimiento) => {
+        if (!requerimiento || usuarioEsAdmin()) {
+            return;
+        }
+
+        bloquearCampoGuardado(document.getElementById('fechaInicioInterno'), requerimiento.fecha_inicio_interno);
+        bloquearCampoGuardado(areaResponsableReq, requerimiento.area_responsable_id || requerimiento.area_responsable_nombre);
+        bloquearCampoGuardado(
+            documentoRequerimientoInterno,
+            obtenerDocumentoPorTipo(requerimiento.documentos || [], 'INTERNO_IMSS')?.id
+        );
+
+        const contestacion = obtenerUltimaContestacion(requerimiento);
+        if (!contestacion) {
+            return;
+        }
+
+        bloquearCampoGuardado(document.getElementById('fechaEnvioRespuestaFinal'), contestacion.fecha_envio_respuesta);
+        bloquearCampoGuardado(document.getElementById('archivoRespuestaFinal'), contestacion.documento_contestacion?.id);
+        bloquearCampoGuardado(document.getElementById('fechaRespuestaFiscaliaFinal'), contestacion.fecha_respuesta_fiscalia);
+        bloquearCampoGuardado(document.getElementById('archivoFiscaliaFinal'), contestacion.documento_respuesta_fiscalia?.id);
+        bloquearCampoGuardado(document.getElementById('notaRespuestaFinal'), contestacion.observaciones_finales);
+    };
+
     cargarReferenciaAsunto(asuntoId);
+    inicializarEstadosArchivo();
 
     if (!listInicial || !listSeguimiento || !btnAgregar || !btnGuardarFaseUno || !btnGuardarFaseDos || !faseDos || !faseTres) {
         return;
@@ -75,7 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const title = item.titulo || `Solicitud ${String(index + 1).padStart(2, '0')}`;
             const description = item.descripcion || 'Sin descripcion capturada.';
             const isDesahogada = item.estatus === 'DESAHOGADA';
-            const existingDocumentName = item.documento?.nombre_original || '';
+            const existingDocument = item.documento || null;
+            const existingDocumentName = existingDocument?.nombre_original || '';
             const isLocked = isDesahogada && !puedeModificarCerrados;
 
             const card = document.createElement('article');
@@ -128,8 +342,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="form-grid penal-req-item-grid">
                         <div class="form-group">
                             <label class="form-label required">Documento por solicitud</label>
-                            <input type="file" class="form-input penal-req-doc-input" accept=".pdf,application/pdf">
-                            ${existingDocumentName ? `<small class="form-help">Documento actual: ${escapeHtml(existingDocumentName)}</small>` : ''}
+                            <div class="penal-file-inline" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <input type="file" class="form-input penal-req-doc-input" accept=".pdf,application/pdf" style="width:auto;max-width:240px;">
+                                <a href="#" class="penal-req-list-inline-link penal-req-doc-link" target="_blank" rel="noopener noreferrer" hidden></a>
+                                <span class="penal-req-doc-status">${textoSinArchivo}</span>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -152,8 +369,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const recepcionSelect = card.querySelector('.penal-req-recepcion-select');
             const recepcionFields = card.querySelector('.penal-req-recepcion-fields');
             const docInput = card.querySelector('.penal-req-doc-input');
+            const docStatus = card.querySelector('.penal-req-doc-status');
+            const docLink = card.querySelector('.penal-req-doc-link');
             const obsInput = card.querySelector('.penal-req-obs-input');
             const fechaDesahogo = card.querySelector('.penal-req-fecha-desahogo');
+            configurarEstadoArchivo({
+                input: docInput,
+                statusElement: docStatus,
+                linkElement: docLink,
+                documento: existingDocument,
+                tipoDocumento: 'REQUERIMIENTO_SOLICITUD',
+            });
 
             if (isDesahogada) {
                 recepcionSelect.value = 'recibido';
@@ -430,6 +656,9 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('Primero guarda el requerimiento');
         }
 
+        const contestacionActual = obtenerUltimaContestacion(requerimientoActual);
+        const tieneDocumentoRespuestaActual = Boolean(contestacionActual?.documento_contestacion?.id);
+        const tieneDocumentoFiscaliaActual = Boolean(contestacionActual?.documento_respuesta_fiscalia?.id);
         const fechaEnvio = document.getElementById('fechaEnvioRespuestaFinal')?.value || '';
         const archivoRespuesta = document.getElementById('archivoRespuestaFinal')?.files?.[0] || null;
         const fechaFiscalia = document.getElementById('fechaRespuestaFiscaliaFinal')?.value || '';
@@ -440,11 +669,11 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('Captura la fecha de envio de la contestacion');
         }
 
-        if (!archivoRespuesta) {
+        if (!archivoRespuesta && !tieneDocumentoRespuestaActual) {
             throw new Error('Adjunta el documento enviado por el IMSS');
         }
 
-        if ((fechaFiscalia && !archivoFiscalia) || (!fechaFiscalia && archivoFiscalia)) {
+        if ((fechaFiscalia && !archivoFiscalia && !tieneDocumentoFiscaliaActual) || (!fechaFiscalia && archivoFiscalia)) {
             throw new Error('La fecha y el documento de respuesta de la fiscalia deben capturarse juntos');
         }
 
@@ -452,7 +681,10 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('requerimiento_id', id);
         formData.append('fecha_envio_respuesta', fechaEnvio);
         formData.append('observaciones_finales', observaciones);
-        formData.append('documento_contestacion', archivoRespuesta);
+
+        if (archivoRespuesta) {
+            formData.append('documento_contestacion', archivoRespuesta);
+        }
 
         if (fechaFiscalia) {
             formData.append('fecha_respuesta_fiscalia', fechaFiscalia);
@@ -522,21 +754,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const setFaseTresReadonlyIfClosed = () => {
-        const hasContestacion = Array.isArray(requerimientoActual?.contestaciones)
-            && requerimientoActual.contestaciones.length > 0;
-
-        if (!hasContestacion || puedeModificarCerrados) {
-            return;
-        }
-
-        document.querySelectorAll('[data-phase="3"] input, [data-phase="3"] textarea, [data-phase="3"] select').forEach((field) => {
-            field.disabled = true;
-        });
-
-        if (btnGuardarFaseTres) {
-            btnGuardarFaseTres.disabled = true;
-            btnGuardarFaseTres.textContent = 'Contestacion registrada';
-        }
+        aplicarBloqueosCamposGuardadosFaseDosTres(requerimientoActual);
     };
 
     const poblarSolicitudesIniciales = (solicitudes) => {
@@ -589,6 +807,13 @@ document.addEventListener('DOMContentLoaded', () => {
             setFieldValue('fechaLimiteAtencionReq', requerimientoActual.fecha_limite_atencion);
             setFieldValue('fechaInicioInterno', requerimientoActual.fecha_inicio_interno);
             setSelectByTextOrValue('areaResponsableReq', requerimientoActual.area_responsable_nombre || requerimientoActual.area_responsable_id);
+            const contestacion = obtenerUltimaContestacion(requerimientoActual);
+            if (contestacion) {
+                setFieldValue('fechaEnvioRespuestaFinal', contestacion.fecha_envio_respuesta);
+                setFieldValue('fechaRespuestaFiscaliaFinal', contestacion.fecha_respuesta_fiscalia);
+                setFieldValue('notaRespuestaFinal', contestacion.observaciones_finales);
+            }
+            mostrarDocumentosActuales(requerimientoActual);
 
             poblarSolicitudesIniciales(requerimientoActual.solicitudes || []);
             renderSeguimientoCards(requerimientoActual.solicitudes || []);
@@ -600,6 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 unlockPhase(faseTres, pillThree);
                 setFaseTresReadonlyIfClosed();
             }
+            aplicarBloqueosCamposGuardadosFaseDosTres(requerimientoActual);
         } catch (error) {
             console.error('No se pudo cargar el requerimiento para actualizacion:', error);
             window.alert(error.message || 'No se pudo cargar el requerimiento');
@@ -655,6 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnContinuarFaseTres.disabled = true;
         const originalText = btnContinuarFaseTres.textContent;
         btnContinuarFaseTres.textContent = 'Guardando...';
+        mostrarCargaRequerimiento();
 
         try {
             await guardarFaseDosApi();
@@ -663,6 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             window.alert(error.message || 'No se pudo guardar el seguimiento interno');
         } finally {
+            await ocultarCargaRequerimiento();
             btnContinuarFaseTres.disabled = false;
             btnContinuarFaseTres.textContent = originalText;
         }
@@ -687,6 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnGuardarFaseUno.disabled = true;
         const originalText = btnGuardarFaseUno.textContent;
         btnGuardarFaseUno.textContent = 'Guardando...';
+        mostrarCargaRequerimiento();
 
         try {
             const result = await guardarFaseUnoApi();
@@ -704,6 +933,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             window.alert(error.message || 'No se pudo registrar el requerimiento');
         } finally {
+            await ocultarCargaRequerimiento();
             btnGuardarFaseUno.disabled = false;
             btnGuardarFaseUno.textContent = originalText;
         }
@@ -768,6 +998,7 @@ document.addEventListener('DOMContentLoaded', () => {
         button.disabled = true;
         const originalText = button.textContent;
         button.textContent = 'Guardando...';
+        mostrarCargaRequerimiento();
 
         try {
             await guardarFaseDosApi();
@@ -775,6 +1006,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             window.alert(error.message || 'No se pudo guardar el seguimiento interno');
         } finally {
+            await ocultarCargaRequerimiento();
             button.disabled = false;
             button.textContent = originalText;
         }
@@ -785,6 +1017,7 @@ document.addEventListener('DOMContentLoaded', () => {
         button.disabled = true;
         const originalText = button.textContent;
         button.textContent = 'Guardando...';
+        mostrarCargaRequerimiento();
 
         try {
             await guardarFaseDosApi();
@@ -792,6 +1025,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             window.alert(error.message || 'No se pudo guardar el seguimiento interno');
         } finally {
+            await ocultarCargaRequerimiento();
             button.disabled = false;
             button.textContent = originalText;
         }
@@ -804,6 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
         button.disabled = true;
         const originalText = button.textContent;
         button.textContent = 'Guardando...';
+        mostrarCargaRequerimiento();
 
         try {
             await guardarFaseTresApi();
@@ -811,13 +1046,19 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             window.alert(error.message || 'No se pudo guardar la contestacion final');
         } finally {
+            await ocultarCargaRequerimiento();
             button.disabled = false;
             button.textContent = originalText;
         }
     });
 
     (async () => {
+        mostrarCargaRequerimiento();
         try {
+            usuarioActual = await verificarSesionRequerimiento();
+            if (!usuarioActual) {
+                return;
+            }
             await cargarCatalogoAreasResponsables();
 
             if (requerimientoId) {
@@ -827,6 +1068,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('No se pudo inicializar el modulo de requerimientos:', error);
+        } finally {
+            await ocultarCargaRequerimiento();
         }
     })();
 });
