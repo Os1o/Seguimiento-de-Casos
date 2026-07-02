@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const LISTADO_REQUERIMIENTOS_API = 'api/penal/requerimientos/list.php';
 const ELIMINAR_REQUERIMIENTO_API = 'api/penal/requerimientos/delete.php';
 const RESTAURAR_REQUERIMIENTO_API = 'api/penal/requerimientos/restore.php';
+const HISTORIAL_REQUERIMIENTO_API = 'api/penal/requerimientos/getHistory.php';
 
 let permisosListadoRequerimientos = {
     puedeEditar: false,
@@ -14,6 +15,32 @@ let permisosListadoRequerimientos = {
 
 function obtenerParametroUrl(nombre) {
     return new URLSearchParams(window.location.search).get(nombre);
+}
+
+function mostrarAlertaListadoRequerimientos(titulo, mensaje) {
+    if (typeof window.appAlert === 'function') {
+        return window.appAlert({
+            title: titulo,
+            message: mensaje,
+            confirmText: 'Aceptar'
+        });
+    }
+
+    window.alert(`${titulo}\n\n${mensaje}`);
+    return Promise.resolve(true);
+}
+
+function confirmarListadoRequerimientos(titulo, mensaje, confirmText = 'Aceptar') {
+    if (typeof window.appConfirm === 'function') {
+        return window.appConfirm({
+            title: titulo,
+            message: mensaje,
+            confirmText,
+            cancelText: 'Cancelar'
+        });
+    }
+
+    return Promise.resolve(window.confirm(`${titulo}\n\n${mensaje}`));
 }
 
 function escaparHtml(valor) {
@@ -42,6 +69,15 @@ function formatearFecha(valor) {
 
 function obtenerDocumentoPorTipo(documentos, tipo) {
     return (documentos || []).find((documento) => documento.tipo_documento === tipo) || null;
+}
+
+function usuarioListadoRequerimientosEsAdmin() {
+    try {
+        const usuario = JSON.parse(sessionStorage.getItem('usuario') || '{}');
+        return String(usuario?.rol || '').toLowerCase() === 'admin';
+    } catch (error) {
+        return false;
+    }
 }
 
 function crearLinkDocumento(documento) {
@@ -230,7 +266,7 @@ function renderPanelContestacion(requerimiento) {
     `;
 }
 
-function renderHistorial(requerimiento) {
+function obtenerMovimientosFallbackHistorial(requerimiento) {
     const movimientos = [];
 
     movimientos.push({
@@ -250,7 +286,20 @@ function renderHistorial(requerimiento) {
         }
     });
 
-    const items = movimientos
+    (requerimiento.contestaciones || []).forEach((contestacion) => {
+        movimientos.push({
+            fecha: contestacion.fecha_envio_respuesta || contestacion.created_at,
+            tipo: 'Contestación final',
+            texto: contestacion.observaciones_finales || 'Se registro la contestacion final.',
+            documento: contestacion.documento_contestacion,
+        });
+    });
+
+    return movimientos;
+}
+
+function renderItemsHistorial(movimientos) {
+    return movimientos
         .sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')))
         .map((movimiento) => `
             <article class="penal-req-list-history-item">
@@ -258,13 +307,18 @@ function renderHistorial(requerimiento) {
                 <div class="penal-req-list-history-content">
                     <div class="penal-req-list-history-topline">
                         <strong>${formatearFecha(movimiento.fecha)}</strong>
-                        <span class="penal-req-list-history-type">${escaparHtml(movimiento.tipo)}</span>
+                        <span class="penal-req-list-history-type">${escaparHtml(movimiento.movimiento || movimiento.tipo || 'Movimiento')}</span>
                     </div>
-                    <p>${escaparHtml(movimiento.texto)}</p>
+                    <p>${escaparHtml(movimiento.detalle || movimiento.texto || '')}</p>
+                    ${movimiento.usuario_nombre ? `<span class="penal-req-list-detail-label">Usuario: ${escaparHtml(movimiento.usuario_nombre)}</span>` : ''}
                     ${movimiento.documento ? crearLinkDocumento(movimiento.documento) : ''}
                 </div>
             </article>
         `).join('');
+}
+
+function renderHistorial(requerimiento) {
+    const fallbackItems = renderItemsHistorial(obtenerMovimientosFallbackHistorial(requerimiento));
 
     return `
         <details class="penal-req-list-history">
@@ -275,11 +329,45 @@ function renderHistorial(requerimiento) {
                 </div>
                 <span class="material-symbols-outlined penal-req-list-history-chevron">expand_more</span>
             </summary>
-            <div class="penal-req-list-history-timeline">
-                ${items}
+            <div class="penal-req-list-history-timeline" data-requerimiento-history="${Number(requerimiento.id)}">
+                ${fallbackItems}
             </div>
         </details>
     `;
+}
+
+async function cargarHistorialRequerimiento(requerimiento) {
+    const container = document.querySelector(`[data-requerimiento-history="${Number(requerimiento.id)}"]`);
+    if (!container) {
+        return;
+    }
+
+    const fallbackHtml = renderItemsHistorial(obtenerMovimientosFallbackHistorial(requerimiento));
+
+    try {
+        const response = await fetch(`${HISTORIAL_REQUERIMIENTO_API}?requerimiento_id=${encodeURIComponent(requerimiento.id)}`, {
+            credentials: 'same-origin',
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.ok) {
+            throw new Error(data.message || 'No se pudo cargar el historial.');
+        }
+
+        const historial = data.data?.historial || [];
+        container.innerHTML = Array.isArray(historial) && historial.length > 0
+            ? renderItemsHistorial(historial)
+            : fallbackHtml;
+    } catch (error) {
+        console.error('No se pudo cargar el historial del requerimiento:', error);
+        container.innerHTML = fallbackHtml;
+    }
+}
+
+function cargarHistorialesRequerimientos(requerimientos) {
+    (requerimientos || []).forEach((requerimiento) => {
+        cargarHistorialRequerimiento(requerimiento);
+    });
 }
 
 function obtenerClaseFase(fase) {
@@ -298,6 +386,8 @@ function renderRequerimiento(requerimiento) {
     const fase = requerimiento.fase_actual || 'ALTA_INICIAL';
     const faseClass = obtenerClaseFase(fase);
     const contestacionHabilitada = fase === 'CONTESTACION_FINAL' || fase === 'CERRADO' || (requerimiento.contestaciones || []).length > 0;
+    const esAdmin = usuarioListadoRequerimientosEsAdmin();
+    const puedeActualizar = esAdmin || requerimiento.fase_actual !== 'CONTESTACION_FINAL';
     const eliminado = requerimiento.eliminado === true || requerimiento.activo === false;
     const deletedMeta = eliminado
         ? `<span class="penal-req-list-card-deleted-meta">Eliminado${requerimiento.deleted_at ? `: ${formatearFecha(requerimiento.deleted_at)}` : ''}${requerimiento.deleted_by_nombre ? ` por ${escaparHtml(requerimiento.deleted_by_nombre)}` : ''}</span>`
@@ -307,7 +397,7 @@ function renderRequerimiento(requerimiento) {
             ? `<button type="button" class="btn btn-secondary" data-restore-requerimiento="${Number(requerimiento.id)}">Restaurar requerimiento</button>`
             : '')
         : `
-            ${permisosListadoRequerimientos.puedeEditar ? `<a href="requerimientosMinisterialesPenal.html?id=${encodeURIComponent(requerimiento.asunto_id || obtenerParametroUrl('id'))}&requerimiento_id=${encodeURIComponent(requerimiento.id)}" class="btn btn-primary">Actualizar requerimiento</a>` : ''}
+            ${puedeActualizar ? `<a href="requerimientosMinisterialesPenal.html?id=${encodeURIComponent(requerimiento.asunto_id || obtenerParametroUrl('id'))}&requerimiento_id=${encodeURIComponent(requerimiento.id)}" class="btn btn-primary">Actualizar requerimiento</a>` : ''}
             ${permisosListadoRequerimientos.puedeEliminar ? `<button type="button" class="btn btn-danger-outline" data-delete-requerimiento="${Number(requerimiento.id)}">Eliminar requerimiento</button>` : ''}
         `;
 
@@ -465,7 +555,11 @@ function inicializarAccionesRequerimientos(asuntoId) {
                 return;
             }
 
-            const confirmado = window.confirm('El requerimiento se ocultara del listado activo, pero podra restaurarse desde "Mostrar eliminados".\n\nDeseas continuar?');
+            const confirmado = await confirmarListadoRequerimientos(
+                'Eliminar requerimiento',
+                'El requerimiento se ocultara del listado activo, pero podra restaurarse desde "Mostrar eliminados".',
+                'Eliminar'
+            );
             if (!confirmado) {
                 return;
             }
@@ -476,7 +570,7 @@ function inicializarAccionesRequerimientos(asuntoId) {
                 await cargarListadoRequerimientos(asuntoId);
             } catch (error) {
                 console.error('No se pudo eliminar el requerimiento:', error);
-                window.alert(error.message || 'No se pudo eliminar el requerimiento.');
+                await mostrarAlertaListadoRequerimientos('No se pudo eliminar', error.message || 'No se pudo eliminar el requerimiento.');
                 button.disabled = false;
             }
         });
@@ -489,13 +583,22 @@ function inicializarAccionesRequerimientos(asuntoId) {
                 return;
             }
 
+            const confirmado = await confirmarListadoRequerimientos(
+                'Restaurar requerimiento',
+                'El requerimiento volvera a mostrarse en el listado activo.',
+                'Restaurar'
+            );
+            if (!confirmado) {
+                return;
+            }
+
             try {
                 button.disabled = true;
                 await ejecutarAccionRequerimiento(RESTAURAR_REQUERIMIENTO_API, id);
                 await cargarListadoRequerimientos(asuntoId);
             } catch (error) {
                 console.error('No se pudo restaurar el requerimiento:', error);
-                window.alert(error.message || 'No se pudo restaurar el requerimiento.');
+                await mostrarAlertaListadoRequerimientos('No se pudo restaurar', error.message || 'No se pudo restaurar el requerimiento.');
                 button.disabled = false;
             }
         });
@@ -560,6 +663,7 @@ async function cargarListadoRequerimientos(asuntoId, options = {}) {
 
         inicializarTabsRequerimientos();
         inicializarAccionesRequerimientos(asuntoId);
+        cargarHistorialesRequerimientos(payload.requerimientos || []);
     } catch (error) {
         console.error('No se pudo cargar el listado de requerimientos:', error);
         mostrarErrorListado(error.message || 'Error inesperado.');

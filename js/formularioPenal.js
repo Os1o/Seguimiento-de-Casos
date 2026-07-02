@@ -943,12 +943,28 @@ async function guardarCaso() {
     formData.append('archivo_inicial', archivoInicial);
 
     try {
-        await guardarCasoPenalApi(formData);
+        const casoGuardado = await guardarCasoPenalApi(formData);
         await window.appAlert({
             title: 'Cambios guardados',
             message: 'El registro se guardó correctamente.'
         });
-        window.location.href = 'penal.html';
+
+        const casoId = casoGuardado?.id;
+        if (!casoId) {
+            window.location.href = 'penal.html';
+            return;
+        }
+
+        const registrarRequerimientos = await window.appConfirm({
+            title: 'Requerimientos ministeriales',
+            message: '¿Deseas registrar requerimientos ministeriales para este caso?',
+            confirmText: 'Sí',
+            cancelText: 'No'
+        });
+
+        window.location.href = registrarRequerimientos
+            ? `listadoRequerimientosPenal.html?id=${encodeURIComponent(casoId)}`
+            : 'penal.html';
     } catch (error) {
         console.error('Error al guardar asunto penal:', error);
         await window.appAlert({

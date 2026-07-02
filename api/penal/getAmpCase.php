@@ -20,13 +20,16 @@ try {
             pa.delegacion_id,
             pa.numero_carpeta,
             pa.fecha_presentacion_denuncia,
-            pa.fecha_conocimiento_amp,
+            COALESCE(pca.fecha_conocimiento_amp, pa.fecha_conocimiento_amp) AS fecha_conocimiento_amp,
+            NULL AS fecha_conocimiento_fiscal,
             pa.estatus_general,
             pa.delito_id,
             d.nombre AS delito_nombre
         FROM penal_asuntos pa
         LEFT JOIN delitos d
             ON d.id = pa.delito_id
+        LEFT JOIN penal_conocimiento_amp pca
+            ON pca.asunto_id = pa.id
         WHERE pa.id = :id
           AND pa.activo = TRUE
         LIMIT 1

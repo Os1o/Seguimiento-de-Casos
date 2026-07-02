@@ -509,14 +509,15 @@ try {
 
     auditLog($pdo, $user, [
         'modulo' => 'PENAL',
-        'accion' => 'ALTA',
-        'entidad' => 'PENAL_ASUNTO',
+        'accion' => 'CREAR',
+        'entidad' => 'Expediente penal',
         'entidad_id' => $asuntoId,
         'expediente_id' => $asuntoId,
         'delegacion_id' => $payload['delegacion_id'],
-        'descripcion' => 'Alta de asunto penal',
+        'descripcion' => 'Creacion de asunto penal',
         'detalles' => [
-            'numero_carpeta' => $payload['numero_carpeta'],
+            'numero_expediente' => $payload['numero_carpeta'],
+            'estatus' => 'En tramite',
             'escenario_denunciante' => $payload['escenario_denunciante'],
             'coadyuvancia' => $payload['coadyuvancia'],
             'denunciantes' => count($payload['denunciantes']),

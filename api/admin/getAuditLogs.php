@@ -4,6 +4,22 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+function sanitizeAuditEntityLabel(?string $entity): string
+{
+    $entity = trim((string) $entity);
+    $map = [
+        'PENAL_CONOCIMIENTO_AMP' => 'Fecha del AMP',
+        'REQUERIMIENTO_PENAL' => 'Requerimiento ministerial',
+        'PENAL_REQUERIMIENTO' => 'Requerimiento ministerial',
+        'PENAL_ASUNTO' => 'Expediente penal',
+        'EXPEDIENTE_PENAL' => 'Expediente penal',
+        'SEGUIMIENTO_PENAL' => 'Actuacion penal',
+        'PENAL_ACTUACION' => 'Actuacion penal',
+    ];
+
+    return $map[$entity] ?? $entity;
+}
+
 try {
     requireAdmin();
 
@@ -78,12 +94,21 @@ try {
         LEFT JOIN expedientes_penal ep
             ON ep.id = ae.expediente_id
            AND ae.modulo = 'PENAL'
+        LEFT JOIN penal_asuntos paudit
+            ON paudit.id = ae.expediente_id
+           AND ae.modulo = 'PENAL'
         LEFT JOIN seguimiento_civil sc
             ON sc.id = ae.seguimiento_id
            AND ae.modulo = 'CIVIL'
         LEFT JOIN seguimiento_penal sp
             ON sp.id = ae.seguimiento_id
            AND ae.modulo = 'PENAL'
+        LEFT JOIN penal_actuaciones pact
+            ON pact.id = ae.seguimiento_id
+           AND ae.modulo = 'PENAL'
+           AND pact.asunto_id = paudit.id
+        LEFT JOIN penal_catalogo_etapas pce
+            ON pce.id = pact.etapa_id
     ";
 
     $countSql = 'SELECT COUNT(*) ' . $fromSql;
@@ -116,8 +141,8 @@ try {
             ae.entidad_id,
             ae.expediente_id,
             ae.seguimiento_id,
-            COALESCE(ec.numero_expediente, ep.numero_expediente) AS expediente_numero_visible,
-            COALESCE(sc.tipo_actuacion, sp.tipo_actuacion) AS seguimiento_tipo_actuacion,
+            COALESCE(ec.numero_expediente, paudit.numero_carpeta, ep.numero_expediente) AS expediente_numero_visible,
+            COALESCE(sc.tipo_actuacion, pce.nombre, sp.tipo_actuacion) AS seguimiento_tipo_actuacion,
             ae.descripcion,
             ae.detalles,
             ae.ip_address,
@@ -156,6 +181,8 @@ try {
     $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($logs as &$log) {
+        $log['entidad'] = sanitizeAuditEntityLabel($log['entidad'] ?? '');
+
         if (isset($log['detalles']) && is_string($log['detalles']) && trim($log['detalles']) !== '') {
             $decodedDetails = json_decode($log['detalles'], true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decodedDetails)) {

@@ -26,7 +26,7 @@ try {
 
     $pdo = getDatabaseConnection();
     $scopeStmt = $pdo->prepare('
-        SELECT delegacion_id, activo
+        SELECT delegacion_id, numero_carpeta, estatus_general, activo
         FROM penal_asuntos
         WHERE id = :id
         LIMIT 1
@@ -67,11 +67,15 @@ try {
     auditLog($pdo, $user, [
         'modulo' => 'PENAL',
         'accion' => 'RESTAURAR',
-        'entidad' => 'PENAL_ASUNTO',
+        'entidad' => 'Expediente penal',
         'entidad_id' => $id,
         'expediente_id' => $id,
         'delegacion_id' => $existingCase['delegacion_id'] ?? null,
         'descripcion' => 'Restauracion de asunto penal',
+        'detalles' => [
+            'numero_expediente' => $existingCase['numero_carpeta'] ?? null,
+            'estatus' => strtoupper((string) ($existingCase['estatus_general'] ?? '')) === 'CONCLUIDO' ? 'Concluido' : 'En tramite',
+        ],
     ]);
 
     sendSuccess('Caso penal restaurado correctamente');

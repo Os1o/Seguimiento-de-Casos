@@ -40,6 +40,92 @@ function normalizePenalUpdatePayload(): array
     return normalizeInputToUppercase($payload, ['fecha_presentacion_denuncia', 'cuantia_monto']);
 }
 
+function getPenalAuditNameMap(PDO $pdo, string $table, array $ids): array
+{
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+
+    if ($ids === []) {
+        return [];
+    }
+
+    $allowedTables = [
+        'delegaciones' => 'delegaciones',
+        'delitos' => 'delitos',
+        'areas' => 'areas',
+    ];
+
+    if (!isset($allowedTables[$table])) {
+        return [];
+    }
+
+    $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+    $stmt = $pdo->prepare("SELECT id, nombre FROM {$allowedTables[$table]} WHERE id IN ({$placeholders})");
+    $stmt->execute($ids);
+
+    $map = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $map[(int) $row['id']] = (string) $row['nombre'];
+    }
+
+    return $map;
+}
+
+function replacePenalAuditIdsWithNames(array $data, array $maps): array
+{
+    $resolved = $data;
+
+    foreach ($maps as $field => $map) {
+        if (!array_key_exists($field, $resolved) || $resolved[$field] === null || $resolved[$field] === '') {
+            continue;
+        }
+
+        $id = (int) $resolved[$field];
+        if (isset($map[$id])) {
+            $resolved[$field] = $map[$id];
+        }
+    }
+
+    if (array_key_exists('estatus_general', $resolved)) {
+        $statusMap = [
+            'TRAMITE' => 'En tramite',
+            'CONCLUIDO' => 'Concluido',
+        ];
+        $status = strtoupper((string) $resolved['estatus_general']);
+        $resolved['estatus_general'] = $statusMap[$status] ?? $resolved['estatus_general'];
+    }
+
+    return $resolved;
+}
+
+function buildPenalCaseAuditChanges(PDO $pdo, array $before, array $after): array
+{
+    $maps = [
+        'delegacion_id' => getPenalAuditNameMap($pdo, 'delegaciones', [$before['delegacion_id'] ?? null, $after['delegacion_id'] ?? null]),
+        'delito_id' => getPenalAuditNameMap($pdo, 'delitos', [$before['delito_id'] ?? null, $after['delito_id'] ?? null]),
+        'area_hechos_id' => getPenalAuditNameMap($pdo, 'areas', [$before['area_hechos_id'] ?? null, $after['area_hechos_id'] ?? null]),
+    ];
+
+    return buildAuditFieldChanges(
+        replacePenalAuditIdsWithNames($before, $maps),
+        replacePenalAuditIdsWithNames($after, $maps),
+        [
+            'delegacion_id' => 'OOAD',
+            'numero_carpeta' => 'Numero de carpeta',
+            'anio_inicio' => 'Anio',
+            'fecha_presentacion_denuncia' => 'Fecha de presentacion',
+            'delito_id' => 'Delito',
+            'area_hechos_id' => 'Area generadora',
+            'hechos_denunciante' => 'Hechos del denunciante',
+            'dato_relevante' => 'Dato relevante',
+            'sin_cuantificar' => 'Sin cuantificar',
+            'cuantia_monto' => 'Cuantia',
+            'escenario_denunciante' => 'Escenario denunciante',
+            'coadyuvancia' => 'Coadyuvancia',
+            'estatus_general' => 'Estatus',
+        ]
+    );
+}
+
 function validatePenalUpdateCaseNumber(string $numeroCarpeta): void
 {
     $parts = explode('/', strtoupper($numeroCarpeta));
@@ -475,14 +561,16 @@ try {
 
     auditLog($pdo, $user, [
         'modulo' => 'PENAL',
-        'accion' => 'EDICION',
-        'entidad' => 'PENAL_ASUNTO',
+        'accion' => 'EDITAR',
+        'entidad' => 'Expediente penal',
         'entidad_id' => $payload['id'],
         'expediente_id' => $payload['id'],
         'delegacion_id' => $payload['delegacion_id'],
-        'descripcion' => 'Edicion de registro inicial penal',
+        'descripcion' => 'Edicion de asunto penal',
         'detalles' => [
-            'numero_carpeta' => $payload['numero_carpeta'],
+            'numero_expediente' => $asunto['numero_carpeta'] ?? $payload['numero_carpeta'],
+            'estatus' => strtoupper((string) ($asunto['estatus_general'] ?? '')) === 'CONCLUIDO' ? 'Concluido' : 'En tramite',
+            'cambios' => buildPenalCaseAuditChanges($pdo, $current, is_array($asunto) ? $asunto : []),
             'escenario_denunciante' => $payload['escenario_denunciante'],
             'coadyuvancia' => $payload['coadyuvancia'],
             'denunciantes' => count($payload['denunciantes']),

@@ -55,13 +55,13 @@
 
             <form id="formActualizar" class="card penal-amp-form">
                 <div class="penal-amp-form-head">
-                    <h3>Fecha de conocimiento del AMP</h3>
+                    <h3 id="tituloFormularioAmp">Fecha de conocimiento del AMP</h3>
                 </div>
 
                 <div class="penal-amp-grid">
                     <div class="form-group">
                         <label class="form-label required" for="fechaActuacion">Fecha de conocimiento del AMP / Fiscal</label>
-                        <input type="date" id="fechaActuacion" class="form-input" required>
+                        <input type="date" id="fechaActuacion" class="form-input" min="" required>
                     </div>
                 </div>
 
@@ -103,7 +103,7 @@
                 <div class="penal-amp-actions">
                     <a href="detalleCasoPenal.html" id="btnCancelarAmp" class="btn btn-secondary">Cancelar</a>
                     <a href="registroActuacionPenal.html" id="btnIrActuacion" class="btn btn-secondary">Ir a actuación penal</a>
-                    <button type="submit" class="btn btn-success">Guardar registro</button>
+                    <button type="submit" id="btnGuardarAmp" class="btn btn-success">Guardar registro</button>
                 </div>
             </form>
         </section>

@@ -14,6 +14,14 @@ let casoPenalActual = null;
 const $ = (selector) => document.querySelector(selector);
 
 function mostrarMensaje(titulo, mensaje, tipo = 'info') {
+    if (typeof window.appAlert === 'function') {
+        return window.appAlert({
+            title: titulo,
+            message: mensaje,
+            confirmText: 'Aceptar'
+        });
+    }
+
     if (typeof window.mostrarModalMensaje === 'function') {
         window.mostrarModalMensaje(titulo, mensaje, tipo);
         return;
@@ -23,11 +31,11 @@ function mostrarMensaje(titulo, mensaje, tipo = 'info') {
 }
 
 function mostrarError(mensaje) {
-    mostrarMensaje('No se pudo continuar', mensaje, 'error');
+    return mostrarMensaje('No se pudo continuar', mensaje, 'error');
 }
 
 function mostrarExito(mensaje) {
-    mostrarMensaje('Cambios guardados', mensaje, 'success');
+    return mostrarMensaje('Cambios guardados', mensaje, 'success');
 }
 
 function obtenerIdCaso() {
@@ -125,7 +133,96 @@ function syncCuantia() {
     }
 }
 
+function formatearMontoInput(valor) {
+    if (valor === null || valor === undefined || valor === '') {
+        return '';
+    }
+
+    const limpio = String(valor).replace(/,/g, '').replace(/[^\d.]/g, '');
+    if (!limpio) {
+        return '';
+    }
+
+    const numero = Number.parseFloat(limpio);
+    if (!Number.isFinite(numero)) {
+        return limpio;
+    }
+
+    return numero.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function obtenerMontoNormalizado() {
+    return ($('#cuantiaMonto')?.value || '').replace(/,/g, '').trim();
+}
+
 function aplicarFormatoMoneda(event) {
+    const input = event.target;
+    let valor = input.value.replace(/[^0-9.]/g, '');
+
+    const partes = valor.split('.');
+    if (partes.length > 2) {
+        valor = partes[0] + '.' + partes.slice(1).join('');
+    }
+
+    const partesFinales = valor.split('.');
+    if (partesFinales[0]) {
+        partesFinales[0] = partesFinales[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    input.value = partesFinales.join('.');
+}
+
+function formatearMontoPrecargado() {
+    const monto = $('#cuantiaMonto');
+    if (!monto || !monto.value.trim()) return;
+
+    monto.value = formatearMontoInput(monto.value);
+}
+
+function construirUrlDocumentoPenal(documento) {
+    if (!documento?.id) {
+        return '';
+    }
+
+    const tipo = encodeURIComponent(documento.documento_tipo || 'ASUNTO');
+    const url = `api/downloadPenalDocument.php?id=${encodeURIComponent(documento.id)}&tipo=${tipo}`;
+    return window.construirUrlApiConToken?.(url) || url;
+}
+
+function obtenerDocumentoInicial(caso) {
+    if (caso?.documento_inicial?.id) {
+        return caso.documento_inicial;
+    }
+
+    const documentos = Array.isArray(caso?.documentos) ? caso.documentos : [];
+    return documentos.find((documento) => {
+        const tipo = String(documento.documento_tipo || '').toUpperCase();
+        return tipo === 'ASUNTO' || tipo === 'INICIAL' || tipo === 'DOCUMENTO_INICIAL';
+    }) || null;
+}
+
+function mostrarDocumentoActual(caso) {
+    const wrap = $('#documentoActualPenalWrap');
+    const link = $('#documentoActualPenalLink');
+    if (!wrap || !link) return;
+
+    const documento = obtenerDocumentoInicial(caso);
+    if (!documento?.id) {
+        wrap.hidden = true;
+        link.removeAttribute('href');
+        link.textContent = '';
+        return;
+    }
+
+    link.href = construirUrlDocumentoPenal(documento);
+    link.textContent = documento.nombre_original || documento.nombre || 'Documento inicial';
+    wrap.hidden = false;
+}
+
+function aplicarFormatoMonedaLegacy(event) {
     const input = event.target;
     const limpio = input.value.replace(/[^\d.]/g, '');
     const partes = limpio.split('.');
@@ -136,6 +233,7 @@ function aplicarFormatoMoneda(event) {
 
 function crearCampoPersona({ tipo, valor = '' }) {
     const esProbable = tipo === 'probable';
+    const esRelacionado = tipo === 'relacionado';
     const contenedor = esProbable
         ? $('#listaProbablesResponsables')
         : tipo === 'relacionado'
@@ -145,7 +243,7 @@ function crearCampoPersona({ tipo, valor = '' }) {
     if (!contenedor) return null;
 
     const card = document.createElement('div');
-    card.className = 'penal-person-card';
+    card.className = 'dynamic-field';
     card.dataset.personaTipo = tipo;
 
     const titulo = esProbable
@@ -155,13 +253,13 @@ function crearCampoPersona({ tipo, valor = '' }) {
             : 'Denunciante principal';
 
     card.innerHTML = `
-        <div class="penal-person-card-head">
-            <h4></h4>
-            <button type="button" class="btn btn-danger btn-sm" data-persona-remove>Eliminar</button>
+        <div class="dynamic-field-header">
+            <h4 class="dynamic-field-title"></h4>
+            <button type="button" class="btn-remove" data-persona-remove>Eliminar</button>
         </div>
         <div class="form-group">
-            <label class="form-label required">${esProbable ? 'Nombre del probable responsable' : 'Nombre'}</label>
-            <input type="text" class="form-input" data-persona-nombre maxlength="150" placeholder="Nombre de la persona, empresa o institucion" required>
+            <label class="form-label${esRelacionado ? '' : ' required'}">${esProbable ? 'Nombre del probable responsable' : 'Nombre'}</label>
+            <input type="text" class="form-input" data-persona-nombre maxlength="150" placeholder="Nombre de la persona, empresa o institucion" ${esRelacionado ? '' : 'required'}>
         </div>
     `;
 
@@ -175,10 +273,10 @@ function crearCampoPersona({ tipo, valor = '' }) {
 
 function renumerarPersonas(tipo) {
     const selector = tipo === 'probable'
-        ? '#listaProbablesResponsables .penal-person-card'
+        ? '#listaProbablesResponsables .dynamic-field'
         : tipo === 'relacionado'
-            ? '#listaDenuncianteRelacionados .penal-person-card'
-            : '#listaDenunciantesPrincipales .penal-person-card';
+            ? '#listaDenuncianteRelacionados .dynamic-field'
+            : '#listaDenunciantesPrincipales .dynamic-field';
 
     document.querySelectorAll(selector).forEach((card, index) => {
         const titulo = card.querySelector('h4');
@@ -199,10 +297,10 @@ function renumerarPersonas(tipo) {
 
 function eliminarCampoPersona(tipo, card) {
     const selector = tipo === 'probable'
-        ? '#listaProbablesResponsables .penal-person-card'
+        ? '#listaProbablesResponsables .dynamic-field'
         : tipo === 'relacionado'
-            ? '#listaDenuncianteRelacionados .penal-person-card'
-            : '#listaDenunciantesPrincipales .penal-person-card';
+            ? '#listaDenuncianteRelacionados .dynamic-field'
+            : '#listaDenunciantesPrincipales .dynamic-field';
 
     const cards = Array.from(document.querySelectorAll(selector));
     if (cards.length <= 1) {
@@ -232,20 +330,20 @@ function syncModoDenunciante() {
     const escenarioPill = $('#denuncianteEscenarioPill');
 
     if (modo === 'IMSS') {
-        relacionadosWrap.hidden = false;
-        principalesWrap.hidden = true;
+        relacionadosWrap.style.display = '';
+        principalesWrap.style.display = 'none';
         imssPill.textContent = 'IMSS precargado';
         imssPill.classList.remove('is-muted');
         escenarioPill.textContent = 'Puede agregar personas relacionadas de forma opcional.';
 
-        if (!$('#listaDenuncianteRelacionados .penal-person-card')) {
+        if (!$('#listaDenuncianteRelacionados .dynamic-field')) {
             crearCampoPersona({ tipo: 'relacionado' });
         }
         return;
     }
 
-    relacionadosWrap.hidden = true;
-    principalesWrap.hidden = false;
+    relacionadosWrap.style.display = 'none';
+    principalesWrap.style.display = '';
 
     if (modo === 'IMSS_OTRO') {
         imssPill.textContent = 'IMSS como coadyuvante';
@@ -257,7 +355,7 @@ function syncModoDenunciante() {
         escenarioPill.textContent = 'Capture de 1 a N denunciantes principales. El IMSS no figurara en este escenario.';
     }
 
-    if (!$('#listaDenunciantesPrincipales .penal-person-card')) {
+    if (!$('#listaDenunciantesPrincipales .dynamic-field')) {
         crearCampoPersona({ tipo: 'principal' });
     }
 }
@@ -269,7 +367,7 @@ function syncQrr() {
 
     wrap.hidden = Boolean(qrr);
 
-    if (!qrr && !$('#listaProbablesResponsables .penal-person-card')) {
+    if (!qrr && !$('#listaProbablesResponsables .dynamic-field')) {
         crearCampoPersona({ tipo: 'probable' });
     }
 }
@@ -467,11 +565,11 @@ function poblarCaso(caso) {
 
     $('#hechosVictimaDenunciante').value = caso.hechos_denunciante || '';
     $('#datoRelevante').value = caso.dato_relevante || '';
-    $('#documentoInicialObservaciones').value = caso.documento_inicial_observaciones || '';
-
     $('#sinCuantificar').checked = Boolean(caso.sin_cuantificar);
-    $('#cuantiaMonto').value = caso.cuantia_monto !== null && caso.cuantia_monto !== undefined ? String(caso.cuantia_monto) : '';
+    $('#cuantiaMonto').value = formatearMontoInput(caso.cuantia_monto);
     syncCuantia();
+    formatearMontoPrecargado();
+    mostrarDocumentoActual(caso);
 
     poblarDenunciantes(caso);
     poblarProbables(caso);
@@ -531,12 +629,12 @@ async function guardarCaso(event) {
         formData.append('hechos_denunciante', $('#hechosVictimaDenunciante').value.trim());
         formData.append('dato_relevante', $('#datoRelevante').value.trim());
         formData.append('sin_cuantificar', $('#sinCuantificar').checked ? '1' : '0');
-        formData.append('cuantia_monto', $('#sinCuantificar').checked ? '' : $('#cuantiaMonto').value.trim());
+        formData.append('cuantia_monto', $('#sinCuantificar').checked ? '' : obtenerMontoNormalizado());
         formData.append('escenario_denunciante', escenarioBackend());
         formData.append('coadyuvancia', modoDenuncianteSeleccionado() === 'IMSS_OTRO' ? '1' : '0');
         formData.append('denunciantes', JSON.stringify(denunciantes));
         formData.append('probables_responsables', JSON.stringify(probables));
-        formData.append('documento_inicial_observaciones', $('#documentoInicialObservaciones').value.trim());
+        formData.append('documento_inicial_observaciones', '');
 
         if (archivo) {
             formData.append('archivo_inicial', archivo);
@@ -547,11 +645,8 @@ async function guardarCaso(event) {
             body: formData
         });
 
-        mostrarExito('El asunto penal se actualizo correctamente.');
-
-        setTimeout(() => {
-            window.location.href = `detalleCasoPenal.html?id=${encodeURIComponent(id)}`;
-        }, 500);
+        await mostrarExito('El asunto penal se actualizo correctamente.');
+        window.location.href = `detalleCasoPenal.html?id=${encodeURIComponent(id)}`;
     } catch (error) {
         console.error('Error al actualizar asunto penal:', error);
         mostrarError(error.message || 'No se pudo guardar el asunto penal.');

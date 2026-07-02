@@ -30,10 +30,15 @@ try {
         SELECT
             pa.id,
             pa.asunto_id,
+            pa.fecha_actuacion,
+            pce.nombre AS etapa_nombre,
+            p.numero_carpeta,
             p.delegacion_id
         FROM penal_actuaciones pa
         INNER JOIN penal_asuntos p
             ON p.id = pa.asunto_id
+        INNER JOIN penal_catalogo_etapas pce
+            ON pce.id = pa.etapa_id
         WHERE pa.id = :id
           AND pa.activo = TRUE
           AND pa.deleted_at IS NULL
@@ -125,13 +130,18 @@ try {
     auditLog($pdo, $user, [
         'modulo' => 'PENAL',
         'accion' => 'ELIMINAR',
-        'entidad' => 'PENAL_ACTUACION',
+        'entidad' => 'Actuacion penal',
         'entidad_id' => $actuacionId,
         'expediente_id' => $asuntoId,
+        'seguimiento_id' => $actuacionId,
         'delegacion_id' => $delegacionId,
         'descripcion' => 'Eliminacion de actuacion penal',
         'detalles' => [
+            'numero_expediente' => $actuacion['numero_carpeta'] ?? null,
+            'estatus' => $nuevoEstatus === 'CONCLUIDO' ? 'Concluido' : 'En tramite',
             'asunto_id' => $asuntoId,
+            'fecha_actuacion' => $actuacion['fecha_actuacion'] ?? null,
+            'etapa_nombre' => $actuacion['etapa_nombre'] ?? null,
             'documentos_ligados' => count($documentos),
             'estatus_asunto_resultante' => $nuevoEstatus,
         ],

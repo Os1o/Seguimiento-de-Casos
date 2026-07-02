@@ -115,7 +115,7 @@ try {
     $pdo = getDatabaseConnection();
 
     $asuntoStmt = $pdo->prepare('
-        SELECT id, delegacion_id, fecha_presentacion_denuncia, fecha_conocimiento_amp, estatus_general
+        SELECT id, delegacion_id, numero_carpeta, fecha_presentacion_denuncia, fecha_conocimiento_amp, estatus_general
         FROM penal_asuntos
         WHERE id = :id
           AND deleted_at IS NULL
@@ -250,13 +250,16 @@ try {
 
     auditLog($pdo, $user, [
         'modulo' => 'PENAL',
-        'accion' => 'ALTA',
-        'entidad' => 'PENAL_ACTUACION',
+        'accion' => 'CREAR',
+        'entidad' => 'Actuacion penal',
         'entidad_id' => isset($actuacion['id']) ? (int) $actuacion['id'] : null,
         'expediente_id' => $asuntoId,
+        'seguimiento_id' => isset($actuacion['id']) ? (int) $actuacion['id'] : null,
         'delegacion_id' => $asunto['delegacion_id'] ?? null,
         'descripcion' => 'Alta de actuación penal',
         'detalles' => [
+            'numero_expediente' => $asunto['numero_carpeta'] ?? null,
+            'estatus' => $nuevoEstatus === 'CONCLUIDO' ? 'Concluido' : 'En tramite',
             'fecha_actuacion' => $fechaActuacion,
             'etapa_id' => $etapaId,
             'etapa_nombre' => $etapa['nombre'] ?? null,

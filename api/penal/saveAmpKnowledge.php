@@ -62,7 +62,8 @@ try {
             delegacion_id,
             numero_carpeta,
             fecha_presentacion_denuncia,
-            fecha_conocimiento_amp
+            fecha_conocimiento_amp,
+            estatus_general
         FROM penal_asuntos
         WHERE id = :id
           AND activo = TRUE
@@ -135,16 +136,24 @@ try {
 
     auditLog($pdo, $user, [
         'modulo' => 'PENAL',
-        'accion' => 'REGISTRO_AMP',
-        'entidad' => 'PENAL_CONOCIMIENTO_AMP',
+        'accion' => empty($asunto['fecha_conocimiento_amp']) ? 'CREAR' : 'EDITAR',
+        'entidad' => 'Fecha del AMP',
         'entidad_id' => $payload['asunto_id'],
         'expediente_id' => $payload['asunto_id'],
         'delegacion_id' => isset($asunto['delegacion_id']) ? (int) $asunto['delegacion_id'] : null,
-        'descripcion' => 'Registro de conocimiento del AMP',
+        'descripcion' => empty($asunto['fecha_conocimiento_amp'])
+            ? 'Registro de conocimiento del AMP'
+            : 'Edicion de conocimiento del AMP',
         'detalles' => [
-            'numero_carpeta' => $asunto['numero_carpeta'] ?? null,
+            'numero_expediente' => $asunto['numero_carpeta'] ?? null,
+            'estatus' => strtoupper((string) ($asunto['estatus_general'] ?? '')) === 'CONCLUIDO' ? 'Concluido' : 'En tramite',
             'fecha_anterior' => $asunto['fecha_conocimiento_amp'] ?: null,
             'fecha_nueva' => $payload['fecha_conocimiento_amp'],
+            'cambios' => buildAuditFieldChanges(
+                ['fecha_conocimiento_amp' => $asunto['fecha_conocimiento_amp'] ?: null],
+                ['fecha_conocimiento_amp' => $payload['fecha_conocimiento_amp']],
+                ['fecha_conocimiento_amp' => 'Fecha de conocimiento AMP']
+            ),
         ],
     ]);
 

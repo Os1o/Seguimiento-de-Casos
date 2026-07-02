@@ -70,14 +70,15 @@ try {
 
     auditLog($pdo, $user, [
         'modulo' => 'PENAL',
-        'accion' => 'RESTAURAR_REQUERIMIENTO',
-        'entidad' => 'PENAL_REQUERIMIENTO',
+        'accion' => 'RESTAURAR',
+        'entidad' => 'Requerimiento ministerial',
         'entidad_id' => $id,
         'expediente_id' => (int) $requerimiento['asunto_id'],
         'delegacion_id' => $requerimiento['delegacion_id'] ?? null,
         'descripcion' => 'Restauracion de requerimiento ministerial',
         'detalles' => [
-            'numero_carpeta' => $requerimiento['numero_carpeta'] ?? null,
+            'numero_expediente' => $requerimiento['numero_carpeta'] ?? null,
+            'estatus' => 'Restaurado',
             'folio_referencia' => $requerimiento['folio_referencia'] ?? null,
         ],
     ]);

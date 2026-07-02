@@ -107,8 +107,8 @@ try {
 
     auditLog($pdo, $user, [
         'modulo' => 'PENAL',
-        'accion' => 'ACTUALIZAR',
-        'entidad' => 'SEGUIMIENTO_PENAL',
+        'accion' => 'CREAR',
+        'entidad' => 'Actuacion penal',
         'entidad_id' => (int) ($savedTracking['id'] ?? 0) ?: null,
         'expediente_id' => $expedienteId,
         'seguimiento_id' => (int) ($savedTracking['id'] ?? 0) ?: null,

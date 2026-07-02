@@ -394,6 +394,7 @@ async function renderizarDetalle() {
     const btnRequerimientos = getEl('btnRequerimientos');
     const btnRegistroAmp = getEl('btnRegistroAmp');
     const btnActualizar = getEl('btnActualizar');
+    const btnEditarDatosPenal = getEl('btnEditarDatosPenal');
 
     setText('breadcrumbExpediente', numeroCarpeta);
     setText('numeroExpediente', numeroCarpeta);
@@ -421,6 +422,7 @@ async function renderizarDetalle() {
         const hrefRequerimientos = `listadoRequerimientosPenal.html?id=${encodeURIComponent(caso.id)}`;
         const hrefRegistroAmp = `actualizarCasoPenal.html?id=${encodeURIComponent(caso.id)}`;
         const hrefActuacion = `registroActuacionPenal.html?id=${encodeURIComponent(caso.id)}`;
+        const hrefEditarDatos = `editarCasoPenal.html?id=${encodeURIComponent(caso.id)}`;
         const tieneConocimientoAmp = Boolean(caso.fecha_conocimiento_amp || caso.fecha_conocimiento_fiscal);
         const puedeEditar = usuarioActual && usuarioActual.rol !== 'consulta';
         const esAdmin = usuarioActual?.rol === 'admin';
@@ -428,6 +430,10 @@ async function renderizarDetalle() {
 
         if (linkRequerimientos) linkRequerimientos.href = hrefRequerimientos;
         if (btnRequerimientos) btnRequerimientos.href = hrefRequerimientos;
+        if (btnEditarDatosPenal) {
+            btnEditarDatosPenal.href = hrefEditarDatos;
+            btnEditarDatosPenal.style.display = esAdmin ? '' : 'none';
+        }
         if (btnRegistroAmp) {
             btnRegistroAmp.href = hrefRegistroAmp;
             btnRegistroAmp.style.display = puedeEditarAmp ? '' : 'none';

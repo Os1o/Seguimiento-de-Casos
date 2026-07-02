@@ -74,6 +74,7 @@ function mapPenalListCase(array $case): array
         'fecha_conocimiento_amp' => $case['fecha_conocimiento_amp'] ?? null,
         'fecha_judicializacion' => $case['fecha_judicializacion'] ?? null,
         'determinacion_judicial' => $case['determinacion_judicial'] ?? null,
+        'tiene_requerimientos_pendientes' => penalListBool($case['tiene_requerimientos_pendientes'] ?? false),
         'estatus' => $estatus,
         'estatus_general' => $estatus,
         'abogado_responsable_id' => isset($case['abogado_responsable_id']) ? (int) $case['abogado_responsable_id'] : null,
@@ -122,6 +123,17 @@ try {
             u.nombre_completo AS abogado_responsable,
             pa.created_at,
             pa.updated_at,
+            EXISTS (
+                SELECT 1
+                FROM penal_requerimientos pr
+                WHERE pr.asunto_id = pa.id
+                  AND pr.activo = TRUE
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM penal_requerimiento_contestaciones prc
+                      WHERE prc.requerimiento_id = pr.id
+                  )
+            ) AS tiene_requerimientos_pendientes,
             COALESCE(den.denunciantes_json, \'[]\') AS denunciantes_json,
             COALESCE(resp.responsables_json, \'[]\') AS responsables_json
         FROM penal_asuntos pa

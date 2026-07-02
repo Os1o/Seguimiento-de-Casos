@@ -135,6 +135,40 @@ function cargarValorInicialFechaAmp() {
     inputFecha.value = `${yyyy}-${mm}-${dd}`;
 }
 
+function syncFechaAmpMin() {
+    const inputFecha = document.getElementById('fechaActuacion');
+    const fechaPresentacion = asuntoAmpActual?.fecha_presentacion_denuncia || '';
+
+    if (!inputFecha) {
+        return;
+    }
+
+    inputFecha.min = validarFechaIso(fechaPresentacion) ? fechaPresentacion : '';
+
+    if (inputFecha.min && inputFecha.value && inputFecha.value < inputFecha.min) {
+        inputFecha.value = '';
+    }
+}
+
+function actualizarModoFormularioAmp() {
+    const tieneFechaAmp = Boolean(asuntoAmpActual?.fecha_conocimiento_amp || asuntoAmpActual?.fecha_conocimiento_fiscal);
+    const esEdicionAdmin = usuarioAmpActual?.rol === 'admin' && tieneFechaAmp;
+    const tituloFormulario = document.getElementById('tituloFormularioAmp');
+    const btnSubmit = document.getElementById('btnGuardarAmp');
+
+    if (tituloFormulario) {
+        tituloFormulario.textContent = esEdicionAdmin
+            ? 'Editar fecha de conocimiento del AMP'
+            : 'Fecha de conocimiento del AMP';
+    }
+
+    if (btnSubmit) {
+        btnSubmit.textContent = esEdicionAdmin
+            ? 'Actualizar fecha AMP'
+            : 'Guardar registro';
+    }
+}
+
 async function guardarRegistroAmp(event) {
     event.preventDefault();
 
@@ -169,6 +203,8 @@ async function guardarRegistroAmp(event) {
             asunto_id: asuntoAmpActual.id,
             fecha_conocimiento_amp: fechaConocimientoAmp
         });
+        sessionStorage.setItem('penalAmpCacheDirty', '1');
+        localStorage.removeItem('casosPenal');
 
         await window.appAlert?.({
             title: 'Registro guardado',
@@ -228,6 +264,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         cargarResumenAmp();
         inicializarNavegacionAmp();
         cargarValorInicialFechaAmp();
+        syncFechaAmpMin();
+        actualizarModoFormularioAmp();
 
         const form = document.getElementById('formActualizar');
         if (form) {

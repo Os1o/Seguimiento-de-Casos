@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRegresarFaseDos = document.getElementById('btnRegresarFaseDos');
     const fechaRecepcionFiscalia = document.getElementById('fechaRecepcionFiscalia');
     const fechaLimiteAtencionReq = document.getElementById('fechaLimiteAtencionReq');
+    const fechaInicioInterno = document.getElementById('fechaInicioInterno');
     const areaResponsableReq = document.getElementById('areaResponsableReq');
     const documentoRequerimientoInterno = document.getElementById('documentoRequerimientoInterno');
     const faseDos = document.getElementById('faseSeguimientoInterno');
@@ -34,6 +35,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const mostrarCargaRequerimiento = () => window.mostrarCargaVista?.('.container');
     const ocultarCargaRequerimiento = () => window.ocultarCargaVista?.('.container');
+    const mostrarAlertaRequerimiento = (titulo, mensaje) => {
+        if (typeof window.appAlert === 'function') {
+            return window.appAlert({
+                title: titulo,
+                message: mensaje,
+                confirmText: 'Aceptar'
+            });
+        }
+
+        window.alert(`${titulo}\n\n${mensaje}`);
+        return Promise.resolve(true);
+    };
+    const confirmarRequerimiento = (titulo, mensaje, confirmText = 'Continuar') => {
+        if (typeof window.appConfirm === 'function') {
+            return window.appConfirm({
+                title: titulo,
+                message: mensaje,
+                confirmText,
+                cancelText: 'Cancelar'
+            });
+        }
+
+        return Promise.resolve(window.confirm(`${titulo}\n\n${mensaje}`));
+    };
+    const crearErrorValidacion = (mensaje) => {
+        const error = new Error(mensaje);
+        error.esValidacion = true;
+        return error;
+    };
+    const mostrarErrorRequerimiento = (error, mensajeDefault) => {
+        const titulo = error?.esValidacion ? 'Datos incompletos' : 'No se pudo guardar';
+        return mostrarAlertaRequerimiento(titulo, error?.message || mensajeDefault);
+    };
     const textoSinArchivo = 'SIN ARCHIVOS SELECCIONADOS';
     const usuarioEsAdmin = () => usuarioActual?.rol === 'admin';
     const tieneValorGuardado = (value) => value !== null && value !== undefined && String(value).trim() !== '';
@@ -250,6 +284,44 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    const esModoNuevoRequerimiento = !requerimientoId;
+
+    const asegurarBotonEliminarSolicitudInicial = (item) => {
+        if (!esModoNuevoRequerimiento || !item) {
+            return;
+        }
+
+        if (item.querySelector('[data-delete-solicitud-inicial]')) {
+            return;
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'penal-req-item-actions penal-req-item-actions-start';
+        actions.innerHTML = `
+            <button type="button" class="btn btn-danger-outline" data-delete-solicitud-inicial>
+                Eliminar solicitud
+            </button>
+        `;
+        item.appendChild(actions);
+    };
+
+    const actualizarBotonesEliminarSolicitudesIniciales = () => {
+        if (!esModoNuevoRequerimiento) {
+            return;
+        }
+
+        const items = Array.from(listInicial.querySelectorAll('[data-seed-item]'));
+        const mostrarEliminar = items.length > 1;
+
+        items.forEach((item) => {
+            asegurarBotonEliminarSolicitudInicial(item);
+            const button = item.querySelector('[data-delete-solicitud-inicial]');
+            if (button) {
+                button.hidden = !mostrarEliminar;
+            }
+        });
+    };
+
     const updateSolicitudIndices = () => {
         const items = listInicial.querySelectorAll('[data-seed-item]');
         items.forEach((item, index) => {
@@ -258,6 +330,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 badge.textContent = `Solicitud ${String(index + 1).padStart(2, '0')}`;
             }
         });
+
+        actualizarBotonesEliminarSolicitudesIniciales();
     };
 
     const createSolicitudTemplate = () => {
@@ -272,6 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        asegurarBotonEliminarSolicitudInicial(clone);
         return clone;
     };
 
@@ -420,13 +495,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const fechaRecepcion = document.getElementById('fechaRecepcionFiscalia')?.value || '';
         const fechaLimiteAtencion = document.getElementById('fechaLimiteAtencionReq')?.value || '';
         const documentoInicial = document.getElementById('documentoFiscaliaInicial')?.files?.[0] || null;
+        const documentoInicialActual = requerimientoActual
+            ? obtenerDocumentoPorTipo(requerimientoActual.documentos || [], 'INICIAL_FISCALIA')
+            : null;
         const solicitudes = getSolicitudesIniciales();
+        const idActual = requerimientoGuardadoId || requerimientoActual?.id || null;
 
         if (!asuntoId) {
             throw new Error('No se encontro el asunto penal para registrar el requerimiento');
         }
 
-        if (!folioReferencia || !autoridadEmisora || !fechaRecepcion || !fechaLimiteAtencion || !documentoInicial) {
+        if (!folioReferencia || !autoridadEmisora || !fechaRecepcion || !fechaLimiteAtencion || (!documentoInicial && !documentoInicialActual)) {
             throw new Error('Completa los campos obligatorios del requerimiento inicial');
         }
 
@@ -440,6 +519,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const formData = new FormData();
         formData.append('asunto_id', asuntoId);
+        if (idActual) {
+            formData.append('requerimiento_id', String(idActual));
+        }
         formData.append('folio_referencia', folioReferencia);
         formData.append('autoridad_emisora', autoridadEmisora);
         formData.append('fecha_recepcion', fechaRecepcion);
@@ -534,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const areaResponsableId = areaResponsableReq?.value || '';
 
         if (!fechaInicioInterno || !areaResponsableId) {
-            throw new Error('Completa la fecha de inicio y el area responsable');
+            throw crearErrorValidacion('Completa la fecha de inicio y el area responsable.');
         }
 
         const validation = validateFaseDos();
@@ -670,11 +752,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!archivoRespuesta && !tieneDocumentoRespuestaActual) {
-            throw new Error('Adjunta el documento enviado por el IMSS');
+            throw crearErrorValidacion('Adjunta el documento enviado por el IMSS.');
         }
 
         if ((fechaFiscalia && !archivoFiscalia && !tieneDocumentoFiscaliaActual) || (!fechaFiscalia && archivoFiscalia)) {
-            throw new Error('La fecha y el documento de respuesta de la fiscalia deben capturarse juntos');
+            throw crearErrorValidacion('La fecha y el documento de respuesta de la fiscalia deben capturarse juntos.');
         }
 
         const formData = new FormData();
@@ -806,6 +888,8 @@ document.addEventListener('DOMContentLoaded', () => {
             setFieldValue('fechaRecepcionFiscalia', requerimientoActual.fecha_recepcion);
             setFieldValue('fechaLimiteAtencionReq', requerimientoActual.fecha_limite_atencion);
             setFieldValue('fechaInicioInterno', requerimientoActual.fecha_inicio_interno);
+            syncFechaLimiteMin();
+            syncFechaInicioInternoRange();
             setSelectByTextOrValue('areaResponsableReq', requerimientoActual.area_responsable_nombre || requerimientoActual.area_responsable_id);
             const contestacion = obtenerUltimaContestacion(requerimientoActual);
             if (contestacion) {
@@ -828,7 +912,7 @@ document.addEventListener('DOMContentLoaded', () => {
             aplicarBloqueosCamposGuardadosFaseDosTres(requerimientoActual);
         } catch (error) {
             console.error('No se pudo cargar el requerimiento para actualizacion:', error);
-            window.alert(error.message || 'No se pudo cargar el requerimiento');
+            await mostrarAlertaRequerimiento('No se pudo cargar', error.message || 'No se pudo cargar el requerimiento.');
         }
     };
 
@@ -844,16 +928,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const validateAndContinueFaseTres = () => {
+    const syncFechaInicioInternoRange = () => {
+        if (!fechaInicioInterno) {
+            return;
+        }
+
+        fechaInicioInterno.min = fechaRecepcionFiscalia?.value || '';
+        fechaInicioInterno.max = fechaLimiteAtencionReq?.value || '';
+
+        if (fechaInicioInterno.min && fechaInicioInterno.value && fechaInicioInterno.value < fechaInicioInterno.min) {
+            fechaInicioInterno.value = '';
+        }
+
+        if (fechaInicioInterno.max && fechaInicioInterno.value && fechaInicioInterno.value > fechaInicioInterno.max) {
+            fechaInicioInterno.value = '';
+        }
+    };
+
+    const validateAndContinueFaseTres = async () => {
         const validation = validateFaseDos();
 
         if (!validation.ok) {
-            window.alert('Complete los datos obligatorios de todas las solicitudes que ya fueron marcadas con documentacion recibida.');
+            await mostrarAlertaRequerimiento('Datos incompletos', 'Complete los datos obligatorios de todas las solicitudes que ya fueron marcadas con documentacion recibida.');
             return;
         }
 
         if (validation.hasPendientes) {
-            const proceed = window.confirm('Quedan requerimientos pendientes por desahogar. ¿Esta seguro de que desea continuar a la contestacion final?');
+            const proceed = await confirmarRequerimiento(
+                'Continuar a contestacion final',
+                'Quedan requerimientos pendientes por desahogar. Esta seguro de que desea continuar a la contestacion final?',
+                'Continuar'
+            );
             if (!proceed) {
                 return;
             }
@@ -867,12 +972,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const validation = validateFaseDos();
 
         if (!validation.ok) {
-            window.alert('Complete los datos obligatorios de todas las solicitudes que ya fueron marcadas con documentacion recibida.');
+            await mostrarAlertaRequerimiento('Datos incompletos', 'Complete los datos obligatorios de todas las solicitudes que ya fueron marcadas con documentacion recibida.');
             return;
         }
 
         if (validation.hasPendientes) {
-            const proceed = window.confirm('Quedan requerimientos pendientes por desahogar. ¿Esta seguro de que desea continuar a la contestacion final?');
+            const proceed = await confirmarRequerimiento(
+                'Continuar a contestacion final',
+                'Quedan requerimientos pendientes por desahogar. Esta seguro de que desea continuar a la contestacion final?',
+                'Continuar'
+            );
             if (!proceed) {
                 return;
             }
@@ -888,7 +997,7 @@ document.addEventListener('DOMContentLoaded', () => {
             unlockPhase(faseTres, pillThree);
             faseTres.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
-            window.alert(error.message || 'No se pudo guardar el seguimiento interno');
+            await mostrarErrorRequerimiento(error, 'No se pudo guardar el seguimiento interno.');
         } finally {
             await ocultarCargaRequerimiento();
             btnContinuarFaseTres.disabled = false;
@@ -896,8 +1005,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    fechaRecepcionFiscalia?.addEventListener('change', syncFechaLimiteMin);
+    fechaRecepcionFiscalia?.addEventListener('change', () => {
+        syncFechaLimiteMin();
+        syncFechaInicioInternoRange();
+    });
+    fechaLimiteAtencionReq?.addEventListener('change', syncFechaInicioInternoRange);
     syncFechaLimiteMin();
+    syncFechaInicioInternoRange();
 
     btnAgregar.addEventListener('click', () => {
         const clone = createSolicitudTemplate();
@@ -905,8 +1019,53 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSolicitudIndices();
     });
 
+    if (esModoNuevoRequerimiento) {
+        listInicial.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-delete-solicitud-inicial]');
+            if (!button) {
+                return;
+            }
+
+            const items = Array.from(listInicial.querySelectorAll('[data-seed-item]'));
+            if (items.length <= 1) {
+                actualizarBotonesEliminarSolicitudesIniciales();
+                return;
+            }
+
+            button.closest('[data-seed-item]')?.remove();
+            updateSolicitudIndices();
+        });
+    }
+
     btnGuardarFaseUno.addEventListener('click', async () => {
         if (requerimientoActual) {
+            const faseUnoEditable = usuarioEsAdmin() && !document.getElementById('folioReferenciaReq')?.disabled;
+
+            if (faseUnoEditable) {
+                btnGuardarFaseUno.disabled = true;
+                const originalText = btnGuardarFaseUno.textContent;
+                btnGuardarFaseUno.textContent = 'Guardando...';
+                mostrarCargaRequerimiento();
+
+                try {
+                    await guardarFaseUnoApi();
+                    requerimientoActual = await cargarRequerimientoDesdeApi(requerimientoActual.id);
+                    mostrarDocumentosActuales(requerimientoActual);
+                    renderSeguimientoCards(requerimientoActual?.solicitudes || []);
+                    unlockPhase(faseDos, pillTwo);
+                    faseDos.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } catch (error) {
+                    await mostrarAlertaRequerimiento('No se pudo guardar', error.message || 'No se pudo actualizar el requerimiento inicial.');
+                    return;
+                } finally {
+                    await ocultarCargaRequerimiento();
+                    btnGuardarFaseUno.disabled = false;
+                    btnGuardarFaseUno.textContent = originalText;
+                }
+
+                return;
+            }
+
             unlockPhase(faseDos, pillTwo);
             faseDos.scrollIntoView({ behavior: 'smooth', block: 'start' });
             return;
@@ -931,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', () => {
             unlockPhase(faseDos, pillTwo);
             faseDos.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
-            window.alert(error.message || 'No se pudo registrar el requerimiento');
+            await mostrarAlertaRequerimiento('No se pudo registrar', error.message || 'No se pudo registrar el requerimiento.');
         } finally {
             await ocultarCargaRequerimiento();
             btnGuardarFaseUno.disabled = false;
@@ -939,19 +1098,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    btnGuardarFaseDos.addEventListener('click', () => {
+    btnGuardarFaseDos.addEventListener('click', async () => {
         const validation = validateFaseDos();
 
         if (!validation.ok) {
-            window.alert('Complete los datos obligatorios de todas las solicitudes que ya fueron marcadas con documentacion recibida.');
+            await mostrarAlertaRequerimiento('Datos incompletos', 'Complete los datos obligatorios de todas las solicitudes que ya fueron marcadas con documentacion recibida.');
             return;
         }
 
-        window.alert('Seguimiento validado. El guardado definitivo de la fase 2 se conectara en el siguiente paso.');
+        await mostrarAlertaRequerimiento('Seguimiento validado', 'Seguimiento validado. El guardado definitivo de la fase 2 se conectara en el siguiente paso.');
         return;
 
         if (validation.hasPendientes) {
-            const proceed = window.confirm('Quedan requerimientos pendientes por desahogar. ¿Esta seguro de que desea continuar a la contestacion final?');
+            const proceed = await confirmarRequerimiento(
+                'Continuar a contestacion final',
+                'Quedan requerimientos pendientes por desahogar. Esta seguro de que desea continuar a la contestacion final?',
+                'Continuar'
+            );
             if (!proceed) {
                 return;
             }
@@ -961,15 +1124,15 @@ document.addEventListener('DOMContentLoaded', () => {
         faseTres.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    btnGuardarFaseDosSalir?.addEventListener('click', () => {
+    btnGuardarFaseDosSalir?.addEventListener('click', async () => {
         const validation = validateFaseDos();
 
         if (!validation.ok) {
-            window.alert('Complete los datos obligatorios de todas las solicitudes que ya fueron marcadas con documentacion recibida.');
+            await mostrarAlertaRequerimiento('Datos incompletos', 'Complete los datos obligatorios de todas las solicitudes que ya fueron marcadas con documentacion recibida.');
             return;
         }
 
-        window.alert('Seguimiento validado. El guardado definitivo de la fase 2 se conectara en el siguiente paso.');
+        await mostrarAlertaRequerimiento('Seguimiento validado', 'Seguimiento validado. El guardado definitivo de la fase 2 se conectara en el siguiente paso.');
     });
 
     btnContinuarFaseTres?.addEventListener('click', continueFaseTres);
@@ -1002,9 +1165,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await guardarFaseDosApi();
-            window.alert('Seguimiento interno guardado correctamente.');
+            await mostrarAlertaRequerimiento('Seguimiento guardado', 'Seguimiento interno guardado correctamente.');
         } catch (error) {
-            window.alert(error.message || 'No se pudo guardar el seguimiento interno');
+            await mostrarErrorRequerimiento(error, 'No se pudo guardar el seguimiento interno.');
         } finally {
             await ocultarCargaRequerimiento();
             button.disabled = false;
@@ -1023,7 +1186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await guardarFaseDosApi();
             window.location.href = listadoUrl;
         } catch (error) {
-            window.alert(error.message || 'No se pudo guardar el seguimiento interno');
+            await mostrarErrorRequerimiento(error, 'No se pudo guardar el seguimiento interno.');
         } finally {
             await ocultarCargaRequerimiento();
             button.disabled = false;
@@ -1044,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await guardarFaseTresApi();
             window.location.href = listadoUrl;
         } catch (error) {
-            window.alert(error.message || 'No se pudo guardar la contestacion final');
+            await mostrarErrorRequerimiento(error, 'No se pudo guardar la contestacion final.');
         } finally {
             await ocultarCargaRequerimiento();
             button.disabled = false;

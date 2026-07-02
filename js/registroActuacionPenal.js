@@ -134,6 +134,25 @@ function formatearFechaPenal(fecha) {
     return `${dia}/${mes}/${anio}`;
 }
 
+function validarFechaIso(fecha) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(fecha || ''));
+}
+
+function syncFechaActuacionMin() {
+    const inputFecha = document.getElementById('fechaActuacionSecundaria');
+    const fechaPresentacion = asuntoActual?.fecha_presentacion_denuncia || '';
+
+    if (!inputFecha) {
+        return;
+    }
+
+    inputFecha.min = validarFechaIso(fechaPresentacion) ? fechaPresentacion : '';
+
+    if (inputFecha.min && inputFecha.value && inputFecha.value < inputFecha.min) {
+        inputFecha.value = '';
+    }
+}
+
 function formatearTamanoArchivo(bytes) {
     if (!bytes || Number.isNaN(Number(bytes))) {
         return '0 KB';
@@ -422,6 +441,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const fechaInput = document.getElementById('fechaActuacionSecundaria');
         if (fechaInput) {
             fechaInput.value = new Date().toISOString().split('T')[0];
+            syncFechaActuacionMin();
         }
 
         document.getElementById('formRegistroActuacionPenal')?.addEventListener('submit', guardarActuacionPenal);

@@ -146,7 +146,7 @@ try {
     }
 
     $stmt = $pdo->prepare(
-        'SELECT r.id, r.asunto_id, a.delegacion_id, a.numero_carpeta
+        'SELECT r.id, r.asunto_id, r.folio_referencia, a.delegacion_id, a.numero_carpeta
            FROM penal_requerimientos r
            INNER JOIN penal_asuntos a ON a.id = r.asunto_id
           WHERE r.id = :id
@@ -333,11 +333,18 @@ try {
         $updateReq->execute([':id' => $requerimientoId]);
 
         auditLog($pdo, $user, [
-            'modulo' => 'Penal',
-            'accion' => $canModifyClosedData ? 'Edicion de contestacion final de requerimiento' : 'Actualizacion de contestacion final de requerimiento',
-            'entidad' => 'penal_requerimientos',
+            'modulo' => 'PENAL',
+            'accion' => 'EDITAR',
+            'entidad' => 'Requerimiento ministerial',
             'entidad_id' => $requerimientoId,
-            'descripcion' => 'Se actualizo la contestacion final del requerimiento para la carpeta ' . (string)$requerimiento['numero_carpeta'],
+            'expediente_id' => (int) $requerimiento['asunto_id'],
+            'delegacion_id' => $requerimiento['delegacion_id'] ?? null,
+            'descripcion' => 'Contestacion final registrada | Folio: ' . (($requerimiento['folio_referencia'] ?? '') !== '' ? $requerimiento['folio_referencia'] : 'Sin folio'),
+            'detalles' => [
+                'folio_requerimiento' => $requerimiento['folio_referencia'] ?? null,
+                'fecha_envio' => $effectiveFechaEnvio,
+                'fecha_respuesta_fiscalia' => $effectiveFechaFiscalia,
+            ],
         ]);
 
         $pdo->commit();
@@ -396,11 +403,18 @@ try {
     $updateReq->execute([':id' => $requerimientoId]);
 
     auditLog($pdo, $user, [
-        'modulo' => 'Penal',
-        'accion' => 'Contestacion final de requerimiento',
-        'entidad' => 'penal_requerimientos',
+        'modulo' => 'PENAL',
+        'accion' => 'EDITAR',
+        'entidad' => 'Requerimiento ministerial',
         'entidad_id' => $requerimientoId,
-        'descripcion' => 'Se registro la contestacion final del requerimiento para la carpeta ' . (string)$requerimiento['numero_carpeta'],
+        'expediente_id' => (int) $requerimiento['asunto_id'],
+        'delegacion_id' => $requerimiento['delegacion_id'] ?? null,
+        'descripcion' => 'Contestacion final registrada | Folio: ' . (($requerimiento['folio_referencia'] ?? '') !== '' ? $requerimiento['folio_referencia'] : 'Sin folio'),
+        'detalles' => [
+            'folio_requerimiento' => $requerimiento['folio_referencia'] ?? null,
+            'fecha_envio' => $fechaEnvioRespuesta,
+            'fecha_respuesta_fiscalia' => $fechaRespuestaFiscalia,
+        ],
     ]);
 
     $pdo->commit();

@@ -318,6 +318,11 @@ async function cargarCasos(options = {}) {
     }
 
     try {
+        if (sessionStorage.getItem('penalAmpCacheDirty') === '1') {
+            localStorage.removeItem('casosPenal');
+            sessionStorage.removeItem('penalAmpCacheDirty');
+        }
+
         const filtros = {};
         if (usuarioActual && usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
             filtros.delegacion_id = usuarioActual.delegacion_id;
@@ -367,7 +372,7 @@ function actualizarContadores() {
     const tramites = datosFuente.filter(c => c.estatus === 'TRAMITE').length;
     const concluidos = datosFuente.filter(c => c.estatus === 'CONCLUIDO').length;
     const coadyuvancias = datosFuente.filter(c => esCoadyuvanciaPenal(c)).length;
-    const pendientes = datosFuente.filter(c => obtenerAccionesPendientesPenal(c) !== 'Sin pendientes').length;
+    const pendientes = datosFuente.filter(c => tieneRequerimientosPendientesPenal(c)).length;
     const sinConocimientoAmp = datosFuente.filter(c => !c?.fecha_conocimiento_amp && !c?.fecha_conocimiento_fiscal).length;
 
     const elTotal = document.getElementById('totalCasos');
@@ -1076,7 +1081,7 @@ function renderizarTabla() {
         const responsable = resumenResponsablePenal(caso);
         const anioCarpeta = obtenerAnioPenal(caso);
         const faseActual = obtenerFaseActualPenal(caso);
-        const accionesPendientes = obtenerAccionesPendientesPenal(caso);
+        const requerimientosPendientes = obtenerRequerimientosPendientesPenal(caso);
         const fechaPresentacion = obtenerFechaPresentacionPenal(caso);
         const fechaConocimientoAmp = obtenerFechaConocimientoAmpPenal(caso);
         const cuantia = obtenerCuantiaPenal(caso);
@@ -1085,9 +1090,9 @@ function renderizarTabla() {
             ? '<span class="badge badge-tramite penal-status-badge">En trámite</span>'
             : '<span class="badge badge-concluido penal-status-badge">Concluido</span>';
         const badgeFase = `<span class="badge badge-neutral-soft">${faseActual}</span>`;
-        const badgePendientes = accionesPendientes === 'Sin pendientes'
+        const badgePendientes = requerimientosPendientes === 'Sin pendientes'
             ? '<span class="badge badge-success-soft">Sin pendientes</span>'
-            : `<span class="badge badge-warning-outline">${accionesPendientes}</span>`;
+            : `<span class="badge badge-warning-outline">${requerimientosPendientes}</span>`;
         const badgeCoadyuvancia = esCoadyuvanciaPenal(caso)
             ? '<span class="badge badge-primary-soft">Sí</span>'
             : '<span class="badge badge-neutral-soft">No</span>';
@@ -1271,10 +1276,12 @@ function obtenerFaseActualPenal(caso) {
     return 'Registro inicial';
 }
 
-function obtenerAccionesPendientesPenal(caso) {
-    const valor = (caso?.acciones_pendientes || '').toString().trim();
-    if (!valor) return 'Sin pendientes';
-    return 'Pendientes';
+function tieneRequerimientosPendientesPenal(caso) {
+    return caso?.tiene_requerimientos_pendientes === true;
+}
+
+function obtenerRequerimientosPendientesPenal(caso) {
+    return tieneRequerimientosPendientesPenal(caso) ? 'Pendientes' : 'Sin pendientes';
 }
 
 function obtenerFechaPresentacionPenal(caso) {

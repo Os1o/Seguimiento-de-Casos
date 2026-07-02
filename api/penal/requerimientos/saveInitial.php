@@ -41,6 +41,7 @@ function readRequerimientoInitialPayload(): array
     }
 
     return [
+        'requerimiento_id' => isset($_POST['requerimiento_id']) ? (int) $_POST['requerimiento_id'] : 0,
         'asunto_id' => isset($_POST['asunto_id']) ? (int) $_POST['asunto_id'] : 0,
         'folio_referencia' => mb_strtoupper(trim((string) ($_POST['folio_referencia'] ?? '')), 'UTF-8'),
         'autoridad_emisora' => mb_strtoupper(trim((string) ($_POST['autoridad_emisora'] ?? '')), 'UTF-8'),
@@ -130,6 +131,28 @@ function buildRequerimientoPdfName(string $originalName): string
     return date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '_' . $safeBase . '.pdf';
 }
 
+function normalizeAuditValue(mixed $value): string
+{
+    $value = trim((string) ($value ?? ''));
+    return $value !== '' ? $value : 'Sin valor';
+}
+
+function addAuditChange(array &$changes, string $key, string $label, mixed $before, mixed $after): void
+{
+    $beforeNormalized = normalizeAuditValue($before);
+    $afterNormalized = normalizeAuditValue($after);
+
+    if ($beforeNormalized === $afterNormalized) {
+        return;
+    }
+
+    $changes[$key] = [
+        'etiqueta' => $label,
+        'antes' => $beforeNormalized,
+        'despues' => $afterNormalized,
+    ];
+}
+
 try {
     $user = requirePenalWriteAccess();
 
@@ -173,6 +196,188 @@ try {
     $finalRelativePath = null;
 
     $pdo->beginTransaction();
+
+    if ($payload['requerimiento_id'] > 0) {
+        $user = requireAdmin();
+
+        $reqStmt = $pdo->prepare('
+            SELECT
+                id,
+                asunto_id,
+                folio_referencia,
+                autoridad_emisora,
+                fecha_recepcion,
+                fecha_limite_atencion
+            FROM penal_requerimientos
+            WHERE id = :id
+              AND asunto_id = :asunto_id
+              AND activo = TRUE
+            LIMIT 1
+        ');
+        $reqStmt->execute([
+            'id' => $payload['requerimiento_id'],
+            'asunto_id' => $payload['asunto_id'],
+        ]);
+        $requerimiento = $reqStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$requerimiento) {
+            sendError('Requerimiento no encontrado', 404);
+        }
+
+        $changes = [];
+        addAuditChange($changes, 'folio_referencia', 'Folio', $requerimiento['folio_referencia'] ?? null, $payload['folio_referencia']);
+        addAuditChange($changes, 'autoridad_emisora', 'Autoridad emisora', $requerimiento['autoridad_emisora'] ?? null, $payload['autoridad_emisora']);
+        addAuditChange($changes, 'fecha_recepcion', 'Fecha recepcion', $requerimiento['fecha_recepcion'] ?? null, $payload['fecha_recepcion']);
+        addAuditChange($changes, 'fecha_limite_atencion', 'Fecha limite de atencion', $requerimiento['fecha_limite_atencion'] ?? null, $payload['fecha_limite_atencion']);
+
+        $updateRequerimiento = $pdo->prepare('
+            UPDATE penal_requerimientos
+               SET folio_referencia = :folio_referencia,
+                   autoridad_emisora = :autoridad_emisora,
+                   fecha_recepcion = :fecha_recepcion,
+                   fecha_limite_atencion = :fecha_limite_atencion,
+                   updated_at = NOW()
+             WHERE id = :id
+        ');
+        $updateRequerimiento->execute([
+            'folio_referencia' => $payload['folio_referencia'] !== '' ? $payload['folio_referencia'] : null,
+            'autoridad_emisora' => $payload['autoridad_emisora'],
+            'fecha_recepcion' => $payload['fecha_recepcion'],
+            'fecha_limite_atencion' => $payload['fecha_limite_atencion'],
+            'id' => $payload['requerimiento_id'],
+        ]);
+
+        $existingSolicitudesStmt = $pdo->prepare('
+            SELECT id
+            FROM penal_requerimiento_solicitudes
+            WHERE requerimiento_id = :requerimiento_id
+              AND activo = TRUE
+            ORDER BY numero_orden ASC, id ASC
+        ');
+        $existingSolicitudesStmt->execute(['requerimiento_id' => $payload['requerimiento_id']]);
+        $existingSolicitudes = $existingSolicitudesStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $updateSolicitud = $pdo->prepare('
+            UPDATE penal_requerimiento_solicitudes
+               SET numero_orden = :numero_orden,
+                   titulo = :titulo,
+                   descripcion = :descripcion
+             WHERE id = :id
+        ');
+        $insertSolicitudUpdate = $pdo->prepare('
+            INSERT INTO penal_requerimiento_solicitudes (
+                requerimiento_id,
+                numero_orden,
+                titulo,
+                descripcion
+            )
+            VALUES (
+                :requerimiento_id,
+                :numero_orden,
+                :titulo,
+                :descripcion
+            )
+        ');
+
+        foreach ($payload['solicitudes'] as $index => $solicitud) {
+            $solicitudId = isset($existingSolicitudes[$index]) ? (int) $existingSolicitudes[$index] : 0;
+            if ($solicitudId > 0) {
+                $updateSolicitud->execute([
+                    'numero_orden' => $solicitud['numero_orden'],
+                    'titulo' => $solicitud['titulo'],
+                    'descripcion' => $solicitud['descripcion'],
+                    'id' => $solicitudId,
+                ]);
+                continue;
+            }
+
+            $insertSolicitudUpdate->execute([
+                'requerimiento_id' => $payload['requerimiento_id'],
+                'numero_orden' => $solicitud['numero_orden'],
+                'titulo' => $solicitud['titulo'],
+                'descripcion' => $solicitud['descripcion'],
+            ]);
+        }
+
+        if ($documentoInicial !== null) {
+            $storageDir = getStorageBasePath() . DIRECTORY_SEPARATOR . 'documentos' . DIRECTORY_SEPARATOR . 'penal' . DIRECTORY_SEPARATOR . 'requerimientos' . DIRECTORY_SEPARATOR . $payload['requerimiento_id'];
+            $relativeDir = 'storage/documentos/penal/requerimientos/' . $payload['requerimiento_id'];
+
+            if (!is_dir($storageDir) && !mkdir($storageDir, 0775, true) && !is_dir($storageDir)) {
+                throw new RuntimeException('No se pudo preparar la carpeta de almacenamiento');
+            }
+
+            $storedName = buildRequerimientoPdfName($documentoInicial['nombre_original']);
+            $finalAbsolutePath = $storageDir . DIRECTORY_SEPARATOR . $storedName;
+            $finalRelativePath = $relativeDir . '/' . $storedName;
+
+            if (!move_uploaded_file($documentoInicial['tmp_path'], $finalAbsolutePath)) {
+                throw new RuntimeException('No se pudo guardar el documento inicial en disco');
+            }
+
+            $insertDocumentoUpdate = $pdo->prepare('
+                INSERT INTO penal_requerimiento_documentos (
+                    requerimiento_id,
+                    tipo_documento,
+                    nombre_original,
+                    nombre_guardado,
+                    ruta_archivo,
+                    mime_type,
+                    tamano_bytes,
+                    usuario_id
+                )
+                VALUES (
+                    :requerimiento_id,
+                    :tipo_documento,
+                    :nombre_original,
+                    :nombre_guardado,
+                    :ruta_archivo,
+                    :mime_type,
+                    :tamano_bytes,
+                    :usuario_id
+                )
+            ');
+
+            $insertDocumentoUpdate->execute([
+                'requerimiento_id' => $payload['requerimiento_id'],
+                'tipo_documento' => 'INICIAL_FISCALIA',
+                'nombre_original' => $documentoInicial['nombre_original'],
+                'nombre_guardado' => $storedName,
+                'ruta_archivo' => $finalRelativePath,
+                'mime_type' => $documentoInicial['mime_type'],
+                'tamano_bytes' => $documentoInicial['tamano_bytes'],
+                'usuario_id' => isset($user['id']) ? (int) $user['id'] : null,
+            ]);
+        }
+
+        auditLog($pdo, $user, [
+            'modulo' => 'PENAL',
+            'accion' => 'EDITAR',
+            'entidad' => 'Requerimiento ministerial',
+            'entidad_id' => $payload['requerimiento_id'],
+            'expediente_id' => $payload['asunto_id'],
+            'delegacion_id' => isset($asunto['delegacion_id']) ? (int) $asunto['delegacion_id'] : null,
+            'descripcion' => 'Actualizacion de requerimiento ministerial | Folio: ' . ($payload['folio_referencia'] !== '' ? $payload['folio_referencia'] : 'Sin folio'),
+            'detalles' => array_filter([
+                'numero_expediente' => $asunto['numero_carpeta'] ?? null,
+                'estatus' => 'Edicion fase inicial',
+                'folio_requerimiento' => $payload['folio_referencia'],
+                'autoridad_emisora' => $payload['autoridad_emisora'],
+                'fecha_recepcion' => $payload['fecha_recepcion'],
+                'fecha_limite_atencion' => $payload['fecha_limite_atencion'],
+                'solicitudes' => count($payload['solicitudes']),
+                'documento_inicial' => $documentoInicial !== null,
+                'cambios' => $changes !== [] ? $changes : null,
+            ], static fn($value): bool => $value !== null),
+        ]);
+
+        $pdo->commit();
+
+        sendSuccess('Requerimiento actualizado correctamente', [
+            'requerimiento_id' => $payload['requerimiento_id'],
+            'solicitudes' => count($payload['solicitudes']),
+        ]);
+    }
 
     $insertRequerimiento = $pdo->prepare('
         INSERT INTO penal_requerimientos (
@@ -288,14 +493,16 @@ try {
 
     auditLog($pdo, $user, [
         'modulo' => 'PENAL',
-        'accion' => 'ALTA_REQUERIMIENTO',
-        'entidad' => 'PENAL_REQUERIMIENTO',
+        'accion' => 'CREAR',
+        'entidad' => 'Requerimiento ministerial',
         'entidad_id' => $requerimientoId,
         'expediente_id' => $payload['asunto_id'],
         'delegacion_id' => isset($asunto['delegacion_id']) ? (int) $asunto['delegacion_id'] : null,
-        'descripcion' => 'Alta inicial de requerimiento ministerial',
+        'descripcion' => 'Alta inicial de requerimiento ministerial | Folio: ' . ($payload['folio_referencia'] !== '' ? $payload['folio_referencia'] : 'Sin folio'),
         'detalles' => [
-            'numero_carpeta' => $asunto['numero_carpeta'] ?? null,
+            'numero_expediente' => $asunto['numero_carpeta'] ?? null,
+            'estatus' => 'Alta inicial',
+            'folio_requerimiento' => $payload['folio_referencia'],
             'folio_referencia' => $payload['folio_referencia'],
             'autoridad_emisora' => $payload['autoridad_emisora'],
             'fecha_recepcion' => $payload['fecha_recepcion'],

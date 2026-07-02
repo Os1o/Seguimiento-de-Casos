@@ -117,6 +117,23 @@ try {
     ]);
     $probablesResponsables = mapPenalProbablesResponsables($responsablesStmt->fetchAll(PDO::FETCH_ASSOC));
 
+    $documentoInicialStmt = $pdo->prepare('
+        SELECT
+            id,
+            nombre_original,
+            ruta_archivo,
+            created_at
+        FROM penal_asunto_documentos
+        WHERE asunto_id = :asunto_id
+          AND activo = TRUE
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+    ');
+    $documentoInicialStmt->execute([
+        'asunto_id' => $id,
+    ]);
+    $documentoInicial = $documentoInicialStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
     $trackingStmt = $pdo->prepare('
         SELECT
             pa.id,
@@ -166,6 +183,13 @@ try {
     $case['probables_responsables'] = $probablesResponsables;
     $case['probable_responsable'] = $probablesResponsables[0] ?? null;
     $case['denunciante'] = $denunciantes[0] ?? null;
+    $case['documento_inicial'] = $documentoInicial ? [
+        'id' => (int) $documentoInicial['id'],
+        'nombre_original' => (string) ($documentoInicial['nombre_original'] ?? ''),
+        'ruta_archivo' => (string) ($documentoInicial['ruta_archivo'] ?? ''),
+        'documento_tipo' => 'ASUNTO',
+        'created_at' => $documentoInicial['created_at'] ?? null,
+    ] : null;
     $case['total_requerimientos'] = isset($requerimientos['total_requerimientos']) ? (int) $requerimientos['total_requerimientos'] : 0;
     $case['requerimientos_seguimiento'] = isset($requerimientos['requerimientos_seguimiento']) ? (int) $requerimientos['requerimientos_seguimiento'] : 0;
     $case['requerimientos_contestacion'] = isset($requerimientos['requerimientos_contestacion']) ? (int) $requerimientos['requerimientos_contestacion'] : 0;

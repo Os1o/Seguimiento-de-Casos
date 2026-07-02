@@ -100,14 +100,14 @@
                         <div class="penal-preview-card-head">
                             <h4>Cuant&iacute;a</h4>
                         </div>
-                        <div class="penal-cuantia-grid">
+                        <div class="form-grid">
                             <div class="form-group">
                                 <label class="form-label required">Monto</label>
                                 <input type="text" id="cuantiaMonto" class="form-input" placeholder="Monto o cantidad" inputmode="decimal" required>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group penal-cuantia-toggle-wrap">
                                 <label class="form-label">Captura de cuant&iacute;a</label>
-                                <label class="penal-qrr-toggle penal-qrr-toggle-wide" for="sinCuantificar">
+                                <label class="penal-qrr-toggle" for="sinCuantificar">
                                     <input type="checkbox" id="sinCuantificar">
                                     <span class="penal-qrr-box"></span>
                                     <span class="penal-qrr-copy">
@@ -163,16 +163,16 @@
                         <div class="penal-preview-card-head">
                             <h4>Personas relacionadas con el denunciante</h4>
                         </div>
-                        <div id="listaDenuncianteRelacionados" class="penal-dynamic-list"></div>
-                        <button type="button" class="btn btn-secondary btn-sm" id="btnAgregarDenuncianteRelacionado">Agregar persona relacionada</button>
+                        <div id="listaDenuncianteRelacionados"></div>
+                        <button type="button" class="btn-add" id="btnAgregarDenuncianteRelacionado">Agregar persona relacionada</button>
                     </div>
 
                     <div id="denunciantePrincipalesWrap" class="penal-preview-card penal-preview-card-full" style="display:none;">
                         <div class="penal-preview-card-head">
                             <h4>Denunciantes principales</h4>
                         </div>
-                        <div id="listaDenunciantesPrincipales" class="penal-dynamic-list"></div>
-                        <button type="button" class="btn btn-secondary btn-sm" id="btnAgregarDenunciantePrincipal">Agregar denunciante</button>
+                        <div id="listaDenunciantesPrincipales"></div>
+                        <button type="button" class="btn-add" id="btnAgregarDenunciantePrincipal">Agregar denunciante</button>
                     </div>
                 </div>
 
@@ -194,24 +194,28 @@
                     <span class="penal-section-state">Edici&oacute;n activa</span>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Identificaci&oacute;n del probable responsable</label>
-                    <label class="penal-qrr-toggle" for="responsableQrr">
-                        <input type="checkbox" id="responsableQrr">
-                        <span class="penal-qrr-box"></span>
-                        <span class="penal-qrr-copy">
-                            <strong>QRR - Qui&eacute;n Resulte Responsable</strong>
-                            <small>Marcar cuando no se cuente con probable responsable identificado.</small>
-                        </span>
-                    </label>
+                <div class="form-grid penal-mode-group">
+                    <div class="form-group form-grid-full">
+                        <label class="form-label">Identificaci&oacute;n del probable responsable</label>
+                        <label class="penal-qrr-toggle" for="responsableQrr">
+                            <input type="checkbox" id="responsableQrr">
+                            <span class="penal-qrr-box"></span>
+                            <span class="penal-qrr-copy">
+                                <strong>QRR - Qui&eacute;n Resulte Responsable</strong>
+                                <small>Marcar cuando no se cuente con probable responsable identificado.</small>
+                            </span>
+                        </label>
+                    </div>
                 </div>
 
                 <div id="probablesResponsablesWrap" class="penal-preview-card penal-preview-card-full">
                     <div class="penal-preview-card-head">
                         <h4>Probables responsables</h4>
                     </div>
-                    <div id="listaProbablesResponsables" class="penal-dynamic-list"></div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="btnAgregarProbableResponsable">Agregar probable responsable</button>
+                    <div id="listaProbablesResponsables"></div>
+                    <button type="button" class="btn-add" id="btnAgregarProbableResponsable">
+                        + Agregar probable responsable
+                    </button>
                 </div>
 
                 <div class="form-group">
@@ -227,11 +231,10 @@
                         <div class="form-group">
                             <label class="form-label">Archivo inicial</label>
                             <input type="file" id="archivoInicialPenal" class="form-input" accept=".pdf,application/pdf">
+                            <div class="form-help-text" id="documentoActualPenalWrap" hidden>
+                                Documento actual: <a href="#" target="_blank" rel="noopener noreferrer" id="documentoActualPenalLink"></a>
+                            </div>
                             <small class="form-hint">Solo se permite un archivo PDF de hasta 10 MB. Si no adjunta uno nuevo, se conserva el documento actual.</small>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Observaciones del archivo</label>
-                            <input type="text" id="documentoInicialObservaciones" class="form-input" placeholder="Descripci&oacute;n breve del documento recibido">
                         </div>
                     </div>
                 </div>

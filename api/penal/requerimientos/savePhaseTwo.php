@@ -13,6 +13,35 @@ function canModifyClosedReqData(array $user): bool
     return $role === 'admin';
 }
 
+function getReqPhaseTwoAreaNames(PDO $pdo, array $ids): array
+{
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+
+    if ($ids === []) {
+        return [];
+    }
+
+    $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+    $stmt = $pdo->prepare("SELECT id, nombre FROM areas WHERE id IN ({$placeholders})");
+    $stmt->execute($ids);
+
+    $map = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $map[(int) $row['id']] = (string) $row['nombre'];
+    }
+
+    return $map;
+}
+
+function resolveReqPhaseTwoAreaName(?int $id, array $map): ?string
+{
+    if ($id === null || $id <= 0) {
+        return null;
+    }
+
+    return $map[$id] ?? (string) $id;
+}
+
 function readPhaseTwoPayload(): array
 {
     $requerimientoId = filter_input(INPUT_POST, 'requerimiento_id', FILTER_VALIDATE_INT);
@@ -169,6 +198,7 @@ try {
         SELECT
             pr.id,
             pr.asunto_id,
+            pr.folio_referencia,
             pr.fecha_inicio_interno,
             pr.area_responsable_id,
             doc_interno.id AS documento_interno_id,
@@ -246,6 +276,7 @@ try {
     $solicitudIdsStmt = $pdo->prepare('
         SELECT
             s.id,
+            s.titulo,
             mov.fecha_desahogo,
             doc.id AS documento_id,
             doc.nombre_original AS documento_nombre_original,
@@ -299,9 +330,9 @@ try {
 
     foreach ($payload['solicitudes'] as $solicitud) {
         $currentState = $currentSolicitudStates[$solicitud['id']] ?? null;
-        $isLocked = $currentState
-            && !empty($currentState['fecha_desahogo'])
-            && !empty($currentState['documento_id']);
+        $wasAlreadyDesahogada = $currentState
+            && trim((string) ($currentState['fecha_desahogo'] ?? '')) !== '';
+        $isLocked = $wasAlreadyDesahogada;
 
         if ($isLocked && !$canModifyClosedData) {
             continue;
@@ -355,6 +386,29 @@ try {
         'id' => $payload['requerimiento_id'],
     ]);
 
+    $areaAuditNames = getReqPhaseTwoAreaNames($pdo, [
+        isset($requerimiento['area_responsable_id']) ? (int) $requerimiento['area_responsable_id'] : null,
+        $areaResponsableId,
+    ]);
+
+    $internalChanges = buildAuditFieldChanges(
+        [
+            'fecha_inicio_interno' => $requerimiento['fecha_inicio_interno'] ?? null,
+            'area_responsable_id' => resolveReqPhaseTwoAreaName(
+                isset($requerimiento['area_responsable_id']) ? (int) $requerimiento['area_responsable_id'] : null,
+                $areaAuditNames
+            ),
+        ],
+        [
+            'fecha_inicio_interno' => $fechaInicioInterno,
+            'area_responsable_id' => resolveReqPhaseTwoAreaName($areaResponsableId, $areaAuditNames),
+        ],
+        [
+            'fecha_inicio_interno' => 'Fecha inicio',
+            'area_responsable_id' => 'Area responsable',
+        ]
+    );
+
     if ($documentoInterno !== null) {
         $directory = getStorageBasePath()
             . DIRECTORY_SEPARATOR . 'documentos'
@@ -395,6 +449,23 @@ try {
             'mimeType' => $documentoInterno['mime_type'],
             'tamanoBytes' => $documentoInterno['size'],
             'usuarioId' => (int) ($user['id'] ?? 0),
+        ]);
+    }
+
+    if ($internalChanges !== [] || $documentoInterno !== null) {
+        auditLog($pdo, $user, [
+            'modulo' => 'PENAL',
+            'accion' => 'EDITAR',
+            'entidad' => 'Requerimiento ministerial',
+            'entidad_id' => $payload['requerimiento_id'],
+            'expediente_id' => (int) $requerimiento['asunto_id'],
+            'delegacion_id' => $requerimiento['delegacion_id'] ?? null,
+            'descripcion' => 'Registro de requerimiento interno | Folio: ' . (($requerimiento['folio_referencia'] ?? '') !== '' ? $requerimiento['folio_referencia'] : 'Sin folio'),
+            'detalles' => [
+                'folio_requerimiento' => $requerimiento['folio_referencia'] ?? null,
+                'fecha_inicio' => $fechaInicioInterno,
+                'area_responsable' => resolveReqPhaseTwoAreaName($areaResponsableId, $areaAuditNames),
+            ],
         ]);
     }
 
@@ -440,9 +511,9 @@ try {
 
     foreach ($payload['solicitudes'] as $solicitud) {
         $currentState = $currentSolicitudStates[$solicitud['id']] ?? null;
-        $isLocked = $currentState
-            && !empty($currentState['fecha_desahogo'])
-            && !empty($currentState['documento_id']);
+        $wasAlreadyDesahogada = $currentState
+            && trim((string) ($currentState['fecha_desahogo'] ?? '')) !== '';
+        $isLocked = $wasAlreadyDesahogada;
 
         if ($isLocked && !$canModifyClosedData) {
             $desahogadas++;
@@ -462,6 +533,24 @@ try {
             'usuarioId' => (int) ($user['id'] ?? 0),
         ]);
         $movimientoId = (int) $movimientoStmt->fetchColumn();
+        $tituloSolicitud = trim((string) ($currentState['titulo'] ?? ('Solicitud ' . $solicitud['id'])));
+
+        if (!$wasAlreadyDesahogada) {
+            auditLog($pdo, $user, [
+                'modulo' => 'PENAL',
+                'accion' => 'EDITAR',
+                'entidad' => 'Requerimiento ministerial',
+                'entidad_id' => $payload['requerimiento_id'],
+                'expediente_id' => (int) $requerimiento['asunto_id'],
+                'delegacion_id' => $requerimiento['delegacion_id'] ?? null,
+                'descripcion' => 'Solicitud ' . $tituloSolicitud . ' desahogada | Folio: ' . (($requerimiento['folio_referencia'] ?? '') !== '' ? $requerimiento['folio_referencia'] : 'Sin folio'),
+                'detalles' => [
+                    'folio_requerimiento' => $requerimiento['folio_referencia'] ?? null,
+                    'titulo_solicitud' => $tituloSolicitud,
+                    'fecha_desahogo' => $solicitud['fecha_desahogo'],
+                ],
+            ]);
+        }
 
         if (isset($solicitudFiles[$solicitud['id']])) {
             $file = $solicitudFiles[$solicitud['id']];
@@ -500,19 +589,6 @@ try {
 
         $desahogadas++;
     }
-
-    auditLog($pdo, $user, [
-        'modulo' => 'Penal',
-        'accion' => 'Seguimiento de requerimiento',
-        'entidad_tipo' => 'Requerimiento penal',
-        'entidad_id' => (string) $payload['requerimiento_id'],
-        'entidad_resumen' => (string) ($requerimiento['numero_carpeta'] ?? ''),
-        'detalle' => sprintf(
-            'Se registro seguimiento interno del requerimiento. Solicitudes desahogadas: %d. Pendientes: %d.',
-            $desahogadas,
-            $pendientes
-        ),
-    ]);
 
     $pdo->commit();
 

@@ -55,7 +55,8 @@ body {
   min-height: 100vh;
 }
 
-.material-symbols-outlined {
+.material-symbols-outlined,
+.material-icons {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
   font-style: normal;
@@ -67,8 +68,22 @@ body {
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
+  width: 1em;
+  min-width: 1em;
+  height: 1em;
+  min-height: 1em;
+  overflow: hidden;
+  flex: 0 0 auto;
+  vertical-align: middle;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'liga';
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.material-icons {
+  font-family: 'Material Icons', 'Material Symbols Outlined';
 }
 
 /* =====================================================
