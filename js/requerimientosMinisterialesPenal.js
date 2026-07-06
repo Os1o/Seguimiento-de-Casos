@@ -350,6 +350,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return clone;
     };
 
+    const syncRecepcionCardState = (card) => {
+        if (!card) {
+            return;
+        }
+
+        const recepcionSelect = card.querySelector('.penal-req-recepcion-select');
+        const recepcionFields = card.querySelector('.penal-req-recepcion-fields');
+        const docInput = card.querySelector('.penal-req-doc-input');
+        const obsInput = card.querySelector('.penal-req-obs-input');
+        const fechaDesahogo = card.querySelector('.penal-req-fecha-desahogo');
+        const isLocked = card.dataset.locked === '1';
+
+        if (!recepcionSelect || !recepcionFields || !docInput || !obsInput || !fechaDesahogo) {
+            return;
+        }
+
+        const isRecibido = recepcionSelect.value === 'recibido';
+        recepcionFields.classList.toggle('is-hidden', !isRecibido);
+        obsInput.required = false;
+        fechaDesahogo.required = isRecibido && !isLocked;
+        docInput.required = isRecibido && card.dataset.hasDocumento !== '1' && !isLocked;
+    };
+
     const renderSeguimientoCards = (solicitudesGuardadas = null) => {
         const items = Array.isArray(solicitudesGuardadas)
             ? solicitudesGuardadas
@@ -357,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 titulo: item.querySelector('.req-solicitud-titulo')?.value.trim() || `Solicitud ${String(index + 1).padStart(2, '0')}`,
                 descripcion: item.querySelector('.req-solicitud-descripcion')?.value.trim() || 'Sin descripcion capturada.',
             }));
-        listSeguimiento.innerHTML = '';
+        const fragment = document.createDocumentFragment();
 
         items.forEach((item, index) => {
             const title = item.titulo || `Solicitud ${String(index + 1).padStart(2, '0')}`;
@@ -439,10 +462,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
 
-            listSeguimiento.appendChild(card);
+            fragment.appendChild(card);
 
             const recepcionSelect = card.querySelector('.penal-req-recepcion-select');
-            const recepcionFields = card.querySelector('.penal-req-recepcion-fields');
             const docInput = card.querySelector('.penal-req-doc-input');
             const docStatus = card.querySelector('.penal-req-doc-status');
             const docLink = card.querySelector('.penal-req-doc-link');
@@ -462,14 +484,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 fechaDesahogo.value = item.fecha_desahogo || '';
             }
 
-            const syncRecepcionState = () => {
-                const isRecibido = recepcionSelect.value === 'recibido';
-                recepcionFields.classList.toggle('is-hidden', !isRecibido);
-                obsInput.required = false;
-                fechaDesahogo.required = isRecibido && !isLocked;
-                docInput.required = isRecibido && card.dataset.hasDocumento !== '1' && !isLocked;
-            };
-
             if (isLocked) {
                 recepcionSelect.disabled = true;
                 docInput.disabled = true;
@@ -477,9 +491,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 fechaDesahogo.disabled = true;
             }
 
-            recepcionSelect.addEventListener('change', syncRecepcionState);
-            syncRecepcionState();
+            syncRecepcionCardState(card);
         });
+
+        // Render por fragmento: reduce reflows al reconstruir solicitudes de fase 2.
+        listSeguimiento.replaceChildren(fragment);
     };
 
     const getSolicitudesIniciales = () => {
@@ -1013,6 +1029,17 @@ document.addEventListener('DOMContentLoaded', () => {
     syncFechaLimiteMin();
     syncFechaInicioInternoRange();
 
+    // Un solo listener delegado para tarjetas regeneradas de fase 2.
+    listSeguimiento.addEventListener('change', (event) => {
+        const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+        const recepcionSelect = target?.closest('.penal-req-recepcion-select');
+        if (!recepcionSelect) {
+            return;
+        }
+
+        syncRecepcionCardState(recepcionSelect.closest('.penal-req-follow-card'));
+    });
+
     btnAgregar.addEventListener('click', () => {
         const clone = createSolicitudTemplate();
         listInicial.appendChild(clone);
@@ -1098,45 +1125,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    btnGuardarFaseDos.addEventListener('click', async () => {
-        const validation = validateFaseDos();
-
-        if (!validation.ok) {
-            await mostrarAlertaRequerimiento('Datos incompletos', 'Complete los datos obligatorios de todas las solicitudes que ya fueron marcadas con documentacion recibida.');
-            return;
-        }
-
-        await mostrarAlertaRequerimiento('Seguimiento validado', 'Seguimiento validado. El guardado definitivo de la fase 2 se conectara en el siguiente paso.');
-        return;
-
-        if (validation.hasPendientes) {
-            const proceed = await confirmarRequerimiento(
-                'Continuar a contestacion final',
-                'Quedan requerimientos pendientes por desahogar. Esta seguro de que desea continuar a la contestacion final?',
-                'Continuar'
-            );
-            if (!proceed) {
-                return;
-            }
-        }
-
-        unlockPhase(faseTres, pillThree);
-        faseTres.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-
-    btnGuardarFaseDosSalir?.addEventListener('click', async () => {
-        const validation = validateFaseDos();
-
-        if (!validation.ok) {
-            await mostrarAlertaRequerimiento('Datos incompletos', 'Complete los datos obligatorios de todas las solicitudes que ya fueron marcadas con documentacion recibida.');
-            return;
-        }
-
-        await mostrarAlertaRequerimiento('Seguimiento validado', 'Seguimiento validado. El guardado definitivo de la fase 2 se conectara en el siguiente paso.');
-    });
-
-    btnContinuarFaseTres?.addEventListener('click', continueFaseTres);
-
     btnRegresarFaseUno?.addEventListener('click', () => {
         listInicial.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -1145,18 +1133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         faseDos.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    const replaceButtonHandler = (button, handler) => {
-        if (!button || !button.parentNode) {
-            return null;
-        }
-
-        const clone = button.cloneNode(true);
-        button.parentNode.replaceChild(clone, button);
-        clone.addEventListener('click', handler);
-        return clone;
-    };
-
-    replaceButtonHandler(btnGuardarFaseDos, async (event) => {
+    btnGuardarFaseDos.addEventListener('click', async (event) => {
         const button = event.currentTarget;
         button.disabled = true;
         const originalText = button.textContent;
@@ -1175,7 +1152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    replaceButtonHandler(btnGuardarFaseDosSalir, async (event) => {
+    btnGuardarFaseDosSalir?.addEventListener('click', async (event) => {
         const button = event.currentTarget;
         button.disabled = true;
         const originalText = button.textContent;
@@ -1194,9 +1171,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    replaceButtonHandler(btnContinuarFaseTres, continueFaseTres);
+    btnContinuarFaseTres?.addEventListener('click', continueFaseTres);
 
-    replaceButtonHandler(btnGuardarFaseTres, async (event) => {
+    btnGuardarFaseTres?.addEventListener('click', async (event) => {
         const button = event.currentTarget;
         button.disabled = true;
         const originalText = button.textContent;

@@ -331,8 +331,6 @@ function syncDenuncianteMode() {
     const modo = obtenerModoDenuncianteActual();
     const wrapRelacionados = document.getElementById('denuncianteRelacionadosWrap');
     const wrapPrincipales = document.getElementById('denunciantePrincipalesWrap');
-    const pillImss = document.getElementById('denuncianteImssPill');
-    const pillEscenario = document.getElementById('denuncianteEscenarioPill');
 
     if (wrapRelacionados) {
         wrapRelacionados.style.display = modo === 'IMSS' ? '' : 'none';
@@ -340,29 +338,6 @@ function syncDenuncianteMode() {
 
     if (wrapPrincipales) {
         wrapPrincipales.style.display = modo === 'IMSS' ? 'none' : '';
-    }
-
-    if (pillImss) {
-        pillImss.classList.remove('is-muted');
-        if (modo === 'IMSS') {
-            pillImss.textContent = 'IMSS precargado';
-        } else if (modo === 'IMSS_OTRO') {
-            pillImss.textContent = 'IMSS como coadyuvante';
-            pillImss.classList.add('is-muted');
-        } else {
-            pillImss.textContent = 'IMSS no participa';
-            pillImss.classList.add('is-muted');
-        }
-    }
-
-    if (pillEscenario) {
-        if (modo === 'IMSS') {
-            pillEscenario.textContent = 'Puede agregar personas relacionadas de forma opcional cuando el IMSS sea el denunciante principal.';
-        } else if (modo === 'IMSS_OTRO') {
-            pillEscenario.textContent = 'Capture de 1 a N denunciantes principales. El IMSS quedara solo como coadyuvante.';
-        } else {
-            pillEscenario.textContent = 'Capture de 1 a N denunciantes principales. El IMSS no figurara en este escenario.';
-        }
     }
 
     if (modo !== 'IMSS') {
@@ -653,7 +628,7 @@ function initCuantiaMode() {
 }
 
 function initExpedienteCompuesto() {
-    const campos = ['expJurisdiccion', 'expEntidad', 'expOoad', 'expNumero', 'expAnio'];
+    const campos = ['expJurisdiccion', 'expNumeroCarpeta'];
 
     campos.forEach(id => {
         const element = document.getElementById(id);
@@ -665,45 +640,36 @@ function initExpedienteCompuesto() {
 }
 
 function sanitizePenalExpedienteParts() {
-    const entidadInput = document.getElementById('expEntidad');
-    const ooadInput = document.getElementById('expOoad');
-    const numeroInput = document.getElementById('expNumero');
+    const numeroCarpetaInput = document.getElementById('expNumeroCarpeta');
+    if (!numeroCarpetaInput) {
+        return { numeroCarpeta: '' };
+    }
 
-    const entidad = entidadInput.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
-    const ooad = ooadInput.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
-    const numero = numeroInput.value.replace(/\D/g, '').slice(0, 7);
+    const numeroCarpeta = numeroCarpetaInput.value
+        .toUpperCase()
+        .replace(/[^A-Z0-9\/-]/g, '')
+        .slice(0, 80);
 
-    entidadInput.value = entidad;
-    ooadInput.value = ooad;
-    numeroInput.value = numero;
+    numeroCarpetaInput.value = numeroCarpeta;
 
-    return { entidad, ooad, numero };
+    return { numeroCarpeta };
 }
 
 function validatePenalExpedienteParts() {
-    const { entidad, ooad, numero } = sanitizePenalExpedienteParts();
+    const { numeroCarpeta } = sanitizePenalExpedienteParts();
 
-    if (!/^[A-Z]{3,4}$/.test(entidad)) {
-        throw new Error('La entidad del expediente penal debe tener entre 3 y 4 letras.');
+    if (!/^[A-Z0-9\/-]{3,80}$/.test(numeroCarpeta)) {
+        throw new Error('El numero de carpeta solo puede incluir letras, numeros, diagonales (/) y guiones medios (-), entre 3 y 80 caracteres.');
     }
 
-    if (!/^[A-Z]{3,4}$/.test(ooad)) {
-        throw new Error('La OOAD del expediente penal debe tener entre 3 y 4 letras.');
-    }
-
-    if (!/^\d{7}$/.test(numero)) {
-        throw new Error('El numero del expediente penal debe tener exactamente 7 digitos.');
-    }
-
-    return { entidad, ooad, numero };
+    return { numeroCarpeta };
 }
 
 function actualizarPreviewExpediente() {
     const jurisdiccion = document.getElementById('expJurisdiccion').value;
-    const { entidad, ooad, numero } = sanitizePenalExpedienteParts();
-    const anio = document.getElementById('expAnio').value;
+    const { numeroCarpeta } = sanitizePenalExpedienteParts();
 
-    const partes = [jurisdiccion, entidad, ooad, numero, anio].filter(Boolean);
+    const partes = [jurisdiccion, numeroCarpeta].filter(Boolean);
     const preview = document.getElementById('previewExpediente');
 
     if (preview) {
@@ -713,14 +679,13 @@ function actualizarPreviewExpediente() {
 
 function obtenerNumeroExpediente() {
     const jurisdiccion = document.getElementById('expJurisdiccion').value;
-    const { entidad, ooad, numero } = validatePenalExpedienteParts();
-    const anio = document.getElementById('expAnio').value;
+    const { numeroCarpeta } = validatePenalExpedienteParts();
 
-    if (!jurisdiccion || !entidad || !ooad || !numero || !anio) {
+    if (!jurisdiccion || !numeroCarpeta) {
         return null;
     }
 
-    return `${jurisdiccion}/${entidad}/${ooad}/${numero}/${anio}`;
+    return `${jurisdiccion}/${numeroCarpeta}`;
 }
 
 function construirDenunciantePayload() {
@@ -923,7 +888,7 @@ async function guardarCaso() {
     }
 
     const escenarioDenunciante = obtenerEscenarioDenunciantePayload();
-    const anioInicio = parseInt(document.getElementById('expAnio').value, 10);
+    const anioInicio = fechaInicio ? parseInt(fechaInicio.slice(0, 4), 10) : NaN;
     const formData = new FormData();
     formData.append('delegacion_id', String(delegacionId));
     formData.append('numero_carpeta', numeroExpediente);

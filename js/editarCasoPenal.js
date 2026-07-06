@@ -38,6 +38,21 @@ function mostrarExito(mensaje) {
     return mostrarMensaje('Cambios guardados', mensaje, 'success');
 }
 
+function mostrarLoader(mensaje = 'Cargando datos del caso...') {
+    const overlay = $('#loadingOverlay');
+    const texto = $('#loadingOverlayText');
+
+    if (texto) {
+        texto.textContent = mensaje;
+    }
+
+    overlay?.classList.remove('d-none');
+}
+
+function ocultarLoader() {
+    $('#loadingOverlay')?.classList.add('d-none');
+}
+
 function obtenerIdCaso() {
     const params = new URLSearchParams(window.location.search);
     const id = Number.parseInt(params.get('id') || '', 10);
@@ -611,6 +626,7 @@ async function guardarCaso(event) {
 
     try {
         validarFormularioBase();
+        mostrarLoader('Guardando cambios...');
 
         const id = obtenerIdCaso();
         const numeroCarpeta = obtenerNumeroCarpeta();
@@ -645,10 +661,12 @@ async function guardarCaso(event) {
             body: formData
         });
 
+        ocultarLoader();
         await mostrarExito('El asunto penal se actualizo correctamente.');
         window.location.href = `detalleCasoPenal.html?id=${encodeURIComponent(id)}`;
     } catch (error) {
         console.error('Error al actualizar asunto penal:', error);
+        ocultarLoader();
         mostrarError(error.message || 'No se pudo guardar el asunto penal.');
     }
 }
@@ -679,8 +697,11 @@ function registrarEventos() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    mostrarLoader('Cargando datos del caso...');
+
     const id = obtenerIdCaso();
     if (!id) {
+        ocultarLoader();
         mostrarError('No se recibio el identificador del asunto penal.');
         return;
     }
@@ -705,5 +726,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error('No se pudo cargar la edicion penal:', error);
         mostrarError(error.message || 'No se pudo cargar el asunto penal.');
+    } finally {
+        ocultarLoader();
     }
 });

@@ -12,6 +12,7 @@ let permisosListadoRequerimientos = {
     puedeEliminar: false,
     puedeRestaurar: false,
 };
+let listadoRequerimientosAbortController = null;
 
 function obtenerParametroUrl(nombre) {
     return new URLSearchParams(window.location.search).get(nombre);
@@ -487,31 +488,23 @@ function renderListaRequerimientos(requerimientos) {
     return requerimientos.map(renderRequerimiento).join('');
 }
 
-function inicializarTabsRequerimientos() {
-    const tabGroups = document.querySelectorAll('[data-req-tabs]');
+function activarTabRequerimiento(button) {
+    if (!button?.dataset?.target || button.disabled || button.classList.contains('is-disabled')) {
+        return;
+    }
 
-    tabGroups.forEach((group) => {
-        const buttons = Array.from(group.querySelectorAll('.penal-req-phase-tab:not(.is-disabled)'));
-        const cardBody = group.closest('.penal-req-list-card-body');
-        const panels = cardBody ? Array.from(cardBody.querySelectorAll('.penal-req-phase-panel')) : [];
+    const group = button.closest('[data-req-tabs]');
+    const cardBody = group?.closest('.penal-req-list-card-body');
+    if (!group || !cardBody) {
+        return;
+    }
 
-        const activate = (targetId) => {
-            buttons.forEach((button) => {
-                button.classList.toggle('is-active', button.dataset.target === targetId);
-            });
-
-            panels.forEach((panel) => {
-                panel.classList.toggle('is-active', panel.id === targetId);
-            });
-        };
-
-        buttons.forEach((button) => {
-            button.addEventListener('click', () => {
-                if (button.dataset.target) {
-                    activate(button.dataset.target);
-                }
-            });
-        });
+    const targetId = button.dataset.target;
+    group.querySelectorAll('.penal-req-phase-tab').forEach((tab) => {
+        tab.classList.toggle('is-active', tab.dataset.target === targetId);
+    });
+    cardBody.querySelectorAll('.penal-req-phase-panel').forEach((panel) => {
+        panel.classList.toggle('is-active', panel.id === targetId);
     });
 }
 
@@ -548,60 +541,58 @@ async function ejecutarAccionRequerimiento(endpoint, id) {
 }
 
 function inicializarAccionesRequerimientos(asuntoId) {
-    document.querySelectorAll('[data-delete-requerimiento]').forEach((button) => {
-        button.addEventListener('click', async () => {
-            const id = Number(button.dataset.deleteRequerimiento || 0);
-            if (!id) {
-                return;
-            }
+    const group = document.querySelector('.penal-req-list-group');
+    if (!group || group.dataset.actionsBound === '1') {
+        return;
+    }
 
-            const confirmado = await confirmarListadoRequerimientos(
-                'Eliminar requerimiento',
-                'El requerimiento se ocultara del listado activo, pero podra restaurarse desde "Mostrar eliminados".',
-                'Eliminar'
+    group.dataset.actionsBound = '1';
+
+    // Delegacion unica: evita reinstalar listeners tras cada render del listado.
+    group.addEventListener('click', async (event) => {
+        const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+        const tabButton = target?.closest('.penal-req-phase-tab');
+        if (tabButton) {
+            activarTabRequerimiento(tabButton);
+            return;
+        }
+
+        const deleteButton = target?.closest('[data-delete-requerimiento]');
+        const restoreButton = target?.closest('[data-restore-requerimiento]');
+        const button = deleteButton || restoreButton;
+        if (!button) {
+            return;
+        }
+
+        const id = Number(deleteButton?.dataset.deleteRequerimiento || restoreButton?.dataset.restoreRequerimiento || 0);
+        if (!id) {
+            return;
+        }
+
+        const isDelete = Boolean(deleteButton);
+        const confirmado = await confirmarListadoRequerimientos(
+            isDelete ? 'Eliminar requerimiento' : 'Restaurar requerimiento',
+            isDelete
+                ? 'El requerimiento se ocultara del listado activo, pero podra restaurarse desde "Mostrar eliminados".'
+                : 'El requerimiento volvera a mostrarse en el listado activo.',
+            isDelete ? 'Eliminar' : 'Restaurar'
+        );
+        if (!confirmado) {
+            return;
+        }
+
+        try {
+            button.disabled = true;
+            await ejecutarAccionRequerimiento(isDelete ? ELIMINAR_REQUERIMIENTO_API : RESTAURAR_REQUERIMIENTO_API, id);
+            await cargarListadoRequerimientos(asuntoId);
+        } catch (error) {
+            console.error(isDelete ? 'No se pudo eliminar el requerimiento:' : 'No se pudo restaurar el requerimiento:', error);
+            await mostrarAlertaListadoRequerimientos(
+                isDelete ? 'No se pudo eliminar' : 'No se pudo restaurar',
+                error.message || (isDelete ? 'No se pudo eliminar el requerimiento.' : 'No se pudo restaurar el requerimiento.')
             );
-            if (!confirmado) {
-                return;
-            }
-
-            try {
-                button.disabled = true;
-                await ejecutarAccionRequerimiento(ELIMINAR_REQUERIMIENTO_API, id);
-                await cargarListadoRequerimientos(asuntoId);
-            } catch (error) {
-                console.error('No se pudo eliminar el requerimiento:', error);
-                await mostrarAlertaListadoRequerimientos('No se pudo eliminar', error.message || 'No se pudo eliminar el requerimiento.');
-                button.disabled = false;
-            }
-        });
-    });
-
-    document.querySelectorAll('[data-restore-requerimiento]').forEach((button) => {
-        button.addEventListener('click', async () => {
-            const id = Number(button.dataset.restoreRequerimiento || 0);
-            if (!id) {
-                return;
-            }
-
-            const confirmado = await confirmarListadoRequerimientos(
-                'Restaurar requerimiento',
-                'El requerimiento volvera a mostrarse en el listado activo.',
-                'Restaurar'
-            );
-            if (!confirmado) {
-                return;
-            }
-
-            try {
-                button.disabled = true;
-                await ejecutarAccionRequerimiento(RESTAURAR_REQUERIMIENTO_API, id);
-                await cargarListadoRequerimientos(asuntoId);
-            } catch (error) {
-                console.error('No se pudo restaurar el requerimiento:', error);
-                await mostrarAlertaListadoRequerimientos('No se pudo restaurar', error.message || 'No se pudo restaurar el requerimiento.');
-                button.disabled = false;
-            }
-        });
+            button.disabled = false;
+        }
     });
 }
 
@@ -625,9 +616,16 @@ async function cargarListadoRequerimientos(asuntoId, options = {}) {
         window.mostrarCargaBloque?.('.penal-req-list-group');
     }
 
+    if (listadoRequerimientosAbortController) {
+        listadoRequerimientosAbortController.abort();
+    }
+    listadoRequerimientosAbortController = new AbortController();
+    const requestController = listadoRequerimientosAbortController;
+
     try {
         const response = await fetch(`${LISTADO_REQUERIMIENTOS_API}?id=${encodeURIComponent(asuntoId)}${includeDeleted ? '&include_deleted=1' : ''}`, {
             credentials: 'same-origin',
+            signal: requestController.signal,
         });
         const data = await response.json();
 
@@ -661,14 +659,19 @@ async function cargarListadoRequerimientos(asuntoId, options = {}) {
             group.innerHTML = renderListaRequerimientos(payload.requerimientos || []);
         }
 
-        inicializarTabsRequerimientos();
         inicializarAccionesRequerimientos(asuntoId);
         cargarHistorialesRequerimientos(payload.requerimientos || []);
     } catch (error) {
+        if (error.name === 'AbortError') {
+            return;
+        }
         console.error('No se pudo cargar el listado de requerimientos:', error);
         mostrarErrorListado(error.message || 'Error inesperado.');
     } finally {
-        if (showBlockLoader) {
+        if (listadoRequerimientosAbortController === requestController) {
+            listadoRequerimientosAbortController = null;
+        }
+        if (showBlockLoader && listadoRequerimientosAbortController === null) {
             await window.ocultarCargaBloque?.('.penal-req-list-group');
         }
     }
@@ -700,6 +703,8 @@ async function inicializarListadoRequerimientosPenal() {
     if (detailBreadcrumb) {
         detailBreadcrumb.href = `detalleCasoPenal.html?id=${encodeURIComponent(asuntoId)}`;
     }
+
+    inicializarAccionesRequerimientos(asuntoId);
 
     const deletedToggle = document.querySelector('#toggleEliminadosRequerimientos');
     if (deletedToggle && !deletedToggle.dataset.bound) {

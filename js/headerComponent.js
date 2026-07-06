@@ -27,6 +27,7 @@ let appSessionLastHeartbeat = 0;
 let appSessionLogoutInProgress = false;
 let appSessionIdleTimer = null;
 let appSessionHeartbeatTimer = null;
+let appSessionInactivityControlInitialized = false;
 let appViewLoadingStartedAt = 0;
 let appDialogActivo = null;
 const appBlockLoadingStartedAt = new WeakMap();
@@ -991,10 +992,16 @@ function sincronizarBreadcrumbHeaderModerno(header, homeHref = 'casos.html') {
 }
 
 function inicializarControlSesionInactiva() {
+    if (appSessionInactivityControlInitialized) {
+        return;
+    }
+
     const activeHeader = document.querySelector('.app-header');
     if (!activeHeader || activeHeader.dataset.showSession === 'false') {
         return;
     }
+
+    appSessionInactivityControlInitialized = true;
 
     const activityEvents = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
     const registrarActividad = function () {
@@ -1003,7 +1010,7 @@ function inicializarControlSesionInactiva() {
     };
 
     activityEvents.forEach(eventName => {
-        window.addEventListener(eventName, registrarActividad, { passive: true });
+        document.addEventListener(eventName, registrarActividad, { passive: true });
     });
 
     programarTimeoutSesion();

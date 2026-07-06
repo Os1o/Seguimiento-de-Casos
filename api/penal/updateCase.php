@@ -128,28 +128,18 @@ function buildPenalCaseAuditChanges(PDO $pdo, array $before, array $after): arra
 
 function validatePenalUpdateCaseNumber(string $numeroCarpeta): void
 {
-    $parts = explode('/', strtoupper($numeroCarpeta));
+    $numeroCarpeta = strtoupper(trim($numeroCarpeta));
 
-    if (count($parts) !== 5) {
-        sendError('El numero de carpeta debe tener el formato JURISDICCION/ENTIDAD/OOAD/NUMERO/ANIO', 400);
+    if ($numeroCarpeta === '') {
+        sendError('El numero de carpeta es obligatorio', 400);
     }
 
-    [$jurisdiccion, $entidad, $ooad, $numero, $anio] = array_map('trim', $parts);
-
-    if (!in_array($jurisdiccion, ['FED', 'LOC'], true)) {
-        sendError('La jurisdiccion debe ser FED o LOC', 400);
+    if (mb_strlen($numeroCarpeta, 'UTF-8') > 84) {
+        sendError('El numero de carpeta no puede exceder 84 caracteres', 400);
     }
 
-    if (!preg_match('/^[A-Z]{3,4}$/', $entidad) || !preg_match('/^[A-Z]{3,4}$/', $ooad)) {
-        sendError('Entidad y OOAD deben tener 3 o 4 letras', 400);
-    }
-
-    if (!preg_match('/^[0-9]{7}$/', $numero)) {
-        sendError('El numero de carpeta debe tener 7 digitos', 400);
-    }
-
-    if (!preg_match('/^[0-9]{4}$/', $anio)) {
-        sendError('El anio debe tener 4 digitos', 400);
+    if (!preg_match('/^(FED|LOC)\/[A-Z0-9\/-]{3,80}$/', $numeroCarpeta)) {
+        sendError('El numero de carpeta solo puede incluir jurisdiccion FED o LOC, letras, numeros, diagonales y guiones medios', 400);
     }
 }
 

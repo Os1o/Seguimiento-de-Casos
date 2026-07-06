@@ -34,7 +34,6 @@
                     <div>
                         <h3 class="form-section-title">Base del asunto</h3>
                     </div>
-                    <span class="penal-section-state">Captura activa</span>
                 </div>
 
                 <div class="form-grid">
@@ -53,7 +52,7 @@
 
                 <div class="form-group">
                     <label class="form-label required">No. de Carpeta</label>
-                    <p class="form-hint">Formato actual: JURISDICCI&Oacute;N / ENTIDAD / OOAD / N&Uacute;MERO / A&Ntilde;O</p>
+                    <p class="form-hint">Formato actual: JURISDICCI&Oacute;N / N&Uacute;MERO DE CARPETA</p>
                     <div class="expediente-compuesto">
                         <select id="expJurisdiccion" class="form-select" required>
                             <option value="">Jurisdicci&oacute;n</option>
@@ -61,13 +60,7 @@
                             <option value="LOC">LOC</option>
                         </select>
                         <span class="exp-separador">/</span>
-                        <input type="text" id="expEntidad" class="form-input" placeholder="Entidad" maxlength="4" pattern="[A-Za-z]{3,4}" inputmode="text" required>
-                        <span class="exp-separador">/</span>
-                        <input type="text" id="expOoad" class="form-input" placeholder="OOAD" maxlength="4" pattern="[A-Za-z]{3,4}" inputmode="text" required>
-                        <span class="exp-separador">/</span>
-                        <input type="text" id="expNumero" class="form-input" placeholder="N&uacute;m." maxlength="7" pattern="[0-9]{7}" inputmode="numeric" required>
-                        <span class="exp-separador">/</span>
-                        <input type="text" id="expAnio" class="form-input" placeholder="A&ntilde;o" maxlength="4" required>
+                        <input type="text" id="expNumeroCarpeta" class="form-input" placeholder="MIC12345672026" maxlength="80" inputmode="text" required>
                     </div>
                     <small class="form-preview" id="previewExpediente">Vista previa: ---</small>
                 </div>
@@ -124,7 +117,6 @@
                     <div>
                         <h3 class="form-section-title">Denunciante y hechos</h3>
                     </div>
-                    <span class="penal-section-state">Captura activa</span>
                 </div>
 
                 <div class="form-subsection">
@@ -152,11 +144,6 @@
                         </div>
                     </div>
 
-                    <div class="penal-preview-inline">
-                        <div id="denuncianteImssPill" class="penal-preview-pill">IMSS precargado</div>
-                        <div id="denuncianteEscenarioPill" class="penal-preview-pill is-muted">Puede agregar personas relacionadas de forma opcional cuando el IMSS sea el denunciante principal.</div>
-                    </div>
-
                     <div id="denuncianteRelacionadosWrap" class="penal-preview-card penal-preview-card-full">
                         <div class="penal-preview-card-head">
                             <h4>Personas relacionadas con el denunciante</h4>
@@ -169,7 +156,6 @@
                     <div id="denunciantePrincipalesWrap" class="penal-preview-card penal-preview-card-full" style="display: none;">
                         <div class="penal-preview-card-head">
                             <h4>Denunciantes principales</h4>
-                            <span class="penal-preview-chip">Captura activa</span>
                         </div>
                         <div id="listaDenunciantesPrincipales"></div>
                         <button type="button" id="btnAgregarDenunciantePrincipal" class="btn-add">Agregar denunciante principal</button>
@@ -179,7 +165,6 @@
                 <div class="penal-preview-card penal-preview-card-full">
                     <div class="penal-preview-card-head">
                         <h4>Hechos con datos de la v&iacute;ctima / denunciante</h4>
-                        <span class="penal-preview-chip">Captura activa</span>
                     </div>
                     <div class="form-group">
                         <textarea id="hechosVictimaDenunciante" class="form-textarea" placeholder="Narrativa inicial de hechos con datos de la v&iacute;ctima o del denunciante."></textarea>
@@ -192,7 +177,6 @@
                     <div>
                         <h3 class="form-section-title">Probable responsable y control interno</h3>
                     </div>
-                    <span class="penal-section-state">Captura activa</span>
                 </div>
 
                 <div class="form-grid penal-mode-group">
@@ -212,7 +196,6 @@
                 <div id="probablesResponsablesWrap" class="penal-preview-card penal-preview-card-full">
                     <div class="penal-preview-card-head">
                         <h4>Probables responsables</h4>
-                        <span class="penal-preview-chip">Captura activa</span>
                     </div>
                     <div id="listaProbablesResponsables"></div>
                     <button type="button" id="btnAgregarProbableResponsable" class="btn-add">
@@ -228,12 +211,11 @@
                 <div class="penal-preview-card penal-preview-card-full">
                     <div class="penal-preview-card-head">
                         <h4>Documento inicial</h4>
-                        <span class="penal-preview-chip">Captura activa</span>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Archivo inicial</label>
-                            <input type="file" id="archivoInicialPenal" class="form-input" accept=".pdf,application/pdf">
+                            <label class="form-label required">Archivo inicial</label>
+                            <input type="file" id="archivoInicialPenal" class="form-input" accept=".pdf,application/pdf" required>
                             <small class="form-help-text">Solo se permite un archivo PDF de hasta 10 MB.</small>
                         </div>
                     </div>

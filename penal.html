@@ -32,7 +32,7 @@
             </a>
         </div>
 
-        <div class="penal-summary-strip" aria-label="Resumen de asuntos penales">
+        <div class="penal-summary-strip" aria-label="Resumen de asuntos penales" data-quick-filter-container>
             <div class="penal-summary-item penal-summary-item-export">
                 <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">folder</span>
                 <div class="penal-summary-copy">
@@ -44,35 +44,35 @@
                     <span class="material-symbols-outlined" aria-hidden="true">download</span>
                 </button>
             </div>
-            <div class="penal-summary-item">
+            <div class="penal-summary-item" data-quick-filter="estatus_tramite" role="button" tabindex="0" aria-pressed="false">
                 <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">pending_actions</span>
                 <div class="penal-summary-copy">
                     <div class="penal-summary-label">En trámite</div>
                     <div class="penal-summary-value" id="casosTramite">0</div>
                 </div>
             </div>
-            <div class="penal-summary-item">
+            <div class="penal-summary-item" data-quick-filter="estatus_concluido" role="button" tabindex="0" aria-pressed="false">
                 <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">task_alt</span>
                 <div class="penal-summary-copy">
                     <div class="penal-summary-label">Concluidos</div>
                     <div class="penal-summary-value" id="casosConcluidos">0</div>
                 </div>
             </div>
-            <div class="penal-summary-item">
+            <div class="penal-summary-item" data-quick-filter="coadyuvancia" role="button" tabindex="0" aria-pressed="false">
                 <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">handshake</span>
                 <div class="penal-summary-copy">
-                    <div class="penal-summary-label">Con coadyuvancia</div>
+                    <div class="penal-summary-label">Coadyuvancia</div>
                     <div class="penal-summary-value" id="casosCoadyuvancia">0</div>
                 </div>
             </div>
-            <div class="penal-summary-item">
+            <div class="penal-summary-item" data-quick-filter="requerimientos_pendientes" role="button" tabindex="0" aria-pressed="false">
                 <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">notification_important</span>
                 <div class="penal-summary-copy">
                     <div class="penal-summary-label">Con requerimientos pendientes</div>
                     <div class="penal-summary-value" id="casosPendientes">0</div>
                 </div>
             </div>
-            <div class="penal-summary-item">
+            <div class="penal-summary-item" data-quick-filter="sin_amp" role="button" tabindex="0" aria-pressed="false">
                 <span class="penal-summary-icon material-symbols-outlined" aria-hidden="true">help</span>
                 <div class="penal-summary-copy">
                     <div class="penal-summary-label">Sin conocimiento AMP</div>

@@ -6,15 +6,18 @@ let casosFiltrados = [];
 let todosLosCasos = [];
 let paginaActual = 1;
 const REGISTROS_POR_PAGINA = 10;
+const SEARCH_DEBOUNCE_MS = 180;
 let usuarioActual = null;
 let filtroSentenciaDona = '';
 let ordenFechaListado = 'actualizacion';
+let filtroRapidoPenal = '';
 let catalogosCargados = false;
 let catalogos = {
     delegaciones: [],
     delitos: [],
     estadosProcesales: []
 };
+let searchDebounceTimer = null;
 window.hoveredDonaSegment = -1;
 
 async function verificarSesion() {
@@ -272,11 +275,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', () => {
-            paginaActual = 1;
-            aplicarFiltros();
+            // Debounce: evita recalcular tabla, filtros y grafica por cada tecla.
+            window.clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = window.setTimeout(() => {
+                paginaActual = 1;
+                aplicarFiltros();
+            }, SEARCH_DEBOUNCE_MS);
         });
     }
 
+    inicializarQuickFiltersPenal();
     actualizarResumenFiltrosToolbar();
 
     // Scroll cierra dropdown
@@ -765,6 +773,20 @@ function obtenerResumenFiltrosActivos() {
         });
     }
 
+    if (filtroRapidoPenal) {
+        const etiquetasQuickFilter = {
+            coadyuvancia: 'Coadyuvancia',
+            requerimientos_pendientes: 'Con requerimientos pendientes',
+            sin_amp: 'Sin conocimiento AMP'
+        };
+
+        activos.push({
+            filtroId: 'filtroRapidoPenal',
+            nombre: 'Métrica',
+            valor: etiquetasQuickFilter[filtroRapidoPenal] || filtroRapidoPenal
+        });
+    }
+
     return activos;
 }
 
@@ -909,23 +931,8 @@ function toggleFiltro(id, boton) {
     panel.style.top = (rect.bottom + 4) + 'px';
     panel.style.left = rect.left + 'px';
 
-    const opciones = opcionesFiltros[id] || [];
-    const opcionesConConteo = opciones.map(op => {
-        const count = todosLosCasos.filter(c => {
-            if (id === 'filtroDelegacion') return c.delegacion_id == op.valor;
-            if (id === 'filtroEstatus') return c.estatus === op.valor;
-            if (id === 'filtroDelito') {
-                const nombre = c.delito_nombre || obtenerNombreDelito(c.delito_id);
-                return nombre === op.valor;
-            }
-            if (id === 'filtroEstadoProcesal') {
-                const nombre = c.estado_procesal_nombre || obtenerNombreEstadoProcesal(c.estado_procesal_id);
-                return nombre === op.valor;
-            }
-            return false;
-        }).length;
-        return { ...op, count };
-    }).filter(op => op.count > 0);
+    // Filtros cruzados: calcula opciones con todos los filtros activos excepto el abierto.
+    const opcionesConConteo = calcularOpcionesDisponiblesPenal(id);
 
     lista.innerHTML = '';
 
@@ -948,6 +955,217 @@ function toggleFiltro(id, boton) {
     filtroAbierto = id;
 }
 
+function cumpleFiltroRapidoPenal(caso) {
+    if (!filtroRapidoPenal) {
+        return true;
+    }
+
+    if (filtroRapidoPenal === 'coadyuvancia') {
+        return esCoadyuvanciaPenal(caso);
+    }
+
+    if (filtroRapidoPenal === 'requerimientos_pendientes') {
+        return tieneRequerimientosPendientesPenal(caso);
+    }
+
+    if (filtroRapidoPenal === 'sin_amp') {
+        return !tieneFechaConocimientoAmpPenal(caso);
+    }
+
+    return true;
+}
+
+function resetBotonFiltroEstatusPenal() {
+    const btn = document.getElementById('btn_filtroEstatus');
+    if (!btn) {
+        return;
+    }
+
+    const nombre = btn.dataset.nombre || 'Estatus';
+    btn.classList.remove('filtro-activo');
+    btn.innerHTML = `<span class="filtro-btn-nombre">${nombre} <span class="filtro-flecha">&#9660;</span></span>`;
+}
+
+function actualizarEstadoVisualQuickFiltersPenal() {
+    document.querySelectorAll('[data-quick-filter]').forEach((card) => {
+        const filtro = card.dataset.quickFilter || '';
+        const activo =
+            (filtro === 'estatus_tramite' && estadoFiltros.filtroEstatus === 'TRAMITE') ||
+            (filtro === 'estatus_concluido' && estadoFiltros.filtroEstatus === 'CONCLUIDO') ||
+            filtro === filtroRapidoPenal;
+
+        card.classList.toggle('is-active', activo);
+        card.setAttribute('aria-pressed', activo ? 'true' : 'false');
+    });
+}
+
+function aplicarQuickFilterPenal(filtro) {
+    if (filtro === 'estatus_tramite' || filtro === 'estatus_concluido') {
+        const estatus = filtro === 'estatus_tramite' ? 'TRAMITE' : 'CONCLUIDO';
+        const etiqueta = estatus === 'TRAMITE' ? 'Trámite' : 'Concluido';
+        filtroRapidoPenal = '';
+        seleccionarFiltro('filtroEstatus', estadoFiltros.filtroEstatus === estatus ? '' : estatus, etiqueta);
+        actualizarEstadoVisualQuickFiltersPenal();
+        return;
+    }
+
+    filtroRapidoPenal = filtroRapidoPenal === filtro ? '' : filtro;
+
+    if (filtroRapidoPenal) {
+        estadoFiltros.filtroEstatus = '';
+        resetBotonFiltroEstatusPenal();
+    }
+
+    cerrarTodosLosFiltros();
+    actualizarEstadoVisualQuickFiltersPenal();
+    actualizarResumenFiltrosToolbar();
+    paginaActual = 1;
+    aplicarFiltros();
+}
+
+function inicializarQuickFiltersPenal() {
+    const container = document.querySelector('[data-quick-filter-container]');
+    if (!container || container.dataset.quickFiltersBound === '1') {
+        return;
+    }
+
+    container.dataset.quickFiltersBound = '1';
+    container.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+        const card = target?.closest('[data-quick-filter]');
+        if (!card || !container.contains(card)) {
+            return;
+        }
+
+        aplicarQuickFilterPenal(card.dataset.quickFilter || '');
+    });
+
+    container.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+        }
+
+        const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+        const card = target?.closest('[data-quick-filter]');
+        if (!card || !container.contains(card)) {
+            return;
+        }
+
+        event.preventDefault();
+        aplicarQuickFilterPenal(card.dataset.quickFilter || '');
+    });
+}
+
+function normalizarTextoBusquedaPenal(caso) {
+    return [
+        caso.numero_expediente || '',
+        caso.numero_carpeta || '',
+        extraerNombresPenal(caso.denunciante).join(' '),
+        extraerNombresPenal(caso.probable_responsable).join(' '),
+        caso.dato_relevante || ''
+    ].join(' ').toLowerCase();
+}
+
+function cumpleBusquedaPenal(caso, busqueda) {
+    if (!busqueda) {
+        return true;
+    }
+
+    return normalizarTextoBusquedaPenal(caso).includes(busqueda);
+}
+
+function cumpleFiltroSentenciaPenal(caso) {
+    if (!filtroSentenciaDona) {
+        return true;
+    }
+
+    if (filtroSentenciaDona === 'SIN_SENTENCIA') {
+        return !caso.sentencia;
+    }
+
+    return caso.sentencia === filtroSentenciaDona;
+}
+
+function obtenerValorFiltroPenal(caso, filtroId) {
+    if (filtroId === 'filtroDelegacion') {
+        return {
+            valor: caso.delegacion_id,
+            etiqueta: obtenerNombreDelegacionCaso(caso)
+        };
+    }
+
+    if (filtroId === 'filtroEstatus') {
+        return {
+            valor: caso.estatus,
+            etiqueta: caso.estatus === 'TRAMITE' ? 'Trámite' : 'Concluido'
+        };
+    }
+
+    if (filtroId === 'filtroDelito') {
+        const nombre = caso.delito_nombre || obtenerNombreDelito(caso.delito_id);
+        return {
+            valor: nombre,
+            etiqueta: nombre
+        };
+    }
+
+    if (filtroId === 'filtroEstadoProcesal') {
+        const nombre = caso.estado_procesal_nombre || obtenerNombreEstadoProcesal(caso.estado_procesal_id);
+        return {
+            valor: nombre,
+            etiqueta: nombre
+        };
+    }
+
+    return {
+        valor: null,
+        etiqueta: ''
+    };
+}
+
+function cumpleFiltrosPenal(caso, filtroExcluido = '') {
+    const busqueda = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+
+    if (!cumpleBusquedaPenal(caso, busqueda) || !cumpleFiltroSentenciaPenal(caso) || !cumpleFiltroRapidoPenal(caso)) {
+        return false;
+    }
+
+    return Object.entries(estadoFiltros).every(([filtroId, valor]) => {
+        if (!valor || filtroId === filtroExcluido) {
+            return true;
+        }
+
+        const filtroCaso = obtenerValorFiltroPenal(caso, filtroId);
+        return String(filtroCaso.valor ?? '') === String(valor);
+    });
+}
+
+function calcularOpcionesDisponiblesPenal(filtroActual) {
+    const conteo = new Map();
+
+    todosLosCasos
+        .filter((caso) => cumpleFiltrosPenal(caso, filtroActual))
+        .forEach((caso) => {
+            const { valor, etiqueta } = obtenerValorFiltroPenal(caso, filtroActual);
+            if (valor === undefined || valor === null || valor === '') {
+                return;
+            }
+
+            const key = String(valor);
+            if (!conteo.has(key)) {
+                conteo.set(key, {
+                    valor,
+                    etiqueta: etiqueta || String(valor),
+                    count: 0
+                });
+            }
+
+            conteo.get(key).count++;
+        });
+
+    return Array.from(conteo.values()).sort((a, b) => String(a.etiqueta).localeCompare(String(b.etiqueta)));
+}
+
 function seleccionarFiltro(id, valor, etiqueta) {
     estadoFiltros[id] = valor;
 
@@ -965,47 +1183,13 @@ function seleccionarFiltro(id, valor, etiqueta) {
 
     cerrarTodosLosFiltros();
     actualizarResumenFiltrosToolbar();
+    actualizarEstadoVisualQuickFiltersPenal();
     paginaActual = 1;
     aplicarFiltros();
 }
 
 function aplicarFiltros() {
-    const busqueda = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
-
-    casosFiltrados = todosLosCasos.filter(caso => {
-        if (estadoFiltros.filtroDelegacion && caso.delegacion_id != estadoFiltros.filtroDelegacion) return false;
-
-        if (estadoFiltros.filtroEstatus && caso.estatus !== estadoFiltros.filtroEstatus) return false;
-
-        if (estadoFiltros.filtroDelito) {
-            const nombre = caso.delito_nombre || obtenerNombreDelito(caso.delito_id);
-            if (nombre !== estadoFiltros.filtroDelito) return false;
-        }
-
-        if (estadoFiltros.filtroEstadoProcesal) {
-            const nombre = caso.estado_procesal_nombre || obtenerNombreEstadoProcesal(caso.estado_procesal_id);
-            if (nombre !== estadoFiltros.filtroEstadoProcesal) return false;
-        }
-
-        if (filtroSentenciaDona) {
-            if (filtroSentenciaDona === 'SIN_SENTENCIA') {
-                if (caso.sentencia) return false;
-            } else {
-                if (caso.sentencia !== filtroSentenciaDona) return false;
-            }
-        }
-
-        if (busqueda) {
-            const expediente = (caso.numero_expediente || '').toLowerCase();
-            const denunciante = extraerNombresPenal(caso.denunciante).join(' ').toLowerCase();
-            const responsable = extraerNombresPenal(caso.probable_responsable).join(' ').toLowerCase();
-            const datoRel = (caso.dato_relevante || '').toLowerCase();
-            if (!expediente.includes(busqueda) && !denunciante.includes(busqueda) &&
-                !responsable.includes(busqueda) && !datoRel.includes(busqueda)) return false;
-        }
-
-        return true;
-    });
+    casosFiltrados = todosLosCasos.filter((caso) => cumpleFiltrosPenal(caso));
 
     casosFiltrados.sort((a, b) => {
         const fechaActualizacionA = a.fecha_actualizacion || a.fecha_creacion || '';
@@ -1026,12 +1210,14 @@ function aplicarFiltros() {
 
     renderizarTabla();
     dibujarGraficaSentencia();
+    actualizarEstadoVisualQuickFiltersPenal();
     actualizarResumenFiltrosToolbar();
 }
 
 function limpiarFiltros() {
     Object.keys(estadoFiltros).forEach(k => estadoFiltros[k] = '');
     filtroSentenciaDona = '';
+    filtroRapidoPenal = '';
     const searchInput = document.getElementById('searchInput');
     if (searchInput) searchInput.value = '';
 
@@ -1046,6 +1232,7 @@ function limpiarFiltros() {
 
     cerrarTodosLosFiltros();
     cerrarResumenFiltros();
+    actualizarEstadoVisualQuickFiltersPenal();
     ordenFechaListado = 'actualizacion';
     paginaActual = 1;
     aplicarFiltros();
