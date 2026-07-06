@@ -231,6 +231,23 @@
         </form>
     </div>
 
+    <div id="modalAreaGeneradoraPenal" class="modal-overlay" style="display: none;">
+        <div class="modal-content card" style="max-width: 520px; width: 92%;">
+            <div class="modal-header">
+                <h3>Nueva área generadora penal</h3>
+                <button type="button" class="btn-close" id="btnCerrarAreaGeneradoraPenal" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label required" for="nuevaAreaGeneradoraNombre">Nombre del área</label>
+                <input type="text" id="nuevaAreaGeneradoraNombre" class="form-input" maxlength="255" autocomplete="off">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="btnCancelarAreaGeneradoraPenal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnGuardarAreaGeneradoraPenal">Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/headerComponent.js"></script>
     <script src="js/textLimiter.js"></script>
     <script src="js/formularioPenal.js"></script>

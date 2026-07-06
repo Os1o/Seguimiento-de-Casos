@@ -278,9 +278,10 @@ function validateNewPenalCasePayload(PDO $pdo, array $user, array $payload): arr
 
     $stmt = $pdo->prepare('
         SELECT id
-        FROM areas
+        FROM areas_penal
         WHERE id = :id
           AND delegacion_id = :delegacion_id
+          AND activo = TRUE
         LIMIT 1
     ');
     $stmt->execute([

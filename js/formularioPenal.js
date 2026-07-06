@@ -13,6 +13,7 @@ let limitadorHechosVictimaPenal = null;
 let contadorDenuncianteRelacionado = 0;
 let contadorDenunciantePrincipal = 0;
 let contadorProbableResponsable = 0;
+const AREA_GENERADORA_ADD_VALUE = '__agregar_area_generadora_penal__';
 
 async function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
@@ -84,24 +85,162 @@ function actualizarInfoOOADFormularioPenal() {
 }
 
 async function cargarCatalogosPenalFormulario() {
-    const response = await fetch('api/penal/getNewCaseCatalogs.php', {
-        method: 'GET',
-        credentials: 'same-origin'
+    const [catalogosResponse, areasResponse] = await Promise.all([
+        fetch('api/penal/getNewCaseCatalogs.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        }),
+        fetch('api/penal/catalogs/getAreasGeneradoras.php', {
+            method: 'GET',
+            credentials: 'same-origin'
+        })
+    ]);
+
+    const result = await catalogosResponse.json();
+    const areasResult = await areasResponse.json();
+
+    if (!catalogosResponse.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar los catálogos');
+    }
+
+    if (!areasResponse.ok || !areasResult.ok) {
+        throw new Error(areasResult.message || 'No se pudieron cargar las áreas generadoras penales');
+    }
+
+    const data = result.data || {};
+    const areasData = areasResult.data || {};
+
+    catalogos = {
+        delegaciones: data.delegaciones || [],
+        delitos: data.delitos || [],
+        areas: areasData.areas || []
+    };
+}
+
+async function guardarAreaGeneradoraPenalApi(delegacionId, nombre) {
+    const response = await fetch('api/penal/catalogs/saveAreaGeneradora.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            delegacion_id: delegacionId,
+            nombre
+        })
     });
 
     const result = await response.json();
 
     if (!response.ok || !result.ok) {
-        throw new Error(result.message || 'No se pudieron cargar los catálogos');
+        const detail = result.errors?.detail ? `: ${result.errors.detail}` : '';
+        throw new Error((result.message || 'No se pudo guardar el área generadora penal') + detail);
     }
 
-    const data = result.data || {};
+    return result.data?.area || null;
+}
 
-    catalogos = {
-        delegaciones: data.delegaciones || [],
-        delitos: data.delitos || [],
-        areas: data.areas || []
-    };
+function usuarioPuedeAgregarAreaGeneradoraPenal() {
+    return ['admin', 'editor'].includes(String(usuarioActual?.rol || '').toLowerCase());
+}
+
+function abrirModalAreaGeneradoraPenal() {
+    const delegacionId = parseInt(document.getElementById('delegacion')?.value || '', 10);
+
+    if (!delegacionId) {
+        window.appAlert?.({
+            title: 'OOAD requerida',
+            message: 'Selecciona una OOAD antes de agregar un área generadora.'
+        });
+        return;
+    }
+
+    const input = document.getElementById('nuevaAreaGeneradoraNombre');
+    if (input) {
+        input.value = '';
+    }
+
+    const modal = document.getElementById('modalAreaGeneradoraPenal');
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => input?.focus(), 50);
+    }
+}
+
+function cerrarModalAreaGeneradoraPenal() {
+    const modal = document.getElementById('modalAreaGeneradoraPenal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function guardarNuevaAreaGeneradoraPenal() {
+    const delegacionId = parseInt(document.getElementById('delegacion')?.value || '', 10);
+    const input = document.getElementById('nuevaAreaGeneradoraNombre');
+    const nombre = input?.value.trim() || '';
+    const boton = document.getElementById('btnGuardarAreaGeneradoraPenal');
+
+    if (!delegacionId || !nombre) {
+        await window.appAlert?.({
+            title: 'Datos incompletos',
+            message: 'Selecciona una OOAD y captura el nombre del área generadora.'
+        });
+        return;
+    }
+
+    const textoOriginal = boton?.textContent || 'Guardar';
+
+    try {
+        if (boton) {
+            boton.disabled = true;
+            boton.textContent = 'Guardando...';
+        }
+
+        const area = await guardarAreaGeneradoraPenalApi(delegacionId, nombre);
+        if (area) {
+            catalogos.areas.push(area);
+            catalogos.areas.sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' }));
+            cargarAreasGeneradoras(area.id);
+        }
+
+        cerrarModalAreaGeneradoraPenal();
+    } catch (error) {
+        await window.appAlert?.({
+            title: 'No se pudo guardar',
+            message: error.message || 'No se pudo guardar el área generadora penal.'
+        });
+    } finally {
+        if (boton) {
+            boton.disabled = false;
+            boton.textContent = textoOriginal;
+        }
+    }
+}
+
+function registrarEventosAreaGeneradoraPenal() {
+    const selectArea = document.getElementById('areaGeneradora');
+
+    selectArea?.addEventListener('change', () => {
+        if (selectArea.value === AREA_GENERADORA_ADD_VALUE) {
+            selectArea.value = '';
+            abrirModalAreaGeneradoraPenal();
+        }
+    });
+
+    document.getElementById('btnGuardarAreaGeneradoraPenal')?.addEventListener('click', guardarNuevaAreaGeneradoraPenal);
+    document.getElementById('btnCancelarAreaGeneradoraPenal')?.addEventListener('click', cerrarModalAreaGeneradoraPenal);
+    document.getElementById('btnCerrarAreaGeneradoraPenal')?.addEventListener('click', cerrarModalAreaGeneradoraPenal);
+    document.getElementById('modalAreaGeneradoraPenal')?.addEventListener('click', (event) => {
+        if (event.target === event.currentTarget) {
+            cerrarModalAreaGeneradoraPenal();
+        }
+    });
+    document.getElementById('nuevaAreaGeneradoraNombre')?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            guardarNuevaAreaGeneradoraPenal();
+        }
+    });
 }
 
 async function guardarCasoPenalApi(formData) {
@@ -162,6 +301,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         sincronizarFechasBasePenal();
         document.getElementById('fechaInicio')?.addEventListener('change', sincronizarFechasBasePenal);
         document.getElementById('delegacion')?.addEventListener('change', cargarAreasGeneradoras);
+        registrarEventosAreaGeneradoraPenal();
         limitadorHechosVictimaPenal = window.setupExpandableTextLimiter?.({
             fieldId: 'hechosVictimaDenunciante',
             initialLimit: 1000
@@ -233,7 +373,7 @@ function obtenerMontoPenalNormalizado() {
     return inputMonto.value.replace(/,/g, '').trim();
 }
 
-function cargarAreasGeneradoras() {
+function cargarAreasGeneradoras(areaSeleccionada = '') {
     const selectDelegacion = document.getElementById('delegacion');
     const selectArea = document.getElementById('areaGeneradora');
 
@@ -257,6 +397,17 @@ function cargarAreasGeneradoras() {
         option.textContent = area.nombre;
         selectArea.appendChild(option);
     });
+
+    if (usuarioPuedeAgregarAreaGeneradoraPenal()) {
+        const option = document.createElement('option');
+        option.value = AREA_GENERADORA_ADD_VALUE;
+        option.textContent = '+ Agregar nueva área...';
+        selectArea.appendChild(option);
+    }
+
+    if (areaSeleccionada) {
+        selectArea.value = String(areaSeleccionada);
+    }
 
     selectArea.disabled = false;
 }

@@ -141,7 +141,7 @@ try {
             ON delg.id = pa.delegacion_id
         LEFT JOIN delitos d
             ON d.id = pa.delito_id
-        LEFT JOIN areas a
+        LEFT JOIN areas_penal a
             ON a.id = pa.area_hechos_id
         LEFT JOIN usuarios u
             ON u.id = pa.abogado_responsable_id

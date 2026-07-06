@@ -1034,6 +1034,9 @@ function inicializarControlSesionInactiva() {
         try {
             const response = await fetch('api/session.php', {
                 method: 'GET',
+                headers: {
+                    'X-Heartbeat': '1'
+                },
                 credentials: 'same-origin'
             });
 

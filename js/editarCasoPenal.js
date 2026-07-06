@@ -2,6 +2,7 @@
 
 const IMSS_NOMBRE = 'INSTITUTO MEXICANO DEL SEGURO SOCIAL';
 const MAX_ARCHIVO_PDF = 10 * 1024 * 1024;
+const AREA_GENERADORA_ADD_VALUE = '__agregar_area_generadora_penal__';
 
 let catalogosPenal = {
     delegaciones: [],
@@ -86,42 +87,150 @@ function llenarSelect(select, items, placeholder = 'Seleccione...') {
     });
 }
 
+function obtenerUsuarioEdicionPenal() {
+    try {
+        return JSON.parse(sessionStorage.getItem('usuario') || 'null');
+    } catch (error) {
+        return null;
+    }
+}
+
+function usuarioPuedeAgregarAreaGeneradoraPenal() {
+    const usuario = obtenerUsuarioEdicionPenal();
+    return ['admin', 'editor'].includes(String(usuario?.rol || '').toLowerCase());
+}
+
+async function guardarAreaGeneradoraPenalApi(delegacionId, nombre) {
+    const response = await fetch('api/penal/catalogs/saveAreaGeneradora.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            delegacion_id: delegacionId,
+            nombre
+        })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        const detail = result.errors?.detail ? `: ${result.errors.detail}` : '';
+        throw new Error((result.message || 'No se pudo guardar el área generadora penal') + detail);
+    }
+
+    return result.data?.area || null;
+}
+
+function abrirModalAreaGeneradoraPenal() {
+    const delegacionId = Number.parseInt($('#delegacion')?.value || '', 10);
+
+    if (!delegacionId) {
+        mostrarMensaje('OOAD requerida', 'Selecciona una OOAD antes de agregar un área generadora.', 'error');
+        return;
+    }
+
+    const input = $('#nuevaAreaGeneradoraNombre');
+    if (input) {
+        input.value = '';
+    }
+
+    const modal = $('#modalAreaGeneradoraPenal');
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => input?.focus(), 50);
+    }
+}
+
+function cerrarModalAreaGeneradoraPenal() {
+    const modal = $('#modalAreaGeneradoraPenal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function guardarNuevaAreaGeneradoraPenal() {
+    const delegacionId = Number.parseInt($('#delegacion')?.value || '', 10);
+    const input = $('#nuevaAreaGeneradoraNombre');
+    const nombre = input?.value.trim() || '';
+    const boton = $('#btnGuardarAreaGeneradoraPenal');
+
+    if (!delegacionId || !nombre) {
+        await mostrarMensaje('Datos incompletos', 'Selecciona una OOAD y captura el nombre del área generadora.', 'error');
+        return;
+    }
+
+    const textoOriginal = boton?.textContent || 'Guardar';
+
+    try {
+        if (boton) {
+            boton.disabled = true;
+            boton.textContent = 'Guardando...';
+        }
+
+        const area = await guardarAreaGeneradoraPenalApi(delegacionId, nombre);
+        if (area) {
+            catalogosPenal.areas.push(area);
+            catalogosPenal.areas.sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' }));
+            filtrarAreasPorDelegacion(area.id);
+        }
+
+        cerrarModalAreaGeneradoraPenal();
+    } catch (error) {
+        await mostrarMensaje('No se pudo guardar', error.message || 'No se pudo guardar el área generadora penal.', 'error');
+    } finally {
+        if (boton) {
+            boton.disabled = false;
+            boton.textContent = textoOriginal;
+        }
+    }
+}
+
 function obtenerNumeroCarpeta() {
     const jurisdiccion = ($('#expJurisdiccion')?.value || '').trim().toUpperCase();
-    const entidad = ($('#expEntidad')?.value || '').trim().toUpperCase();
-    const ooad = ($('#expOoad')?.value || '').trim().toUpperCase();
-    const numero = ($('#expNumero')?.value || '').trim();
-    const anio = ($('#expAnio')?.value || '').trim();
+    const numeroCarpeta = sanitizarNumeroCarpeta();
 
-    if (!jurisdiccion || !entidad || !ooad || !numero || !anio) {
+    if (!jurisdiccion || !numeroCarpeta) {
         return '';
     }
 
-    return `${jurisdiccion}/${entidad}/${ooad}/${numero}/${anio}`;
+    return `${jurisdiccion}/${numeroCarpeta}`;
+}
+
+function sanitizarNumeroCarpeta() {
+    const input = $('#expNumeroCarpeta');
+    if (!input) {
+        return '';
+    }
+
+    const valor = input.value
+        .toUpperCase()
+        .replace(/[^A-Z0-9\/-]/g, '')
+        .slice(0, 80);
+
+    input.value = valor;
+    return valor;
 }
 
 function actualizarPreviewExpediente() {
     const preview = $('#previewExpediente');
     if (!preview) return;
 
-    preview.textContent = `Vista previa: ${obtenerNumeroCarpeta() || '---'}`;
+    const jurisdiccion = ($('#expJurisdiccion')?.value || '').trim().toUpperCase();
+    const numeroCarpeta = sanitizarNumeroCarpeta();
+    const partes = [jurisdiccion, numeroCarpeta].filter(Boolean);
+
+    preview.textContent = partes.length > 0 ? `Vista previa: ${partes.join('/')}` : 'Vista previa: ---';
 }
 
 function descomponerNumeroCarpeta(numeroCarpeta) {
     const partes = String(numeroCarpeta || '').split('/');
-    if (partes.length !== 5) return;
+    const jurisdiccion = partes[0] || '';
+    const resto = partes.slice(1).join('/');
 
-    $('#expJurisdiccion').value = partes[0] || '';
-    $('#expEntidad').value = partes[1] || '';
-    $('#expOoad').value = partes[2] || '';
-    $('#expNumero').value = partes[3] || '';
-    $('#expAnio').value = partes[4] || '';
-    actualizarPreviewExpediente();
-}
-
-function normalizarTextoInput(event) {
-    const input = event.target;
-    input.value = input.value.toUpperCase();
+    $('#expJurisdiccion').value = jurisdiccion;
+    $('#expNumeroCarpeta').value = resto;
     actualizarPreviewExpediente();
 }
 
@@ -129,6 +238,14 @@ function filtrarAreasPorDelegacion(areaSeleccionada = '') {
     const delegacionId = Number.parseInt($('#delegacion')?.value || '', 10);
     const areas = catalogosPenal.areas.filter((area) => Number(area.delegacion_id) === delegacionId);
     llenarSelect($('#areaGeneradora'), areas);
+
+    const selectArea = $('#areaGeneradora');
+    if (delegacionId && selectArea && usuarioPuedeAgregarAreaGeneradoraPenal()) {
+        const option = document.createElement('option');
+        option.value = AREA_GENERADORA_ADD_VALUE;
+        option.textContent = '+ Agregar nueva área...';
+        selectArea.appendChild(option);
+    }
 
     if (areaSeleccionada) {
         $('#areaGeneradora').value = String(areaSeleccionada);
@@ -487,13 +604,17 @@ function validarArchivoInicial() {
 }
 
 async function cargarCatalogos() {
-    const result = await fetchJson('api/penal/getNewCaseCatalogs.php');
+    const [result, areasResult] = await Promise.all([
+        fetchJson('api/penal/getNewCaseCatalogs.php'),
+        fetchJson('api/penal/catalogs/getAreasGeneradoras.php')
+    ]);
     const data = result.data || {};
+    const areasData = areasResult.data || {};
 
     catalogosPenal = {
         delegaciones: data.delegaciones || [],
         delitos: data.delitos || [],
-        areas: data.areas || []
+        areas: areasData.areas || []
     };
 
     llenarSelect($('#delegacion'), catalogosPenal.delegaciones);
@@ -596,8 +717,13 @@ function validarFormularioBase() {
         throw new Error('Capture el numero de carpeta completo.');
     }
 
-    if (!/^(FED|LOC)\/[A-Z]{3,4}\/[A-Z]{3,4}\/\d{7}\/\d{4}$/.test(numero)) {
-        throw new Error('El numero de carpeta no cumple el formato requerido.');
+    const numeroLibre = sanitizarNumeroCarpeta();
+    if (!['FED', 'LOC'].includes(($('#expJurisdiccion')?.value || '').trim().toUpperCase())) {
+        throw new Error('Seleccione la jurisdiccion de la carpeta.');
+    }
+
+    if (!/^[A-Z0-9\/-]{3,80}$/.test(numeroLibre)) {
+        throw new Error('El numero de carpeta solo puede incluir letras, numeros, diagonales (/) y guiones medios (-), entre 3 y 80 caracteres.');
     }
 
     const hechos = $('#hechosVictimaDenunciante').value.trim();
@@ -630,16 +756,18 @@ async function guardarCaso(event) {
 
         const id = obtenerIdCaso();
         const numeroCarpeta = obtenerNumeroCarpeta();
+        const fechaInicio = $('#fechaInicio').value;
         const denunciantes = construirDenunciantesPayload();
         const probables = construirProbablesPayload();
         const archivo = validarArchivoInicial();
+        const anioInicio = fechaInicio ? Number.parseInt(fechaInicio.slice(0, 4), 10) : NaN;
 
         const formData = new FormData();
         formData.append('id', String(id));
         formData.append('delegacion_id', $('#delegacion').value);
         formData.append('numero_carpeta', numeroCarpeta);
-        formData.append('anio_inicio', $('#expAnio').value);
-        formData.append('fecha_presentacion_denuncia', $('#fechaInicio').value);
+        formData.append('anio_inicio', Number.isNaN(anioInicio) ? '' : String(anioInicio));
+        formData.append('fecha_presentacion_denuncia', fechaInicio);
         formData.append('delito_id', $('#delito').value);
         formData.append('area_hechos_id', $('#areaGeneradora').value);
         formData.append('hechos_denunciante', $('#hechosVictimaDenunciante').value.trim());
@@ -674,14 +802,16 @@ async function guardarCaso(event) {
 function registrarEventos() {
     $('#formEditarCaso')?.addEventListener('submit', guardarCaso);
     $('#delegacion')?.addEventListener('change', () => filtrarAreasPorDelegacion());
+    $('#areaGeneradora')?.addEventListener('change', () => {
+        if ($('#areaGeneradora')?.value === AREA_GENERADORA_ADD_VALUE) {
+            $('#areaGeneradora').value = '';
+            abrirModalAreaGeneradoraPenal();
+        }
+    });
     $('#sinCuantificar')?.addEventListener('change', syncCuantia);
     $('#cuantiaMonto')?.addEventListener('input', aplicarFormatoMoneda);
 
-    ['#expEntidad', '#expOoad'].forEach((selector) => {
-        $(selector)?.addEventListener('input', normalizarTextoInput);
-    });
-
-    ['#expJurisdiccion', '#expNumero', '#expAnio'].forEach((selector) => {
+    ['#expJurisdiccion', '#expNumeroCarpeta'].forEach((selector) => {
         $(selector)?.addEventListener('input', actualizarPreviewExpediente);
         $(selector)?.addEventListener('change', actualizarPreviewExpediente);
     });
@@ -694,6 +824,20 @@ function registrarEventos() {
     $('#btnAgregarDenunciantePrincipal')?.addEventListener('click', () => crearCampoPersona({ tipo: 'principal' }));
     $('#btnAgregarProbableResponsable')?.addEventListener('click', () => crearCampoPersona({ tipo: 'probable' }));
     $('#responsableQrr')?.addEventListener('change', syncQrr);
+    $('#btnGuardarAreaGeneradoraPenal')?.addEventListener('click', guardarNuevaAreaGeneradoraPenal);
+    $('#btnCancelarAreaGeneradoraPenal')?.addEventListener('click', cerrarModalAreaGeneradoraPenal);
+    $('#btnCerrarAreaGeneradoraPenal')?.addEventListener('click', cerrarModalAreaGeneradoraPenal);
+    $('#modalAreaGeneradoraPenal')?.addEventListener('click', (event) => {
+        if (event.target === event.currentTarget) {
+            cerrarModalAreaGeneradoraPenal();
+        }
+    });
+    $('#nuevaAreaGeneradoraNombre')?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            guardarNuevaAreaGeneradoraPenal();
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

@@ -102,7 +102,7 @@ function buildPenalCaseAuditChanges(PDO $pdo, array $before, array $after): arra
     $maps = [
         'delegacion_id' => getPenalAuditNameMap($pdo, 'delegaciones', [$before['delegacion_id'] ?? null, $after['delegacion_id'] ?? null]),
         'delito_id' => getPenalAuditNameMap($pdo, 'delitos', [$before['delito_id'] ?? null, $after['delito_id'] ?? null]),
-        'area_hechos_id' => getPenalAuditNameMap($pdo, 'areas', [$before['area_hechos_id'] ?? null, $after['area_hechos_id'] ?? null]),
+        'area_hechos_id' => getPenalAuditNameMap($pdo, 'areas_penal', [$before['area_hechos_id'] ?? null, $after['area_hechos_id'] ?? null]),
     ];
 
     return buildAuditFieldChanges(
@@ -379,9 +379,10 @@ function validatePenalUpdatePayload(PDO $pdo, array $user, array $current, array
 
     $stmt = $pdo->prepare('
         SELECT id
-        FROM areas
+        FROM areas_penal
         WHERE id = :id
           AND delegacion_id = :delegacion_id
+          AND activo = TRUE
         LIMIT 1
     ');
     $stmt->execute([

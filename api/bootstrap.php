@@ -66,7 +66,7 @@ if (isset($_SESSION['user'])) {
         }
 
         destroyCurrentSession(true);
-    } else {
+    } else if (($_SERVER['HTTP_X_HEARTBEAT'] ?? '') !== '1') {
         $_SESSION['last_activity'] = $now;
     }
 }
