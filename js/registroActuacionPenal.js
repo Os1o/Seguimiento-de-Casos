@@ -1,6 +1,7 @@
 let usuarioActual = null;
 let asuntoActual = null;
 let catalogoEtapasPenal = [];
+let catalogoFasesActuacionPenal = [];
 let historialActuacionesPenal = [];
 
 const MAX_PDF_SIZE = 10 * 1024 * 1024;
@@ -99,6 +100,64 @@ function cargarEtapasPenales(etapas) {
         option.textContent = etapa.nombre;
         select.appendChild(option);
     });
+
+    resetFasesActuacionPenal();
+}
+
+function resetFasesActuacionPenal(message = 'Seleccione una etapa...') {
+    catalogoFasesActuacionPenal = [];
+    const select = document.getElementById('faseActuacionPenal');
+
+    if (!select) return;
+
+    select.innerHTML = `<option value="">${escapeHtml(message)}</option>`;
+    select.value = '';
+    select.disabled = true;
+}
+
+function cargarFasesActuacionPenal(fases) {
+    catalogoFasesActuacionPenal = Array.isArray(fases) ? fases : [];
+    const select = document.getElementById('faseActuacionPenal');
+
+    if (!select) return;
+
+    if (catalogoFasesActuacionPenal.length === 0) {
+        resetFasesActuacionPenal('Sin fases disponibles');
+        return;
+    }
+
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    catalogoFasesActuacionPenal.forEach(fase => {
+        const option = document.createElement('option');
+        option.value = fase.id;
+        option.textContent = fase.nombre;
+        select.appendChild(option);
+    });
+
+    select.disabled = false;
+}
+
+async function cargarFasesPorEtapa(etapaId) {
+    resetFasesActuacionPenal('Cargando fases...');
+
+    if (!etapaId) {
+        resetFasesActuacionPenal();
+        return;
+    }
+
+    const response = await fetch(`api/getFasesByEtapa.php?etapa_id=${encodeURIComponent(etapaId)}`, {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar las fases de la etapa');
+    }
+
+    cargarFasesActuacionPenal(result.data?.fases || []);
 }
 
 function escapeHtml(value) {
@@ -192,6 +251,9 @@ function renderizarHistorialActuacionesPenal(historial) {
         const referencia = item.referencia_carpeta
             ? `<div class="timeline-doc-meta">Referencia: ${escapeHtml(item.referencia_carpeta)}</div>`
             : '';
+        const fase = item.fase_nombre
+            ? `<div class="timeline-doc-meta">Fase: ${escapeHtml(item.fase_nombre)}</div>`
+            : '';
         const usuario = item.usuario_nombre
             ? `<div class="timeline-doc-meta">Registró: ${escapeHtml(item.usuario_nombre)}</div>`
             : '';
@@ -232,6 +294,7 @@ function renderizarHistorialActuacionesPenal(historial) {
                     <div class="timeline-desc">${escapeHtml(item.descripcion || 'Sin descripción registrada.')}</div>
                     ${complemento}
                     ${referencia}
+                    ${fase}
                     ${usuario}
                     ${documentoHtml}
                 </div>
@@ -262,6 +325,8 @@ function validarArchivoActuacionPenal() {
 function obtenerPayloadActuacionPenal() {
     const fecha = document.getElementById('fechaActuacionSecundaria')?.value?.trim() || '';
     const etapaId = parseInt(document.getElementById('etapaActuacionPenal')?.value || '', 10);
+    const faseValue = document.getElementById('faseActuacionPenal')?.value || '';
+    const faseId = faseValue ? parseInt(faseValue, 10) : null;
     const descripcion = document.getElementById('descripcionActuacionPenal')?.value?.trim() || '';
 
     if (!fecha) {
@@ -270,6 +335,10 @@ function obtenerPayloadActuacionPenal() {
 
     if (!Number.isInteger(etapaId) || etapaId <= 0) {
         throw new Error('Debes seleccionar una etapa');
+    }
+
+    if (faseId !== null && (!Number.isInteger(faseId) || faseId <= 0)) {
+        throw new Error('La fase seleccionada no es valida');
     }
 
     if (!descripcion) {
@@ -286,6 +355,7 @@ function obtenerPayloadActuacionPenal() {
         asunto_id: asuntoActual.id,
         fecha_actuacion: fecha,
         etapa_id: etapaId,
+        fase_id: faseId,
         descripcion: descripcion
     };
 }
@@ -336,6 +406,9 @@ async function guardarActuacionPenal(event) {
         formData.append('asunto_id', String(payload.asunto_id));
         formData.append('fecha_actuacion', payload.fecha_actuacion);
         formData.append('etapa_id', String(payload.etapa_id));
+        if (payload.fase_id) {
+            formData.append('fase_id', String(payload.fase_id));
+        }
         formData.append('descripcion', payload.descripcion);
 
         const archivo = document.getElementById('archivoActuacionPenal')?.files?.[0] || null;
@@ -402,6 +475,20 @@ async function confirmarEliminarActuacionPenal(actuacionId) {
 
 window.confirmarEliminarActuacionPenal = confirmarEliminarActuacionPenal;
 
+async function manejarCambioEtapaActuacionPenal(event) {
+    const etapaId = event.target.value;
+
+    try {
+        await cargarFasesPorEtapa(etapaId);
+    } catch (error) {
+        resetFasesActuacionPenal('No se pudieron cargar fases');
+        await window.appAlert?.({
+            title: 'Fases no disponibles',
+            message: error.message || 'No se pudieron cargar las fases de la etapa seleccionada.'
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
     usuarioActual = await verificarSesionActuacionPenal();
     if (!usuarioActual) return;
@@ -437,6 +524,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         llenarResumenActuacionPenal(asuntoActual);
         cargarEtapasPenales(data.etapas || []);
         renderizarHistorialActuacionesPenal(historialActuacionesPenal);
+        document.getElementById('etapaActuacionPenal')?.addEventListener('change', manejarCambioEtapaActuacionPenal);
 
         const fechaInput = document.getElementById('fechaActuacionSecundaria');
         if (fechaInput) {

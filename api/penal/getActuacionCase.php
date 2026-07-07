@@ -63,10 +63,13 @@ try {
             pa.created_at,
             pce.nombre AS etapa_nombre,
             pce.concluye_asunto,
+            pcf.nombre AS fase_nombre,
             u.nombre_completo AS usuario_nombre
         FROM penal_actuaciones pa
         INNER JOIN penal_catalogo_etapas pce
             ON pce.id = pa.etapa_id
+        LEFT JOIN penal_catalogo_fases pcf
+            ON pcf.id = pa.fase_id
         LEFT JOIN usuarios u
             ON u.id = pa.usuario_id
         WHERE pa.asunto_id = :asunto_id

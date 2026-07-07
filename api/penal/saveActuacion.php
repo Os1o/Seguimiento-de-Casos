@@ -89,6 +89,7 @@ try {
     $asuntoId = isset($_POST['asunto_id']) ? (int) $_POST['asunto_id'] : 0;
     $fechaActuacion = trim((string) ($_POST['fecha_actuacion'] ?? ''));
     $etapaId = isset($_POST['etapa_id']) ? (int) $_POST['etapa_id'] : 0;
+    $faseId = isset($_POST['fase_id']) && $_POST['fase_id'] !== '' ? (int) $_POST['fase_id'] : null;
     $descripcion = trim((string) ($_POST['descripcion'] ?? ''));
 
     if ($asuntoId <= 0) {
@@ -152,6 +153,31 @@ try {
         sendError('La etapa seleccionada no existe', 400);
     }
 
+    $fase = null;
+    if ($faseId !== null) {
+        if ($faseId <= 0) {
+            sendError('La fase seleccionada no es valida', 400);
+        }
+
+        $faseStmt = $pdo->prepare('
+            SELECT id, etapa_id, nombre
+            FROM penal_catalogo_fases
+            WHERE id = :id
+              AND etapa_id = :etapa_id
+              AND activo = TRUE
+            LIMIT 1
+        ');
+        $faseStmt->execute([
+            'id' => $faseId,
+            'etapa_id' => $etapaId,
+        ]);
+        $fase = $faseStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$fase) {
+            sendError('La fase seleccionada no corresponde a la etapa elegida', 400);
+        }
+    }
+
     $pdo->beginTransaction();
 
     $insertActuacion = $pdo->prepare('
@@ -159,12 +185,14 @@ try {
             asunto_id,
             fecha_actuacion,
             etapa_id,
+            fase_id,
             descripcion,
             usuario_id
         ) VALUES (
             :asunto_id,
             :fecha_actuacion,
             :etapa_id,
+            :fase_id,
             :descripcion,
             :usuario_id
         )
@@ -175,6 +203,7 @@ try {
         'asunto_id' => $asuntoId,
         'fecha_actuacion' => $fechaActuacion,
         'etapa_id' => $etapaId,
+        'fase_id' => $faseId,
         'descripcion' => $descripcion,
         'usuario_id' => $user['id'] ?? null,
     ]);
@@ -263,6 +292,8 @@ try {
             'fecha_actuacion' => $fechaActuacion,
             'etapa_id' => $etapaId,
             'etapa_nombre' => $etapa['nombre'] ?? null,
+            'fase_id' => $faseId,
+            'fase_nombre' => $fase['nombre'] ?? null,
             'estatus_asunto' => $nuevoEstatus,
             'documento_cargado' => $documentoGuardado !== null,
         ],

@@ -43,15 +43,70 @@ try {
 
     $delegacionesStmt = $pdo->prepare($delegacionesSql);
     $areasStmt = $pdo->prepare($areasSql);
-    $delitosStmt = $pdo->query('SELECT id, nombre FROM delitos ORDER BY nombre ASC, id ASC');
+    $categoriasStmt = $pdo->query('
+        SELECT
+            cd.id,
+            cd.nombre,
+            cd.descripcion
+        FROM categorias_delito cd
+        WHERE cd.activo = TRUE
+        ORDER BY cd.nombre ASC, cd.id ASC
+    ');
+
+    $delitosStmt = $pdo->query('
+        SELECT
+            d.id,
+            d.nombre,
+            d.fuero,
+            d.categoria_id
+        FROM delitos d
+        LEFT JOIN categorias_delito cd
+            ON cd.id = d.categoria_id
+        ORDER BY
+            CASE WHEN d.categoria_id IS NULL THEN 1 ELSE 0 END ASC,
+            cd.nombre ASC NULLS LAST,
+            d.nombre ASC,
+            d.id ASC
+    ');
 
     $delegacionesStmt->execute($params);
     $areasStmt->execute($params);
+    $categorias = $categoriasStmt->fetchAll(PDO::FETCH_ASSOC);
+    $delitos = $delitosStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $categoriasPorId = [];
+    foreach ($categorias as $categoria) {
+        $categoria['delitos'] = [];
+        $categoriasPorId[(int) $categoria['id']] = $categoria;
+    }
+
+    $delitosSinCategoria = [];
+    foreach ($delitos as $delito) {
+        $categoriaId = isset($delito['categoria_id']) ? (int) $delito['categoria_id'] : null;
+        if ($categoriaId !== null && isset($categoriasPorId[$categoriaId])) {
+            $categoriasPorId[$categoriaId]['delitos'][] = $delito;
+            continue;
+        }
+
+        $delitosSinCategoria[] = $delito;
+    }
+
+    $categoriasDelito = array_values($categoriasPorId);
+    if ($delitosSinCategoria !== []) {
+        $categoriasDelito[] = [
+            'id' => null,
+            'nombre' => 'Sin categoría',
+            'descripcion' => null,
+            'sin_categoria' => true,
+            'delitos' => $delitosSinCategoria,
+        ];
+    }
 
     sendSuccess('Catalogos de nuevo asunto penal cargados correctamente', [
         'delegaciones' => $delegacionesStmt->fetchAll(),
         'areas' => $areasStmt->fetchAll(),
-        'delitos' => $delitosStmt->fetchAll(),
+        'categorias_delito' => $categoriasDelito,
+        'delitos' => $delitos,
     ]);
 } catch (Throwable $exception) {
     sendError('No se pudieron cargar los catalogos del nuevo asunto penal', 500, [

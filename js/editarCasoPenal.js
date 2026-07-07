@@ -3,10 +3,13 @@
 const IMSS_NOMBRE = 'INSTITUTO MEXICANO DEL SEGURO SOCIAL';
 const MAX_ARCHIVO_PDF = 10 * 1024 * 1024;
 const AREA_GENERADORA_ADD_VALUE = '__agregar_area_generadora_penal__';
+const DELITO_ADD_VALUE = '__agregar_delito_penal__';
+const SIN_CATEGORIA_DELITO_VALUE = '__sin_categoria__';
 
 let catalogosPenal = {
     delegaciones: [],
     delitos: [],
+    categoriasDelito: [],
     areas: []
 };
 
@@ -100,6 +103,11 @@ function usuarioPuedeAgregarAreaGeneradoraPenal() {
     return ['admin', 'editor'].includes(String(usuario?.rol || '').toLowerCase());
 }
 
+function usuarioPuedeAgregarDelitoPenal() {
+    const usuario = obtenerUsuarioEdicionPenal();
+    return ['admin', 'editor'].includes(String(usuario?.rol || '').toLowerCase());
+}
+
 async function guardarAreaGeneradoraPenalApi(delegacionId, nombre) {
     const response = await fetch('api/penal/catalogs/saveAreaGeneradora.php', {
         method: 'POST',
@@ -121,6 +129,29 @@ async function guardarAreaGeneradoraPenalApi(delegacionId, nombre) {
     }
 
     return result.data?.area || null;
+}
+
+async function guardarDelitoPenalApi(categoriaId, nombre) {
+    const response = await fetch('api/penal/catalogs/saveDelito.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            categoria_id: categoriaId,
+            nombre
+        })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        const detail = result.errors?.detail ? `: ${result.errors.detail}` : '';
+        throw new Error((result.message || 'No se pudo guardar el delito') + detail);
+    }
+
+    return result.data?.delito || null;
 }
 
 function abrirModalAreaGeneradoraPenal() {
@@ -179,6 +210,90 @@ async function guardarNuevaAreaGeneradoraPenal() {
         cerrarModalAreaGeneradoraPenal();
     } catch (error) {
         await mostrarMensaje('No se pudo guardar', error.message || 'No se pudo guardar el área generadora penal.', 'error');
+    } finally {
+        if (boton) {
+            boton.disabled = false;
+            boton.textContent = textoOriginal;
+        }
+    }
+}
+
+function obtenerCategoriaDelitoSeleccionada() {
+    const value = $('#categoriaDelito')?.value || '';
+    if (!value || value === SIN_CATEGORIA_DELITO_VALUE) {
+        return null;
+    }
+
+    return (catalogosPenal.categoriasDelito || []).find(categoria => String(categoria.id) === String(value)) || null;
+}
+
+function abrirModalDelitoPenal() {
+    const categoria = obtenerCategoriaDelitoSeleccionada();
+
+    if (!categoria?.id) {
+        mostrarMensaje('Categoría requerida', 'Selecciona una categoría válida antes de agregar un delito.', 'error');
+        return;
+    }
+
+    const inputNombre = $('#nuevoDelitoNombre');
+    const inputCategoria = $('#nuevoDelitoCategoriaNombre');
+
+    if (inputNombre) {
+        inputNombre.value = '';
+    }
+
+    if (inputCategoria) {
+        inputCategoria.value = categoria.nombre || '';
+    }
+
+    const modal = $('#modalDelitoPenal');
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => inputNombre?.focus(), 50);
+    }
+}
+
+function cerrarModalDelitoPenal() {
+    const modal = $('#modalDelitoPenal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function guardarNuevoDelitoPenal() {
+    const categoria = obtenerCategoriaDelitoSeleccionada();
+    const input = $('#nuevoDelitoNombre');
+    const nombre = input?.value.trim() || '';
+    const boton = $('#btnGuardarDelitoPenal');
+
+    if (!categoria?.id || !nombre) {
+        await mostrarMensaje('Datos incompletos', 'Selecciona una categoría y captura el nombre del delito.', 'error');
+        return;
+    }
+
+    const textoOriginal = boton?.textContent || 'Guardar';
+
+    try {
+        if (boton) {
+            boton.disabled = true;
+            boton.textContent = 'Guardando...';
+        }
+
+        const delito = await guardarDelitoPenalApi(categoria.id, nombre);
+        if (delito) {
+            catalogosPenal.delitos.push(delito);
+            const categoriaActual = (catalogosPenal.categoriasDelito || []).find(item => String(item.id) === String(categoria.id));
+            if (categoriaActual) {
+                categoriaActual.delitos = Array.isArray(categoriaActual.delitos) ? categoriaActual.delitos : [];
+                categoriaActual.delitos.push(delito);
+                categoriaActual.delitos.sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' }));
+            }
+            cargarDelitosPorCategoria(delito.id);
+        }
+
+        cerrarModalDelitoPenal();
+    } catch (error) {
+        await mostrarMensaje('No se pudo guardar', error.message || 'No se pudo guardar el delito.', 'error');
     } finally {
         if (boton) {
             boton.disabled = false;
@@ -250,6 +365,84 @@ function filtrarAreasPorDelegacion(areaSeleccionada = '') {
     if (areaSeleccionada) {
         $('#areaGeneradora').value = String(areaSeleccionada);
     }
+}
+
+function cargarCategoriasDelito(categoriaSeleccionada = '') {
+    const select = $('#categoriaDelito');
+    if (!select) {
+        return;
+    }
+
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    (catalogosPenal.categoriasDelito || []).forEach(categoria => {
+        const option = document.createElement('option');
+        option.value = categoria.id === null ? SIN_CATEGORIA_DELITO_VALUE : String(categoria.id);
+        option.textContent = categoria.nombre || '';
+        select.appendChild(option);
+    });
+
+    if (categoriaSeleccionada) {
+        select.value = String(categoriaSeleccionada);
+    }
+}
+
+function cargarDelitosPorCategoria(delitoSeleccionado = '') {
+    const categoriaSelect = $('#categoriaDelito');
+    const delitoSelect = $('#delito');
+    if (!categoriaSelect || !delitoSelect) {
+        return;
+    }
+
+    const categoriaValue = categoriaSelect.value;
+    delitoSelect.innerHTML = '<option value="">Seleccione...</option>';
+
+    if (!categoriaValue) {
+        delitoSelect.disabled = true;
+        return;
+    }
+
+    const categoria = (catalogosPenal.categoriasDelito || []).find(item => {
+        const itemValue = item.id === null ? SIN_CATEGORIA_DELITO_VALUE : String(item.id);
+        return itemValue === categoriaValue;
+    });
+
+    (categoria?.delitos || []).forEach(delito => {
+        const option = document.createElement('option');
+        option.value = delito.id;
+        option.textContent = delito.nombre || '';
+        delitoSelect.appendChild(option);
+    });
+
+    if (usuarioPuedeAgregarDelitoPenal() && categoria?.id !== null) {
+        const option = document.createElement('option');
+        option.value = DELITO_ADD_VALUE;
+        option.textContent = '+ Agregar nuevo delito...';
+        delitoSelect.appendChild(option);
+    }
+
+    if (delitoSeleccionado) {
+        delitoSelect.value = String(delitoSeleccionado);
+    }
+
+    delitoSelect.disabled = false;
+}
+
+function obtenerCategoriaPorDelito(delitoId) {
+    const id = String(delitoId || '');
+    if (!id) {
+        return '';
+    }
+
+    const categoria = (catalogosPenal.categoriasDelito || []).find(item => (
+        Array.isArray(item.delitos) && item.delitos.some(delito => String(delito.id) === id)
+    ));
+
+    if (!categoria) {
+        return '';
+    }
+
+    return categoria.id === null ? SIN_CATEGORIA_DELITO_VALUE : String(categoria.id);
 }
 
 function syncCuantia() {
@@ -614,11 +807,13 @@ async function cargarCatalogos() {
     catalogosPenal = {
         delegaciones: data.delegaciones || [],
         delitos: data.delitos || [],
+        categoriasDelito: data.categorias_delito || [],
         areas: areasData.areas || []
     };
 
     llenarSelect($('#delegacion'), catalogosPenal.delegaciones);
-    llenarSelect($('#delito'), catalogosPenal.delitos);
+    cargarCategoriasDelito();
+    cargarDelitosPorCategoria();
     llenarSelect($('#areaGeneradora'), []);
 }
 
@@ -696,7 +891,9 @@ function poblarCaso(caso) {
     filtrarAreasPorDelegacion(caso.area_hechos_id || '');
 
     $('#fechaInicio').value = caso.fecha_presentacion_denuncia || caso.fecha_inicio || '';
-    $('#delito').value = caso.delito_id || '';
+    const categoriaDelito = obtenerCategoriaPorDelito(caso.delito_id);
+    cargarCategoriasDelito(categoriaDelito);
+    cargarDelitosPorCategoria(caso.delito_id || '');
     descomponerNumeroCarpeta(caso.numero_carpeta || caso.numero_expediente || '');
 
     $('#hechosVictimaDenunciante').value = caso.hechos_denunciante || '';
@@ -808,6 +1005,13 @@ function registrarEventos() {
             abrirModalAreaGeneradoraPenal();
         }
     });
+    $('#categoriaDelito')?.addEventListener('change', () => cargarDelitosPorCategoria());
+    $('#delito')?.addEventListener('change', () => {
+        if ($('#delito')?.value === DELITO_ADD_VALUE) {
+            $('#delito').value = '';
+            abrirModalDelitoPenal();
+        }
+    });
     $('#sinCuantificar')?.addEventListener('change', syncCuantia);
     $('#cuantiaMonto')?.addEventListener('input', aplicarFormatoMoneda);
 
@@ -836,6 +1040,20 @@ function registrarEventos() {
         if (event.key === 'Enter') {
             event.preventDefault();
             guardarNuevaAreaGeneradoraPenal();
+        }
+    });
+    $('#btnGuardarDelitoPenal')?.addEventListener('click', guardarNuevoDelitoPenal);
+    $('#btnCancelarDelitoPenal')?.addEventListener('click', cerrarModalDelitoPenal);
+    $('#btnCerrarDelitoPenal')?.addEventListener('click', cerrarModalDelitoPenal);
+    $('#modalDelitoPenal')?.addEventListener('click', (event) => {
+        if (event.target === event.currentTarget) {
+            cerrarModalDelitoPenal();
+        }
+    });
+    $('#nuevoDelitoNombre')?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            guardarNuevoDelitoPenal();
         }
     });
 }
