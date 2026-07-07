@@ -1457,10 +1457,15 @@ function obtenerAnioPenal(caso) {
 }
 
 function obtenerFaseActualPenal(caso) {
-    if (caso?.fecha_conocimiento_amp || caso?.fecha_conocimiento_fiscal) {
-        return 'Seguimiento penal';
+    if (caso?.ultima_fase_nombre) {
+        return caso.ultima_fase_nombre;
     }
-    return 'Registro inicial';
+
+    if (caso?.ultima_etapa_nombre) {
+        return caso.ultima_etapa_nombre;
+    }
+
+    return 'Sin actuaciones';
 }
 
 function tieneRequerimientosPendientesPenal(caso) {

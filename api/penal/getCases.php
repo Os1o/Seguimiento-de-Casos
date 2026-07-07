@@ -60,6 +60,9 @@ function mapPenalListCase(array $case): array
         'fecha_presentacion_denuncia' => $case['fecha_presentacion_denuncia'] ?? null,
         'delito_id' => isset($case['delito_id']) ? (int) $case['delito_id'] : null,
         'delito_nombre' => $case['delito_nombre'] ?? null,
+        'categoria_delito_nombre' => $case['categoria_delito_nombre'] ?? null,
+        'ultima_etapa_nombre' => $case['ultima_etapa_nombre'] ?? null,
+        'ultima_fase_nombre' => $case['ultima_fase_nombre'] ?? null,
         'denunciante' => $denunciantes,
         'probable_responsable' => $responsables,
         'qrr' => array_reduce($responsables, static fn(bool $carry, array $item): bool => $carry || !empty($item['es_qrr']), false),
@@ -108,6 +111,7 @@ try {
             pa.fecha_presentacion_denuncia,
             pa.delito_id,
             d.nombre AS delito_nombre,
+            cd.nombre AS categoria_delito_nombre,
             pa.sin_cuantificar,
             pa.cuantia_monto,
             pa.area_hechos_id,
@@ -123,6 +127,8 @@ try {
             u.nombre_completo AS abogado_responsable,
             pa.created_at,
             pa.updated_at,
+            ultima_actuacion.ultima_etapa_nombre,
+            ultima_actuacion.ultima_fase_nombre,
             EXISTS (
                 SELECT 1
                 FROM penal_requerimientos pr
@@ -141,12 +147,29 @@ try {
             ON delg.id = pa.delegacion_id
         LEFT JOIN delitos d
             ON d.id = pa.delito_id
+        LEFT JOIN categorias_delito cd
+            ON cd.id = d.categoria_id
         LEFT JOIN areas_penal a
             ON a.id = pa.area_hechos_id
         LEFT JOIN usuarios u
             ON u.id = pa.abogado_responsable_id
         LEFT JOIN penal_conocimiento_amp pca
             ON pca.asunto_id = pa.id
+        LEFT JOIN LATERAL (
+            SELECT
+                pce.nombre AS ultima_etapa_nombre,
+                pcf.nombre AS ultima_fase_nombre
+            FROM penal_actuaciones pact
+            INNER JOIN penal_catalogo_etapas pce
+                ON pce.id = pact.etapa_id
+            LEFT JOIN penal_catalogo_fases pcf
+                ON pcf.id = pact.fase_id
+            WHERE pact.asunto_id = pa.id
+              AND pact.activo = TRUE
+              AND pact.deleted_at IS NULL
+            ORDER BY pact.fecha_actuacion DESC, pact.id DESC
+            LIMIT 1
+        ) ultima_actuacion ON TRUE
         LEFT JOIN LATERAL (
             SELECT json_agg(
                 json_build_object(

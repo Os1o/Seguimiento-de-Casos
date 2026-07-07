@@ -60,6 +60,7 @@ try {
             pa.descripcion,
             pa.texto_complementario_estatus,
             pa.referencia_carpeta,
+            pa.es_actuacion_cierre,
             pa.created_at,
             pce.nombre AS etapa_nombre,
             pce.concluye_asunto,

@@ -86,6 +86,19 @@ function llenarResumenActuacionPenal(asunto) {
     }
 }
 
+function esAsuntoPenalConcluido(asunto) {
+    return String(asunto?.estatus_general || asunto?.estatus || '').toUpperCase() === 'CONCLUIDO';
+}
+
+function bloquearFormularioActuacionPenalConcluida() {
+    const form = document.getElementById('formRegistroActuacionPenal');
+    if (!form) return;
+
+    form.querySelectorAll('input, select, textarea, button[type="submit"]').forEach(element => {
+        element.disabled = true;
+    });
+}
+
 function cargarEtapasPenales(etapas) {
     catalogoEtapasPenal = Array.isArray(etapas) ? etapas : [];
     const select = document.getElementById('etapaActuacionPenal');
@@ -245,6 +258,7 @@ function renderizarHistorialActuacionesPenal(historial) {
     container.innerHTML = historialOrdenado.map((item, index) => {
         const documentos = Array.isArray(item.documentos) ? item.documentos : [];
         const documento = documentos[0] || null;
+        const esActuacionCierre = item.es_actuacion_cierre === true || item.es_actuacion_cierre === 't' || item.es_actuacion_cierre === '1';
         const complemento = item.texto_complementario_estatus
             ? `<div class="timeline-doc-meta">Complemento: ${escapeHtml(item.texto_complementario_estatus)}</div>`
             : '';
@@ -257,7 +271,10 @@ function renderizarHistorialActuacionesPenal(historial) {
         const usuario = item.usuario_nombre
             ? `<div class="timeline-doc-meta">Registró: ${escapeHtml(item.usuario_nombre)}</div>`
             : '';
-        const botonEliminar = item.id
+        const distintivoCierre = esActuacionCierre
+            ? '<div class="timeline-doc-meta">Distintivo: Cierre</div>'
+            : '';
+        const botonEliminar = item.id && !esActuacionCierre
             ? `<button type="button" class="timeline-delete-btn" onclick="confirmarEliminarActuacionPenal(${Number(item.id)})">Eliminar</button>`
             : '';
         const documentoHtml = documento
@@ -295,6 +312,7 @@ function renderizarHistorialActuacionesPenal(historial) {
                     ${complemento}
                     ${referencia}
                     ${fase}
+                    ${distintivoCierre}
                     ${usuario}
                     ${documentoHtml}
                 </div>
@@ -400,6 +418,10 @@ async function guardarActuacionPenal(event) {
     event.preventDefault();
 
     try {
+        if (esAsuntoPenalConcluido(asuntoActual)) {
+            throw new Error('La carpeta penal está concluida. Debe reabrirse antes de registrar nuevas actuaciones.');
+        }
+
         const payload = obtenerPayloadActuacionPenal();
         const formData = new FormData();
 
@@ -525,6 +547,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         cargarEtapasPenales(data.etapas || []);
         renderizarHistorialActuacionesPenal(historialActuacionesPenal);
         document.getElementById('etapaActuacionPenal')?.addEventListener('change', manejarCambioEtapaActuacionPenal);
+
+        if (esAsuntoPenalConcluido(asuntoActual)) {
+            bloquearFormularioActuacionPenalConcluida();
+            await window.appAlert?.({
+                title: 'Carpeta concluida',
+                message: 'La carpeta penal está concluida. Reábrela desde el detalle para registrar nuevas actuaciones.'
+            });
+        }
 
         const fechaInput = document.getElementById('fechaActuacionSecundaria');
         if (fechaInput) {

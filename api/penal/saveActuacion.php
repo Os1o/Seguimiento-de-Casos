@@ -135,6 +135,10 @@ try {
         sendError('Primero debe registrarse la fecha de conocimiento del AMP para habilitar las actuaciones penales', 400);
     }
 
+    if (strtoupper((string) ($asunto['estatus_general'] ?? '')) === 'CONCLUIDO') {
+        sendError('La carpeta penal esta concluida. Debe reabrirse antes de registrar nuevas actuaciones', 403);
+    }
+
     if ($fechaActuacion < (string) $asunto['fecha_presentacion_denuncia']) {
         sendError('La fecha de actuación no puede ser menor a la fecha de presentación de la denuncia / querella', 400);
     }
@@ -187,17 +191,21 @@ try {
             etapa_id,
             fase_id,
             descripcion,
-            usuario_id
+            usuario_id,
+            es_actuacion_cierre
         ) VALUES (
             :asunto_id,
             :fecha_actuacion,
             :etapa_id,
             :fase_id,
             :descripcion,
-            :usuario_id
+            :usuario_id,
+            :es_actuacion_cierre
         )
         RETURNING *
     ');
+
+    $esActuacionCierre = !empty($etapa['concluye_asunto']);
 
     $insertActuacion->execute([
         'asunto_id' => $asuntoId,
@@ -206,6 +214,7 @@ try {
         'fase_id' => $faseId,
         'descripcion' => $descripcion,
         'usuario_id' => $user['id'] ?? null,
+        'es_actuacion_cierre' => $esActuacionCierre ? 'true' : 'false',
     ]);
 
     $actuacion = $insertActuacion->fetch(PDO::FETCH_ASSOC);
@@ -294,6 +303,7 @@ try {
             'etapa_nombre' => $etapa['nombre'] ?? null,
             'fase_id' => $faseId,
             'fase_nombre' => $fase['nombre'] ?? null,
+            'es_actuacion_cierre' => $esActuacionCierre,
             'estatus_asunto' => $nuevoEstatus,
             'documento_cargado' => $documentoGuardado !== null,
         ],

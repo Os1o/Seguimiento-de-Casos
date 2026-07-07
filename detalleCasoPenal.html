@@ -70,6 +70,10 @@
                         <span class="info-value" id="delito">---</span>
                     </div>
                     <div class="info-item">
+                        <span class="info-label">Categoria del delito</span>
+                        <span class="info-value" id="categoriaDelito">---</span>
+                    </div>
+                    <div class="info-item">
                         <span class="info-label">Lugar de los hechos</span>
                         <span class="info-value" id="areaGeneradora">---</span>
                     </div>
@@ -161,6 +165,10 @@
                                 <span class="actuacion-label">Etapa</span>
                                 <span class="actuacion-valor actuacion-tipo" id="tipoActuacion">---</span>
                             </div>
+                            <div class="actuacion-campo">
+                                <span class="actuacion-label">Fase</span>
+                                <span class="actuacion-valor actuacion-tipo" id="faseActuacion">---</span>
+                            </div>
                         </div>
                         <div class="actuacion-desc-grupo">
                             <span class="actuacion-label">Descripcion de lo sucedido</span>
@@ -195,6 +203,32 @@
             </div>
         </div>
 
+        <div class="seccion-card" id="seccionMascPenal" style="display: none;">
+            <div class="seccion-title">
+                <h2>MASC</h2>
+            </div>
+            <div class="seccion-body">
+                <div class="info-grid info-grid-3">
+                    <div class="info-item">
+                        <span class="info-label">Fecha del convenio</span>
+                        <span class="info-value" id="mascFechaConvenio">---</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Cierra carpeta</span>
+                        <span class="info-value" id="mascCierraCarpeta">---</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Ultima actualizacion</span>
+                        <span class="info-value" id="mascFechaActualizacion">---</span>
+                    </div>
+                </div>
+                <div class="info-group">
+                    <h4 class="group-title">Descripcion del convenio</h4>
+                    <div class="actuacion-desc" id="mascDescripcion">---</div>
+                </div>
+            </div>
+        </div>
+
         <div class="seccion-card">
             <div class="seccion-title">
                 <h2>Documentos vinculados</h2>
@@ -219,6 +253,8 @@
             <a class="btn btn-actualizar" id="btnActualizar" href="registroActuacionPenal.html">
                 <span class="btn-icon">&#8635;</span> Actuacion penal
             </a>
+            <a class="btn btn-actualizar" id="btnMascPenal" href="mascPenal.html">Registrar MASC</a>
+            <button type="button" class="btn btn-secondary" id="btnReabrirCarpetaPenal" style="display: none;">Reabrir carpeta</button>
             <a class="btn btn-requerimientos" id="btnRequerimientos" href="listadoRequerimientosPenal.html">Requerimientos</a>
             <button type="button" class="btn btn-secondary" id="btnEliminar" onclick="eliminarCaso()">Eliminar</button>
         </div>

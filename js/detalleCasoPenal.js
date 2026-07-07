@@ -4,6 +4,7 @@
 
 let usuarioActual = null;
 let casoActual = null;
+let mascActual = null;
 let historialExpandido = false;
 const MAX_ACTUACIONES_VISIBLES = 5;
 
@@ -27,6 +28,10 @@ function setHTML(id, html) {
     const el = getEl(id);
     if (!el) return;
     el.innerHTML = html;
+}
+
+function penalDetalleBool(value) {
+    return value === true || value === 't' || value === 'true' || value === '1' || value === 1;
 }
 
 async function verificarSesion() {
@@ -117,6 +122,40 @@ async function obtenerCasoPenalDetalle(id) {
     }
 
     return result.data?.case || null;
+}
+
+async function obtenerMascPenalDetalle(id) {
+    const response = await fetch(`api/getPenalMasc.php?asunto_id=${encodeURIComponent(id)}`, {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudo cargar el MASC');
+    }
+
+    return result.data?.masc || null;
+}
+
+async function reabrirCarpetaPenalApi(id) {
+    const response = await fetch('api/reopenPenalCase.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ asunto_id: id })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudo reabrir la carpeta penal');
+    }
+
+    return result.data || {};
 }
 
 async function obtenerDocumentosPenalApi(expedienteId) {
@@ -351,6 +390,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     try {
         await cargarCatalogosPenalDetalle();
         casoActual = await obtenerCasoPenalDetalle(casoId);
+        mascActual = await obtenerMascPenalDetalle(casoId);
 
         if (!casoActual) {
             await window.appAlert?.({
@@ -364,6 +404,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const btnRegistroAmp = getEl('btnRegistroAmp');
         const btnActualizar = getEl('btnActualizar');
         const btnEliminar = getEl('btnEliminar');
+        const btnReabrirCarpetaPenal = getEl('btnReabrirCarpetaPenal');
 
         if (usuarioActual.rol === 'consulta') {
             if (btnRegistroAmp) btnRegistroAmp.style.display = 'none';
@@ -372,6 +413,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         } else if (usuarioActual.rol !== 'admin') {
             if (btnEliminar) btnEliminar.style.display = 'none';
         }
+
+        btnReabrirCarpetaPenal?.addEventListener('click', confirmarReabrirCarpetaPenal);
 
         await renderizarDetalle();
     } catch (error) {
@@ -395,6 +438,8 @@ async function renderizarDetalle() {
     const btnRegistroAmp = getEl('btnRegistroAmp');
     const btnActualizar = getEl('btnActualizar');
     const btnEditarDatosPenal = getEl('btnEditarDatosPenal');
+    const btnMascPenal = getEl('btnMascPenal');
+    const btnReabrirCarpetaPenal = getEl('btnReabrirCarpetaPenal');
 
     setText('breadcrumbExpediente', numeroCarpeta);
     setText('numeroExpediente', numeroCarpeta);
@@ -427,6 +472,8 @@ async function renderizarDetalle() {
         const puedeEditar = usuarioActual && usuarioActual.rol !== 'consulta';
         const esAdmin = usuarioActual?.rol === 'admin';
         const puedeEditarAmp = usuarioActual && (!tieneConocimientoAmp || esAdmin) && usuarioActual.rol !== 'consulta';
+        const estatusConcluido = String(caso.estatus || caso.estatus_general || '').toUpperCase() === 'CONCLUIDO';
+        const tieneMasc = Boolean(mascActual?.id);
 
         if (linkRequerimientos) linkRequerimientos.href = hrefRequerimientos;
         if (btnRequerimientos) btnRequerimientos.href = hrefRequerimientos;
@@ -440,13 +487,22 @@ async function renderizarDetalle() {
         }
         if (btnActualizar) {
             btnActualizar.href = hrefActuacion;
-            btnActualizar.style.display = puedeEditar && tieneConocimientoAmp ? '' : 'none';
+            btnActualizar.style.display = puedeEditar && tieneConocimientoAmp && !estatusConcluido ? '' : 'none';
+        }
+        if (btnMascPenal) {
+            btnMascPenal.href = `mascPenal.html?id=${encodeURIComponent(caso.id)}`;
+            btnMascPenal.textContent = tieneMasc ? 'Ver/Editar MASC' : 'Registrar MASC';
+            btnMascPenal.style.display = tieneMasc || (puedeEditar && !estatusConcluido) ? '' : 'none';
+        }
+        if (btnReabrirCarpetaPenal) {
+            btnReabrirCarpetaPenal.style.display = esAdmin && estatusConcluido ? '' : 'none';
         }
     }
 
     setText('delegacion', delegacion ? delegacion.nombre : '---');
     setText('fechaInicio', formatearFecha(caso.fecha_inicio || caso.fecha_presentacion_denuncia));
     setText('delito', obtenerNombreDelitoLocal(caso.delito_id) || caso.delito_nombre || '---');
+    setText('categoriaDelito', caso.categoria_delito_nombre || '---');
     setText('areaGeneradora', caso.area_generadora_nombre || caso.area_generadora || caso.lugar_hechos || '---');
     setText('cuantia', formatearCuantia(caso.cuantia, caso.sin_cuantificar));
     setText('hechosDenunciante', caso.hechos_denunciante || '---');
@@ -461,11 +517,13 @@ async function renderizarDetalle() {
     setText('fechaJudicializacion', formatearFecha(caso.fecha_judicializacion));
     setText('determinacionJudicial', caso.determinacion_judicial || '---');
     setText('resumenRequerimientosPenal', construirResumenRequerimientos(caso));
+    renderizarMascPenalDetalle();
 
     const seguimiento = caso.seguimiento;
     if (seguimiento && seguimiento.fecha_actuacion) {
         setText('fechaActuacion', formatearFecha(seguimiento.fecha_actuacion));
         setText('tipoActuacion', seguimiento.tipo_actuacion || '---');
+        setText('faseActuacion', seguimiento.fase_nombre || '---');
         setText('descripcionActuacion', seguimiento.descripcion || '---');
     } else {
         setHTML('ultimaActuacionCard', `
@@ -480,6 +538,22 @@ async function renderizarDetalle() {
         renderizarTimeline(),
         renderizarDocumentosPenalDetalle()
     ]);
+}
+
+function renderizarMascPenalDetalle() {
+    const seccion = getEl('seccionMascPenal');
+    if (!seccion) return;
+
+    if (!mascActual?.id) {
+        seccion.style.display = 'none';
+        return;
+    }
+
+    seccion.style.display = '';
+    setText('mascFechaConvenio', formatearFecha(mascActual.fecha_convenio));
+    setText('mascCierraCarpeta', penalDetalleBool(mascActual.cierra_carpeta) ? 'Si' : 'No');
+    setText('mascFechaActualizacion', formatearFecha(mascActual.updated_at || mascActual.created_at));
+    setText('mascDescripcion', mascActual.descripcion || '---');
 }
 
 async function renderizarTimeline() {
@@ -527,6 +601,8 @@ async function renderizarTimeline() {
 
     container.innerHTML = visibles.map((seguimiento, index) => {
         const documento = (documentosPorSeguimiento[seguimiento.id] || [])[0] || null;
+        const esActuacionCierre = seguimiento.es_actuacion_cierre === true || seguimiento.es_actuacion_cierre === 't' || seguimiento.es_actuacion_cierre === '1';
+        const puedeEliminarActuacion = usuarioActual?.rol !== 'consulta' && !esActuacionCierre;
 
         return `
             <div class="timeline-item ${index === visibles.length - 1 ? 'is-last' : ''}">
@@ -539,10 +615,14 @@ async function renderizarTimeline() {
                             <span class="timeline-date-pill">${formatearFecha(seguimiento.fecha_actuacion)}</span>
                             <span class="timeline-step">Actuación ${seguimiento.numeroActuacion}</span>
                         </div>
-                        <span class="timeline-type-chip">${seguimiento.tipo_actuacion || 'Sin tipo'}</span>
+                        <div class="timeline-chip-group">
+                            <span class="timeline-type-chip">${seguimiento.tipo_actuacion || 'Sin tipo'}</span>
+                            ${seguimiento.fase_nombre ? `<span class="timeline-phase-chip">${seguimiento.fase_nombre}</span>` : ''}
+                            ${esActuacionCierre ? '<span class="timeline-close-chip">Cierre</span>' : ''}
+                        </div>
                     </div>
                     <div class="timeline-desc">${seguimiento.descripcion || 'Sin descripción registrada.'}</div>
-                    ${(documento || usuarioActual?.rol !== 'consulta') ? `
+                    ${(documento || puedeEliminarActuacion) ? `
                     <div class="timeline-card-actions timeline-card-actions-between">
                         ${documento ? `
                         <a class="timeline-doc-link" href="${window.construirUrlApiConToken?.(`api/downloadPenalDocument.php?id=${documento.id}&tipo=${encodeURIComponent(documento.documento_tipo || '')}`) || `api/downloadPenalDocument.php?id=${documento.id}&tipo=${encodeURIComponent(documento.documento_tipo || '')}`}" target="_blank" rel="noopener noreferrer">
@@ -550,7 +630,7 @@ async function renderizarTimeline() {
                         </a>
                         <span class="timeline-doc-meta">${documento.nombre_original} - ${formatearTamanoArchivo(documento.tamano_bytes)}</span>
                         ` : ''}
-                        ${usuarioActual?.rol !== 'consulta' ? `
+                        ${puedeEliminarActuacion ? `
                         <button type="button" class="timeline-delete-btn" onclick="confirmarEliminarSeguimientoPenalDetalle(${seguimiento.id})">
                             Eliminar
                         </button>
@@ -723,6 +803,36 @@ async function confirmarEliminarSeguimientoPenalDetalle(trackingId) {
 
 window.confirmarEliminarSeguimientoPenalDetalle = confirmarEliminarSeguimientoPenalDetalle;
 window.toggleHistorialPenalDetalle = toggleHistorialPenalDetalle;
+
+async function confirmarReabrirCarpetaPenal() {
+    if (!casoActual?.id) return;
+
+    const confirmacion = await window.appConfirm?.({
+        title: 'Reabrir carpeta penal',
+        message: '¿Estás seguro de reabrir esta carpeta? Regresará a TRÁMITE y permitirá nuevas actuaciones. La actuación de cierre permanecerá en el historial.',
+        confirmText: 'Reabrir',
+        cancelText: 'Cancelar'
+    });
+
+    if (!confirmacion) return;
+
+    try {
+        await reabrirCarpetaPenalApi(casoActual.id);
+        casoActual = await obtenerCasoPenalDetalle(casoActual.id);
+        mascActual = await obtenerMascPenalDetalle(casoActual.id);
+        await renderizarDetalle();
+        await window.appAlert?.({
+            title: 'Carpeta reabierta',
+            message: 'La carpeta penal regresó a trámite correctamente.'
+        });
+    } catch (error) {
+        console.error('Error al reabrir carpeta penal:', error);
+        await window.appAlert?.({
+            title: 'No se pudo reabrir',
+            message: error.message || 'Ocurrió un problema al reabrir la carpeta penal.'
+        });
+    }
+}
 
 function eliminarCaso() {
     window.appConfirm?.({

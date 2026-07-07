@@ -50,6 +50,8 @@ try {
             pa.fecha_presentacion_denuncia,
             pa.delito_id,
             d.nombre AS delito_nombre,
+            d.categoria_id AS categoria_delito_id,
+            cd.nombre AS categoria_delito_nombre,
             pa.hechos_denunciante,
             pa.sin_cuantificar,
             pa.cuantia_monto,
@@ -71,6 +73,8 @@ try {
             ON delg.id = pa.delegacion_id
         LEFT JOIN delitos d
             ON d.id = pa.delito_id
+        LEFT JOIN categorias_delito cd
+            ON cd.id = d.categoria_id
         LEFT JOIN areas_penal a
             ON a.id = pa.area_hechos_id
         LEFT JOIN usuarios u
@@ -140,6 +144,8 @@ try {
             pa.asunto_id AS expediente_id,
             pa.fecha_actuacion,
             pce.nombre AS tipo_actuacion,
+            pcf.nombre AS fase_nombre,
+            pa.es_actuacion_cierre,
             pa.descripcion,
             pa.created_at,
             pa.texto_complementario_estatus,
@@ -147,6 +153,8 @@ try {
         FROM penal_actuaciones pa
         INNER JOIN penal_catalogo_etapas pce
             ON pce.id = pa.etapa_id
+        LEFT JOIN penal_catalogo_fases pcf
+            ON pcf.id = pa.fase_id
         WHERE pa.asunto_id = :asunto_id
           AND pa.activo = TRUE
           AND pa.deleted_at IS NULL

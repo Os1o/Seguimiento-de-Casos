@@ -31,6 +31,7 @@ try {
             pa.id,
             pa.asunto_id,
             pa.fecha_actuacion,
+            pa.es_actuacion_cierre,
             pce.nombre AS etapa_nombre,
             p.numero_carpeta,
             p.delegacion_id
@@ -54,6 +55,10 @@ try {
 
     if (!$actuacion) {
         sendError('Actuacion penal no encontrada', 404);
+    }
+
+    if (!empty($actuacion['es_actuacion_cierre'])) {
+        sendError('La actuacion de cierre no puede eliminarse. Reabre la carpeta si necesitas registrar nuevas actuaciones', 403);
     }
 
     $asuntoId = (int) ($actuacion['asunto_id'] ?? 0);
