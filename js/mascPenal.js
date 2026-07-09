@@ -160,6 +160,10 @@ function renderizarMasc() {
     actualizarAvisoCierreMasc();
 }
 
+function tieneFechaConocimientoAmpMasc(asunto) {
+    return Boolean(asunto?.fecha_conocimiento_amp || asunto?.fecha_conocimiento_fiscal);
+}
+
 function obtenerPayloadMasc() {
     const fechaConvenio = mascGet('fechaConvenioMasc')?.value || '';
     const descripcion = mascGet('descripcionMasc')?.value?.trim() || '';
@@ -243,11 +247,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         asuntoMascActual = await obtenerCasoMasc(asuntoId);
-        mascActual = await obtenerMasc(asuntoId);
 
         if (!asuntoMascActual) {
             throw new Error('No se encontró el asunto penal');
         }
+
+        if (!tieneFechaConocimientoAmpMasc(asuntoMascActual)) {
+            await window.appAlert?.({
+                title: 'Registro AMP requerido',
+                message: 'No se puede acceder a MASC sin registrar la fecha de conocimiento del AMP.'
+            });
+            window.location.href = 'penal.html';
+            return;
+        }
+
+        mascActual = await obtenerMasc(asuntoId);
 
         renderizarMasc();
         mascGet('descripcionMasc')?.addEventListener('input', actualizarContadorMasc);

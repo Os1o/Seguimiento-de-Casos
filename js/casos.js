@@ -1178,7 +1178,7 @@ function renderizarTabla() {
                             <\/div>` : ''}
                             ${usuarioActual && usuarioActual.rol !== 'consulta' && !esAcumulado ? `
                             <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
-                                Actualizar seguimiento
+                                Seguimiento
                             <\/div>` : ''}
                             ${usuarioActual && usuarioActual.rol !== 'consulta' ? `
                             <div class="menu-item" onclick="abrirModalAcumular(${caso.id})">

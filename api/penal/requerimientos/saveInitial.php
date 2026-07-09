@@ -177,10 +177,16 @@ try {
     $pdo = getDatabaseConnection();
 
     $stmt = $pdo->prepare('
-        SELECT id, delegacion_id, numero_carpeta
-        FROM penal_asuntos
-        WHERE id = :id
-          AND deleted_at IS NULL
+        SELECT
+            pa.id,
+            pa.delegacion_id,
+            pa.numero_carpeta,
+            COALESCE(pca.fecha_conocimiento_amp, pa.fecha_conocimiento_amp) AS fecha_conocimiento_amp
+        FROM penal_asuntos pa
+        LEFT JOIN penal_conocimiento_amp pca
+            ON pca.asunto_id = pa.id
+        WHERE pa.id = :id
+          AND pa.deleted_at IS NULL
         LIMIT 1
     ');
     $stmt->execute(['id' => $payload['asunto_id']]);
@@ -191,6 +197,10 @@ try {
     }
 
     ensureWriteDelegacionAccess($user, isset($asunto['delegacion_id']) ? (int) $asunto['delegacion_id'] : null);
+
+    if (empty($asunto['fecha_conocimiento_amp'])) {
+        sendError('Es necesario registrar la fecha de conocimiento del AMP antes de gestionar Requerimientos', 400);
+    }
 
     $finalAbsolutePath = null;
     $finalRelativePath = null;

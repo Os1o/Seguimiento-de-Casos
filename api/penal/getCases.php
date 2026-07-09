@@ -209,6 +209,16 @@ try {
         $params['delegacionId'] = $delegacionId;
     }
 
+    if (
+        ($user['rol'] ?? null) === 'editor'
+        && isAbogadoUser($user)
+        && !isJefeUser($user)
+        && !hasGlobalScope($user)
+    ) {
+        $sql .= ' AND pa.abogado_responsable_id = :abogadoResponsableId';
+        $params['abogadoResponsableId'] = (int) ($user['id'] ?? 0);
+    }
+
     $sql .= ' ORDER BY pa.updated_at DESC NULLS LAST, pa.id DESC';
 
     $stmt = $pdo->prepare($sql);

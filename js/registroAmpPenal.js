@@ -211,7 +211,7 @@ async function guardarRegistroAmp(event) {
             message: 'La fecha de conocimiento del AMP se guardó correctamente.'
         });
 
-        window.location.href = `detalleCasoPenal.html?id=${asuntoAmpActual.id}`;
+        window.location.href = 'penal.html';
     } catch (error) {
         console.error('Error al guardar registro AMP:', error);
 

@@ -197,10 +197,13 @@ try {
             pa.delegacion_id,
             pa.numero_carpeta,
             pa.fecha_presentacion_denuncia,
+            COALESCE(pca.fecha_conocimiento_amp, pa.fecha_conocimiento_amp) AS fecha_conocimiento_amp,
             pa.estatus_general,
             d.nombre AS delito_nombre,
             delg.nombre AS delegacion_nombre
         FROM penal_asuntos pa
+        LEFT JOIN penal_conocimiento_amp pca
+            ON pca.asunto_id = pa.id
         LEFT JOIN delitos d
             ON d.id = pa.delito_id
         LEFT JOIN delegaciones delg
@@ -299,6 +302,7 @@ try {
             'id' => (int) $case['id'],
             'numero_carpeta' => (string) $case['numero_carpeta'],
             'fecha_presentacion_denuncia' => $case['fecha_presentacion_denuncia'],
+            'fecha_conocimiento_amp' => $case['fecha_conocimiento_amp'],
             'estatus_general' => (string) ($case['estatus_general'] ?? ''),
             'delito_nombre' => (string) ($case['delito_nombre'] ?? ''),
             'delegacion_nombre' => (string) ($case['delegacion_nombre'] ?? ''),

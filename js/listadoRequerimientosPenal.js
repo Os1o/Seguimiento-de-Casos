@@ -106,6 +106,18 @@ function renderResumenAsunto(asunto) {
     `;
 }
 
+function tieneFechaConocimientoAmpRequerimientos(asunto) {
+    return Boolean(asunto?.fecha_conocimiento_amp || asunto?.fecha_conocimiento_fiscal);
+}
+
+async function bloquearAccesoRequerimientosSinAmp() {
+    await mostrarAlertaListadoRequerimientos(
+        'Registro AMP requerido',
+        'No se puede acceder a Requerimientos sin registrar la fecha de conocimiento del AMP.'
+    );
+    window.location.href = 'penal.html';
+}
+
 function renderEstadisticas(stats) {
     return `
         <article class="card penal-req-list-stat">
@@ -629,12 +641,23 @@ async function cargarListadoRequerimientos(asuntoId, options = {}) {
         });
         const data = await response.json();
 
+        if (!response.ok && String(data.message || '').includes('fecha de conocimiento del AMP')) {
+            await bloquearAccesoRequerimientosSinAmp();
+            return;
+        }
+
         if (!response.ok || !data.ok) {
             throw new Error(data.message || 'No se pudo cargar el listado de requerimientos.');
         }
 
         const payload = data.data || {};
         const permisos = payload.permisos || {};
+        const asunto = payload.asunto || {};
+
+        if (!tieneFechaConocimientoAmpRequerimientos(asunto)) {
+            await bloquearAccesoRequerimientosSinAmp();
+            return;
+        }
 
         permisosListadoRequerimientos = {
             puedeEditar: Boolean(permisos.puede_editar_requerimientos || permisos.puede_modificar_cerrados),
@@ -648,7 +671,7 @@ async function cargarListadoRequerimientos(asuntoId, options = {}) {
         }
 
         if (summaryGrid) {
-            summaryGrid.innerHTML = renderResumenAsunto(payload.asunto || {});
+            summaryGrid.innerHTML = renderResumenAsunto(asunto);
         }
 
         if (statsGrid) {

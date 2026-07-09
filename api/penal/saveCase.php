@@ -36,6 +36,9 @@ function normalizePenalNewCasePayload(): array
         'cuantia_monto' => trim((string) ($_POST['cuantia_monto'] ?? '')),
         'escenario_denunciante' => trim((string) ($_POST['escenario_denunciante'] ?? '')),
         'coadyuvancia' => isset($_POST['coadyuvancia']) && (string) $_POST['coadyuvancia'] === '1',
+        'abogado_responsable_id' => isset($_POST['abogado_responsable_id']) && $_POST['abogado_responsable_id'] !== ''
+            ? (int) $_POST['abogado_responsable_id']
+            : null,
         'documento_inicial_observaciones' => trim((string) ($_POST['documento_inicial_observaciones'] ?? '')),
         'denunciantes' => parsePostedJsonArray('denunciantes'),
         'probables_responsables' => parsePostedJsonArray('probables_responsables'),
@@ -248,6 +251,7 @@ function validateNewPenalCasePayload(PDO $pdo, array $user, array $payload): arr
     }
 
     ensureWriteDelegacionAccess($user, $payload['delegacion_id']);
+    $payload['abogado_responsable_id'] = resolveAndValidatePenalResponsibleLawyer($pdo, $user, $payload);
 
     $stmt = $pdo->prepare('
         SELECT id
@@ -294,6 +298,50 @@ function validateNewPenalCasePayload(PDO $pdo, array $user, array $payload): arr
     }
 
     return $payload;
+}
+
+function resolveAndValidatePenalResponsibleLawyer(PDO $pdo, array $user, array $payload): int
+{
+    $lawyerId = isset($payload['abogado_responsable_id']) ? (int) $payload['abogado_responsable_id'] : 0;
+
+    if (($user['rol'] ?? null) === 'editor' && isAbogadoUser($user) && !isJefeUser($user)) {
+        $lawyerId = (int) ($user['id'] ?? 0);
+    }
+
+    if ($lawyerId <= 0) {
+        sendError('Debe seleccionar un abogado responsable', 400);
+    }
+
+    $stmt = $pdo->prepare('
+        SELECT id, delegacion_id
+        FROM usuarios
+        WHERE id = :id
+          AND activo = TRUE
+          AND es_abogado = TRUE
+          AND permiso_penal = TRUE
+        LIMIT 1
+    ');
+    $stmt->execute(['id' => $lawyerId]);
+    $lawyer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$lawyer) {
+        sendError('El abogado responsable seleccionado no es valido', 400);
+    }
+
+    if (!isAdminUser($user)) {
+        $caseDelegacionId = isset($payload['delegacion_id']) ? (int) $payload['delegacion_id'] : null;
+        $lawyerDelegacionId = isset($lawyer['delegacion_id']) ? (int) $lawyer['delegacion_id'] : null;
+
+        if ($caseDelegacionId === null || $lawyerDelegacionId === null || $caseDelegacionId !== $lawyerDelegacionId) {
+            sendError('El abogado responsable debe pertenecer a la misma JSJ del asunto', 400);
+        }
+
+        if (($user['rol'] ?? null) === 'editor' && isAbogadoUser($user) && !isJefeUser($user) && (int) ($user['id'] ?? 0) !== $lawyerId) {
+            sendError('No puedes asignar un abogado responsable distinto a tu usuario', 403);
+        }
+    }
+
+    return $lawyerId;
 }
 
 function buildStoredPdfNames(string $originalName): array
@@ -371,7 +419,7 @@ try {
             :escenario_denunciante,
             :coadyuvancia,
             :estatus_general,
-            NULL
+            :abogado_responsable_id
         )
         RETURNING *
     ');
@@ -390,6 +438,7 @@ try {
         'escenario_denunciante' => $payload['escenario_denunciante'],
         'coadyuvancia' => toPgBool($payload['coadyuvancia']),
         'estatus_general' => 'TRAMITE',
+        'abogado_responsable_id' => $payload['abogado_responsable_id'],
     ]);
 
     $asunto = $insertAsunto->fetch(PDO::FETCH_ASSOC);

@@ -20,11 +20,16 @@ try {
     $pdo = getDatabaseConnection();
 
     $caseStmt = $pdo->prepare('
-        SELECT id, delegacion_id
-        FROM penal_asuntos
-        WHERE id = :id
-          AND activo = TRUE
-          AND deleted_at IS NULL
+        SELECT
+            pa.id,
+            pa.delegacion_id,
+            COALESCE(pca.fecha_conocimiento_amp, pa.fecha_conocimiento_amp) AS fecha_conocimiento_amp
+        FROM penal_asuntos pa
+        LEFT JOIN penal_conocimiento_amp pca
+            ON pca.asunto_id = pa.id
+        WHERE pa.id = :id
+          AND pa.activo = TRUE
+          AND pa.deleted_at IS NULL
         LIMIT 1
     ');
     $caseStmt->execute(['id' => $asuntoId]);

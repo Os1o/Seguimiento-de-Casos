@@ -146,9 +146,16 @@ try {
     }
 
     $stmt = $pdo->prepare(
-        'SELECT r.id, r.asunto_id, r.folio_referencia, a.delegacion_id, a.numero_carpeta
+        'SELECT
+             r.id,
+             r.asunto_id,
+             r.folio_referencia,
+             a.delegacion_id,
+             a.numero_carpeta,
+             COALESCE(pca.fecha_conocimiento_amp, a.fecha_conocimiento_amp) AS fecha_conocimiento_amp
            FROM penal_requerimientos r
            INNER JOIN penal_asuntos a ON a.id = r.asunto_id
+           LEFT JOIN penal_conocimiento_amp pca ON pca.asunto_id = a.id
           WHERE r.id = :id
             AND r.activo = TRUE
             AND a.deleted_at IS NULL'
@@ -161,6 +168,10 @@ try {
     }
 
     ensureWriteDelegacionAccess($user, (int)$requerimiento['delegacion_id']);
+
+    if (empty($requerimiento['fecha_conocimiento_amp'])) {
+        sendError('Es necesario registrar la fecha de conocimiento del AMP antes de gestionar Requerimientos', 400);
+    }
 
     $existingContestacionStmt = $pdo->prepare(
         'SELECT

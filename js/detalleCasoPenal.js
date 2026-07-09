@@ -11,7 +11,8 @@ const MAX_ACTUACIONES_VISIBLES = 5;
 let catalogos = {
     delegaciones: [],
     delitos: [],
-    estadosProcesales: []
+    estadosProcesales: [],
+    abogadosResponsables: []
 };
 
 function getEl(id) {
@@ -58,6 +59,8 @@ async function verificarSesion() {
                 delegacion_id: user.delegacionId ?? null,
                 permiso_civil_mercantil: Boolean(user.permisoCivilMercantil),
                 permiso_penal: Boolean(user.permisoPenal),
+                es_abogado: Boolean(user.esAbogado),
+                es_jefe: Boolean(user.esJefe),
                 session_token: user.sessionToken ?? ''
             };
 
@@ -105,8 +108,64 @@ async function cargarCatalogosPenalDetalle() {
     catalogos = {
         delegaciones: data.delegaciones || [],
         delitos: data.delitos || [],
-        estadosProcesales: data.estadosProcesales || []
+        estadosProcesales: data.estadosProcesales || [],
+        abogadosResponsables: []
     };
+}
+
+function usuarioPuedeReasignarAbogadoPenal() {
+    if (!usuarioActual || !casoActual) {
+        return false;
+    }
+
+    if (usuarioActual.rol === 'admin') {
+        return true;
+    }
+
+    return usuarioActual.rol === 'editor'
+        && Boolean(usuarioActual.es_jefe || usuarioActual.esJefe)
+        && Number(usuarioActual.delegacion_id || 0) === Number(casoActual.delegacion_id || 0);
+}
+
+async function cargarAbogadosResponsablesPenalDetalle() {
+    if ((catalogos.abogadosResponsables || []).length > 0) {
+        return catalogos.abogadosResponsables;
+    }
+
+    const response = await fetch('api/penal/getNewCaseCatalogs.php', {
+        method: 'GET',
+        credentials: 'same-origin'
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudieron cargar los abogados responsables');
+    }
+
+    catalogos.abogadosResponsables = result.data?.abogadosResponsables || [];
+    return catalogos.abogadosResponsables;
+}
+
+async function reasignarAbogadoPenalApi(caseId, abogadoResponsableId) {
+    const response = await fetch('api/reassignPenalLawyer.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            case_id: caseId,
+            abogado_responsable_id: abogadoResponsableId
+        })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+        throw new Error(result.message || 'No se pudo reasignar el abogado responsable');
+    }
+
+    return result.data || {};
 }
 
 async function obtenerCasoPenalDetalle(id) {
@@ -405,6 +464,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const btnActualizar = getEl('btnActualizar');
         const btnEliminar = getEl('btnEliminar');
         const btnReabrirCarpetaPenal = getEl('btnReabrirCarpetaPenal');
+        const btnReasignarAbogadoPenal = getEl('btnReasignarAbogadoPenal');
 
         if (usuarioActual.rol === 'consulta') {
             if (btnRegistroAmp) btnRegistroAmp.style.display = 'none';
@@ -415,6 +475,15 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
 
         btnReabrirCarpetaPenal?.addEventListener('click', confirmarReabrirCarpetaPenal);
+        btnReasignarAbogadoPenal?.addEventListener('click', abrirModalReasignarAbogadoPenal);
+        getEl('btnGuardarReasignarAbogadoPenal')?.addEventListener('click', guardarReasignacionAbogadoPenal);
+        getEl('btnCancelarReasignarAbogadoPenal')?.addEventListener('click', cerrarModalReasignarAbogadoPenal);
+        getEl('btnCerrarReasignarAbogadoPenal')?.addEventListener('click', cerrarModalReasignarAbogadoPenal);
+        getEl('modalReasignarAbogadoPenal')?.addEventListener('click', (event) => {
+            if (event.target === event.currentTarget) {
+                cerrarModalReasignarAbogadoPenal();
+            }
+        });
 
         await renderizarDetalle();
     } catch (error) {
@@ -440,6 +509,7 @@ async function renderizarDetalle() {
     const btnEditarDatosPenal = getEl('btnEditarDatosPenal');
     const btnMascPenal = getEl('btnMascPenal');
     const btnReabrirCarpetaPenal = getEl('btnReabrirCarpetaPenal');
+    const btnReasignarAbogadoPenal = getEl('btnReasignarAbogadoPenal');
 
     setText('breadcrumbExpediente', numeroCarpeta);
     setText('numeroExpediente', numeroCarpeta);
@@ -491,11 +561,14 @@ async function renderizarDetalle() {
         }
         if (btnMascPenal) {
             btnMascPenal.href = `mascPenal.html?id=${encodeURIComponent(caso.id)}`;
-            btnMascPenal.textContent = tieneMasc ? 'Ver/Editar MASC' : 'Registrar MASC';
-            btnMascPenal.style.display = tieneMasc || (puedeEditar && !estatusConcluido) ? '' : 'none';
+            btnMascPenal.textContent = 'MASC';
+            btnMascPenal.style.display = (tieneMasc && esAdmin) || (!tieneMasc && puedeEditar && !estatusConcluido) ? '' : 'none';
         }
         if (btnReabrirCarpetaPenal) {
             btnReabrirCarpetaPenal.style.display = esAdmin && estatusConcluido ? '' : 'none';
+        }
+        if (btnReasignarAbogadoPenal) {
+            btnReasignarAbogadoPenal.style.display = usuarioPuedeReasignarAbogadoPenal() ? '' : 'none';
         }
     }
 
@@ -504,6 +577,7 @@ async function renderizarDetalle() {
     setText('delito', obtenerNombreDelitoLocal(caso.delito_id) || caso.delito_nombre || '---');
     setText('categoriaDelito', caso.categoria_delito_nombre || '---');
     setText('areaGeneradora', caso.area_generadora_nombre || caso.area_generadora || caso.lugar_hechos || '---');
+    setText('abogadoResponsable', caso.abogado_responsable || caso.abogado_responsable_nombre || '---');
     setText('cuantia', formatearCuantia(caso.cuantia, caso.sin_cuantificar));
     setText('hechosDenunciante', caso.hechos_denunciante || '---');
 
@@ -554,6 +628,86 @@ function renderizarMascPenalDetalle() {
     setText('mascCierraCarpeta', penalDetalleBool(mascActual.cierra_carpeta) ? 'Si' : 'No');
     setText('mascFechaActualizacion', formatearFecha(mascActual.updated_at || mascActual.created_at));
     setText('mascDescripcion', mascActual.descripcion || '---');
+}
+
+async function abrirModalReasignarAbogadoPenal() {
+    if (!usuarioPuedeReasignarAbogadoPenal()) {
+        return;
+    }
+
+    try {
+        const abogados = await cargarAbogadosResponsablesPenalDetalle();
+        const select = getEl('selectReasignarAbogadoPenal');
+        const actual = getEl('reasignarAbogadoActualPenal');
+
+        if (actual) {
+            actual.value = casoActual?.abogado_responsable || casoActual?.abogado_responsable_nombre || 'Sin asignar';
+        }
+
+        if (select) {
+            select.innerHTML = '<option value="">Seleccione...</option>';
+            abogados.forEach((abogado) => {
+                const option = document.createElement('option');
+                option.value = String(abogado.id);
+                option.textContent = abogado.nombre_completo || abogado.usuario || `Usuario ${abogado.id}`;
+                select.appendChild(option);
+            });
+            select.value = casoActual?.abogado_responsable_id ? String(casoActual.abogado_responsable_id) : '';
+        }
+
+        const modal = getEl('modalReasignarAbogadoPenal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    } catch (error) {
+        console.error('No se pudieron cargar abogados penales:', error);
+        await window.appAlert?.({
+            title: 'No se pudo cargar el catálogo',
+            message: error.message || 'No se pudieron cargar los abogados responsables.'
+        });
+    }
+}
+
+function cerrarModalReasignarAbogadoPenal() {
+    const modal = getEl('modalReasignarAbogadoPenal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function guardarReasignacionAbogadoPenal() {
+    const select = getEl('selectReasignarAbogadoPenal');
+    const abogadoId = parseInt(select?.value || '', 10);
+
+    if (!casoActual?.id || !abogadoId) {
+        await window.appAlert?.({
+            title: 'Datos incompletos',
+            message: 'Selecciona el nuevo abogado responsable.'
+        });
+        return;
+    }
+
+    if (abogadoId === parseInt(casoActual.abogado_responsable_id || 0, 10)) {
+        cerrarModalReasignarAbogadoPenal();
+        return;
+    }
+
+    try {
+        await reasignarAbogadoPenalApi(casoActual.id, abogadoId);
+        cerrarModalReasignarAbogadoPenal();
+        await window.appAlert?.({
+            title: 'Cambios guardados',
+            message: 'El abogado responsable se reasignó correctamente.'
+        });
+        casoActual = await obtenerCasoPenalDetalle(casoActual.id);
+        await renderizarDetalle();
+    } catch (error) {
+        console.error('No se pudo reasignar abogado penal:', error);
+        await window.appAlert?.({
+            title: 'No se pudo reasignar',
+            message: error.message || 'No se pudo reasignar el abogado responsable.'
+        });
+    }
 }
 
 async function renderizarTimeline() {

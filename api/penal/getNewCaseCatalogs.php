@@ -29,20 +29,47 @@ try {
            AND d.activo = TRUE
         WHERE 1 = 1
     ';
+    $abogadosSql = '
+        SELECT
+            u.id,
+            u.nombre_completo,
+            u.usuario,
+            u.delegacion_id,
+            d.nombre AS delegacion_nombre,
+            u.es_abogado,
+            u.es_jefe,
+            u.rol
+        FROM usuarios u
+        LEFT JOIN delegaciones d
+            ON d.id = u.delegacion_id
+        WHERE u.activo = TRUE
+          AND u.es_abogado = TRUE
+          AND u.permiso_penal = TRUE
+    ';
 
     $params = [];
+    $abogadosParams = [];
 
     if (!hasGlobalScope($user) && $userDelegacionId !== null) {
         $delegacionesSql .= ' AND d.id = :delegacionId';
         $areasSql .= ' AND a.delegacion_id = :delegacionId';
+        $abogadosSql .= ' AND u.delegacion_id = :delegacionId';
         $params['delegacionId'] = $userDelegacionId;
+        $abogadosParams['delegacionId'] = $userDelegacionId;
+    }
+
+    if (($user['rol'] ?? null) === 'editor' && isAbogadoUser($user) && !isJefeUser($user)) {
+        $abogadosSql .= ' AND u.id = :abogadoUsuarioId';
+        $abogadosParams['abogadoUsuarioId'] = (int) ($user['id'] ?? 0);
     }
 
     $delegacionesSql .= ' ORDER BY d.nombre ASC, d.id ASC';
     $areasSql .= ' ORDER BY a.nombre ASC, a.id ASC';
+    $abogadosSql .= ' ORDER BY u.nombre_completo ASC, u.id ASC';
 
     $delegacionesStmt = $pdo->prepare($delegacionesSql);
     $areasStmt = $pdo->prepare($areasSql);
+    $abogadosStmt = $pdo->prepare($abogadosSql);
     $categoriasStmt = $pdo->query('
         SELECT
             cd.id,
@@ -71,6 +98,7 @@ try {
 
     $delegacionesStmt->execute($params);
     $areasStmt->execute($params);
+    $abogadosStmt->execute($abogadosParams);
     $categorias = $categoriasStmt->fetchAll(PDO::FETCH_ASSOC);
     $delitos = $delitosStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -105,6 +133,7 @@ try {
     sendSuccess('Catalogos de nuevo asunto penal cargados correctamente', [
         'delegaciones' => $delegacionesStmt->fetchAll(),
         'areas' => $areasStmt->fetchAll(),
+        'abogadosResponsables' => $abogadosStmt->fetchAll(),
         'categorias_delito' => $categoriasDelito,
         'delitos' => $delitos,
     ]);

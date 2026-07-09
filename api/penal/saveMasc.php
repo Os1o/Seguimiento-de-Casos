@@ -49,11 +49,19 @@ try {
     $pdo = getDatabaseConnection();
 
     $caseStmt = $pdo->prepare('
-        SELECT id, delegacion_id, numero_carpeta, fecha_presentacion_denuncia, estatus_general
-        FROM penal_asuntos
-        WHERE id = :id
-          AND activo = TRUE
-          AND deleted_at IS NULL
+        SELECT
+            pa.id,
+            pa.delegacion_id,
+            pa.numero_carpeta,
+            pa.fecha_presentacion_denuncia,
+            COALESCE(pca.fecha_conocimiento_amp, pa.fecha_conocimiento_amp) AS fecha_conocimiento_amp,
+            pa.estatus_general
+        FROM penal_asuntos pa
+        LEFT JOIN penal_conocimiento_amp pca
+            ON pca.asunto_id = pa.id
+        WHERE pa.id = :id
+          AND pa.activo = TRUE
+          AND pa.deleted_at IS NULL
         LIMIT 1
     ');
     $caseStmt->execute(['id' => $asuntoId]);
@@ -64,6 +72,10 @@ try {
     }
 
     ensureWriteDelegacionAccess($user, isset($asunto['delegacion_id']) ? (int) $asunto['delegacion_id'] : null);
+
+    if (empty($asunto['fecha_conocimiento_amp'])) {
+        sendError('Es necesario registrar la fecha de conocimiento del AMP antes de gestionar MASC', 400);
+    }
 
     if ($fechaConvenio < (string) $asunto['fecha_presentacion_denuncia']) {
         sendError('La fecha del convenio MASC no puede ser menor a la fecha de presentacion de la denuncia / querella', 400);

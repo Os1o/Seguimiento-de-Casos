@@ -96,6 +96,16 @@ try {
         $sql .= ' WHERE ec.activo = TRUE';
     }
 
+    if (
+        ($user['rol'] ?? null) === 'editor'
+        && isAbogadoUser($user)
+        && !isJefeUser($user)
+        && !hasGlobalScope($user)
+    ) {
+        $sql .= ' AND ec.abogado_responsable_id = :abogadoResponsableId';
+        $params['abogadoResponsableId'] = (int) ($user['id'] ?? 0);
+    }
+
     $sql .= '
         GROUP BY
             ec.id,

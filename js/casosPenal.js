@@ -1266,7 +1266,6 @@ function renderizarTabla() {
         const delitoNombre = caso.delito_nombre || obtenerNombreDelito(caso.delito_id) || '---';
         const denunciante = resumenDenunciantePenal(caso);
         const responsable = resumenResponsablePenal(caso);
-        const anioCarpeta = obtenerAnioPenal(caso);
         const faseActual = obtenerFaseActualPenal(caso);
         const requerimientosPendientes = obtenerRequerimientosPendientesPenal(caso);
         const fechaPresentacion = obtenerFechaPresentacionPenal(caso);
@@ -1280,30 +1279,25 @@ function renderizarTabla() {
         const badgePendientes = requerimientosPendientes === 'Sin pendientes'
             ? '<span class="badge badge-success-soft">Sin pendientes</span>'
             : `<span class="badge badge-warning-outline">${requerimientosPendientes}</span>`;
-        const badgeCoadyuvancia = esCoadyuvanciaPenal(caso)
-            ? '<span class="badge badge-primary-soft">Sí</span>'
-            : '<span class="badge badge-neutral-soft">No</span>';
 
         return `
             <tr>
                 <td><small>${delegacionNombre}</small></td>
-                <td class="cell-center">${badgeEstatus}</td>
                 <td>
                     <a href="#" class="expediente-link" onclick="verDetalle(${caso.id}); return false;">
                         <strong>${caso.numero_expediente || '---'}</strong>
                     </a>
                     <small class="expediente-meta-texto">${formatearFechaRelativa(caso.fecha_actualizacion || caso.fecha_creacion)}</small>
                 </td>
-                <td class="cell-center"><small>${anioCarpeta}</small></td>
                 <td><small>${delitoNombre}</small></td>
                 <td>${denunciante}</td>
                 <td>${responsable}</td>
-                <td class="cell-center"><small>${escapeHtml(cuantia)}</small></td>
+                <td><small>${escapeHtml(cuantia)}</small></td>
+                <td class="cell-center">${badgeEstatus}</td>
                 <td class="cell-center">${badgeFase}</td>
                 <td class="cell-center">${badgePendientes}</td>
                 <td class="cell-center"><small>${fechaPresentacion}</small></td>
                 <td class="cell-center"><small>${fechaConocimientoAmp}</small></td>
-                <td class="cell-center">${badgeCoadyuvancia}</td>
                 <td class="td-sticky-right">
                     <div class="menu-container" id="menu-container-${caso.id}">
                         <button class="menu-trigger" onclick="toggleMenu(${caso.id})" id="menu-trigger-${caso.id}">
@@ -1313,16 +1307,20 @@ function renderizarTabla() {
                             <div class="menu-item" onclick="verDetalle(${caso.id})">
                                 Ver detalle
                             </div>
+                            ${tieneConocimientoAmp ? `
                             <div class="menu-item" onclick="verRequerimientos(${caso.id})">
                                 Requerimientos ministeriales
-                            </div>
+                            </div>` : ''}
                             ${usuarioActual && (usuarioActual.rol === 'admin' || (usuarioActual.rol !== 'consulta' && !tieneConocimientoAmp)) ? `
                             <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
                                 Registro AMP
                             </div>` : ''}
                             ${usuarioActual && usuarioActual.rol !== 'consulta' && tieneConocimientoAmp ? `
                             <div class="menu-item" onclick="verActuacionesPenales(${caso.id})">
-                                Actuaciones penales
+                                Seguimiento
+                            </div>
+                            <div class="menu-item" onclick="verMASC(${caso.id})">
+                                MASC
                             </div>` : ''}
                             ${usuarioActual && usuarioActual.rol === 'admin' ? `
                             <div class="menu-item" onclick="editarCaso(${caso.id})">
@@ -1441,19 +1439,6 @@ function escapeHtml(texto) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
-}
-
-function obtenerAnioPenal(caso) {
-    if (caso?.anio) return String(caso.anio);
-    if (caso?.fecha_inicio) {
-        const matchFecha = String(caso.fecha_inicio).match(/^(\d{4})/);
-        if (matchFecha) return matchFecha[1];
-    }
-    if (caso?.numero_expediente) {
-        const matchExpediente = String(caso.numero_expediente).match(/(20\d{2})/);
-        if (matchExpediente) return matchExpediente[1];
-    }
-    return '---';
 }
 
 function obtenerFaseActualPenal(caso) {
@@ -1690,6 +1675,10 @@ function verRequerimientos(id) {
 
 function verActuacionesPenales(id) {
     window.location.href = `registroActuacionPenal.html?id=${id}`;
+}
+
+function verMASC(id) {
+    window.location.href = `mascPenal.html?id=${id}`;
 }
 
 async function confirmarEliminar(id) {

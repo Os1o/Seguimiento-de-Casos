@@ -6231,8 +6231,6 @@ body {
   min-width: 132px;
 }
 
-.modern-header-page .table th:nth-child(2),
-.modern-header-page .table td:nth-child(2),
 .modern-header-page .table th:nth-child(12),
 .modern-header-page .table td:nth-child(12) {
   text-align: center;

@@ -108,18 +108,16 @@
             <table class="table table-casos-penal table-casos-penal-redisenada" id="tablaCasos">
                 <colgroup>
                     <col style="width: 150px;">
-                    <col style="width: 108px;">
                     <col style="width: 245px;">
-                    <col style="width: 82px;">
                     <col style="width: 220px;">
                     <col style="width: 220px;">
                     <col style="width: 220px;">
                     <col style="width: 150px;">
+                    <col style="width: 108px;">
                     <col style="width: 140px;">
                     <col style="width: 182px;">
                     <col style="width: 125px;">
                     <col style="width: 145px;">
-                    <col style="width: 110px;">
                     <col class="col-acciones">
                 </colgroup>
                 <thead>
@@ -128,12 +126,7 @@
                             <button id="btn_filtroDelegacion" class="filtro-btn-custom" data-nombre="JSJ"
                                 onclick="toggleFiltro('filtroDelegacion', this)"><span class="filtro-btn-nombre">OOAD <span class="filtro-flecha">&#9660;</span></span></button>
                         </th>
-                        <th class="th-filtrable">
-                            <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus"
-                                onclick="toggleFiltro('filtroEstatus', this)"><span class="filtro-btn-nombre">Estatus <span class="filtro-flecha">&#9660;</span></span></button>
-                        </th>
                         <th>No. de carpeta</th>
-                        <th>Año</th>
                         <th class="th-filtrable">
                             <button id="btn_filtroDelito" class="filtro-btn-custom" data-nombre="Delito"
                                 onclick="toggleFiltro('filtroDelito', this)"><span class="filtro-btn-nombre">Delito <span class="filtro-flecha">&#9660;</span></span></button>
@@ -141,11 +134,14 @@
                         <th>Denunciante</th>
                         <th>Probable Responsable</th>
                         <th class="th-break-header"><span>Cuantía</span></th>
+                        <th class="th-filtrable">
+                            <button id="btn_filtroEstatus" class="filtro-btn-custom" data-nombre="Estatus"
+                                onclick="toggleFiltro('filtroEstatus', this)"><span class="filtro-btn-nombre">Estatus <span class="filtro-flecha">&#9660;</span></span></button>
+                        </th>
                         <th>Fase actual</th>
-                        <th class="th-break-header"><span>Acciones<br>pendientes</span></th>
+                        <th class="th-break-header"><span>Requerimientos<br>pendientes</span></th>
                         <th class="th-break-header"><span>Fecha de<br>presentación</span></th>
                         <th class="th-break-header"><span>Fecha conocimiento<br>AMP</span></th>
-                        <th>Coadyuvancia</th>
                         <th class="th-sticky-right"></th>
                     </tr>
                 </thead>

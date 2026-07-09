@@ -68,6 +68,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const titulo = error?.esValidacion ? 'Datos incompletos' : 'No se pudo guardar';
         return mostrarAlertaRequerimiento(titulo, error?.message || mensajeDefault);
     };
+    const tieneFechaConocimientoAmpRequerimiento = (asunto) => (
+        Boolean(asunto?.fecha_conocimiento_amp || asunto?.fecha_conocimiento_fiscal)
+    );
+    const bloquearAccesoRequerimientoSinAmp = async () => {
+        await mostrarAlertaRequerimiento(
+            'Registro AMP requerido',
+            'No se puede acceder a Requerimientos sin registrar la fecha de conocimiento del AMP.'
+        );
+        window.location.href = 'penal.html';
+    };
     const textoSinArchivo = 'SIN ARCHIVOS SELECCIONADOS';
     const usuarioEsAdmin = () => usuarioActual?.rol === 'admin';
     const tieneValorGuardado = (value) => value !== null && value !== undefined && String(value).trim() !== '';
@@ -610,6 +620,11 @@ document.addEventListener('DOMContentLoaded', () => {
             credentials: 'same-origin',
         });
         const data = await response.json();
+
+        if (!response.ok && String(data.message || '').includes('fecha de conocimiento del AMP')) {
+            await bloquearAccesoRequerimientoSinAmp();
+            return null;
+        }
 
         if (!response.ok || !data.ok) {
             throw new Error(data.message || 'No se pudo cargar el requerimiento');
@@ -1234,11 +1249,21 @@ async function cargarReferenciaAsunto(asuntoId) {
         });
         const data = await response.json();
 
+        if (!response.ok && String(data.message || '').includes('fecha de conocimiento del AMP')) {
+            await bloquearAccesoRequerimientoSinAmp();
+            return;
+        }
+
         if (!response.ok || !data.ok) {
             throw new Error(data.message || 'No se pudo cargar la referencia del asunto');
         }
 
         const asunto = data.data?.asunto || {};
+        if (!tieneFechaConocimientoAmpRequerimiento(asunto)) {
+            await bloquearAccesoRequerimientoSinAmp();
+            return;
+        }
+
         setReferenciaText('reqRefNumeroCarpeta', asunto.numero_carpeta || '--');
         setReferenciaText('reqRefDelito', asunto.delito_nombre || '--');
         setReferenciaText('reqRefOoad', asunto.delegacion_nombre || '--');

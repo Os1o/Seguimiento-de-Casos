@@ -7,7 +7,8 @@ let catalogos = {
     delegaciones: [],
     delitos: [],
     categoriasDelito: [],
-    areas: []
+    areas: [],
+    abogadosResponsables: []
 };
 let limitadorDatoRelevantePenal = null;
 let limitadorHechosVictimaPenal = null;
@@ -42,6 +43,8 @@ async function verificarSesion() {
                 delegacion_id: user.delegacionId ?? null,
                 permiso_civil_mercantil: Boolean(user.permisoCivilMercantil),
                 permiso_penal: Boolean(user.permisoPenal),
+                es_abogado: Boolean(user.esAbogado),
+                es_jefe: Boolean(user.esJefe),
                 session_token: user.sessionToken ?? ''
             };
 
@@ -117,7 +120,8 @@ async function cargarCatalogosPenalFormulario() {
         delegaciones: data.delegaciones || [],
         delitos: data.delitos || [],
         categoriasDelito: data.categorias_delito || [],
-        areas: areasData.areas || []
+        areas: areasData.areas || [],
+        abogadosResponsables: data.abogadosResponsables || []
     };
 }
 
@@ -173,6 +177,12 @@ async function guardarAreaGeneradoraPenalApi(delegacionId, nombre) {
 
 function usuarioPuedeAgregarAreaGeneradoraPenal() {
     return ['admin', 'editor'].includes(String(usuarioActual?.rol || '').toLowerCase());
+}
+
+function usuarioEsEditorAbogadoPenal() {
+    return usuarioActual?.rol === 'editor'
+        && Boolean(usuarioActual?.es_abogado || usuarioActual?.esAbogado)
+        && !Boolean(usuarioActual?.es_jefe || usuarioActual?.esJefe);
 }
 
 function abrirModalAreaGeneradoraPenal() {
@@ -446,6 +456,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         cargarDelegaciones();
         cargarAreasGeneradoras();
+        cargarAbogadosResponsablesPenal();
         cargarCategoriasDelito();
         cargarDelitos();
         initDenuncianteMode();
@@ -454,7 +465,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         initExpedienteCompuesto();
         sincronizarFechasBasePenal();
         document.getElementById('fechaInicio')?.addEventListener('change', sincronizarFechasBasePenal);
-        document.getElementById('delegacion')?.addEventListener('change', cargarAreasGeneradoras);
+        document.getElementById('delegacion')?.addEventListener('change', () => {
+            cargarAreasGeneradoras();
+            cargarAbogadosResponsablesPenal();
+        });
         registrarEventosAreaGeneradoraPenal();
         registrarEventosDelitoPenal();
         limitadorHechosVictimaPenal = window.setupExpandableTextLimiter?.({
@@ -493,6 +507,53 @@ function cargarDelegaciones() {
     if (usuarioActual.rol !== 'admin' && usuarioActual.delegacion_id) {
         select.value = usuarioActual.delegacion_id;
         select.disabled = true;
+    }
+}
+
+function cargarAbogadosResponsablesPenal(abogadoSeleccionado = '') {
+    const grupo = document.getElementById('grupoAbogadoResponsablePenal');
+    const select = document.getElementById('abogadoResponsable');
+
+    if (!grupo || !select) {
+        return;
+    }
+
+    if (usuarioActual?.rol === 'consulta') {
+        grupo.style.display = 'none';
+        select.required = false;
+        select.disabled = true;
+        select.value = '';
+        return;
+    }
+
+    grupo.style.display = '';
+    select.required = true;
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    const delegacionId = parseInt(document.getElementById('delegacion')?.value || '', 10);
+    let abogados = catalogos.abogadosResponsables || [];
+
+    if (delegacionId && usuarioActual?.rol !== 'admin') {
+        abogados = abogados.filter(abogado => parseInt(abogado.delegacion_id, 10) === delegacionId);
+    }
+
+    abogados.forEach(abogado => {
+        const option = document.createElement('option');
+        option.value = abogado.id;
+        option.textContent = abogado.nombre_completo || abogado.usuario || `Usuario ${abogado.id}`;
+        select.appendChild(option);
+    });
+
+    if (usuarioEsEditorAbogadoPenal()) {
+        select.value = String(usuarioActual.id || '');
+        select.disabled = true;
+        return;
+    }
+
+    select.disabled = false;
+
+    if (abogadoSeleccionado) {
+        select.value = String(abogadoSeleccionado);
     }
 }
 
@@ -1186,6 +1247,7 @@ async function guardarCaso() {
     const fechaInicio = document.getElementById('fechaInicio').value;
     const delitoId = parseInt(document.getElementById('delito').value);
     const areaGeneradoraId = parseInt(document.getElementById('areaGeneradora').value, 10);
+    const abogadoResponsableId = parseInt(document.getElementById('abogadoResponsable')?.value || '', 10);
     const hechosVictimaDenunciante = document.getElementById('hechosVictimaDenunciante')?.value.trim() || '';
     const datoRelevante = document.getElementById('datoRelevante')?.value.trim() || '';
     const sinCuantificar = Boolean(document.getElementById('sinCuantificar')?.checked);
@@ -1202,7 +1264,7 @@ async function guardarCaso() {
         return;
     }
 
-    if (!delegacionId || !numeroExpediente || !fechaInicio || !delitoId || !areaGeneradoraId) {
+    if (!delegacionId || !numeroExpediente || !fechaInicio || !delitoId || !areaGeneradoraId || !abogadoResponsableId) {
         await window.appAlert({
             title: 'Campos obligatorios',
             message: 'Por favor completa todos los campos requeridos.'
@@ -1251,6 +1313,7 @@ async function guardarCaso() {
     formData.append('fecha_presentacion_denuncia', fechaInicio);
     formData.append('delito_id', String(delitoId));
     formData.append('area_hechos_id', String(areaGeneradoraId));
+    formData.append('abogado_responsable_id', String(abogadoResponsableId));
     formData.append('hechos_denunciante', hechosVictimaDenunciante);
     formData.append('dato_relevante', datoRelevante);
     formData.append('sin_cuantificar', sinCuantificar ? '1' : '0');

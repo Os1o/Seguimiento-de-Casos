@@ -203,7 +203,8 @@ try {
             pr.area_responsable_id,
             doc_interno.id AS documento_interno_id,
             pa.delegacion_id,
-            pa.numero_carpeta
+            pa.numero_carpeta,
+            COALESCE(pca.fecha_conocimiento_amp, pa.fecha_conocimiento_amp) AS fecha_conocimiento_amp
         FROM penal_requerimientos pr
         LEFT JOIN LATERAL (
             SELECT d.id
@@ -217,6 +218,8 @@ try {
         INNER JOIN penal_asuntos pa
             ON pa.id = pr.asunto_id
            AND pa.deleted_at IS NULL
+        LEFT JOIN penal_conocimiento_amp pca
+            ON pca.asunto_id = pa.id
         WHERE pr.id = :id
           AND pr.activo = TRUE
         LIMIT 1
@@ -232,6 +235,10 @@ try {
         $user,
         $requerimiento['delegacion_id'] !== null ? (int) $requerimiento['delegacion_id'] : null
     );
+
+    if (empty($requerimiento['fecha_conocimiento_amp'])) {
+        sendError('Es necesario registrar la fecha de conocimiento del AMP antes de gestionar Requerimientos', 400);
+    }
 
     $areaStmt = $pdo->prepare('SELECT id FROM areas WHERE id = :id LIMIT 1');
     $fechaInicioInterno = $payload['fecha_inicio_interno'];
