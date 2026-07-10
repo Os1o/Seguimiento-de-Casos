@@ -150,8 +150,10 @@ try {
              r.id,
              r.asunto_id,
              r.folio_referencia,
+             r.fecha_inicio_interno,
              a.delegacion_id,
              a.numero_carpeta,
+             a.estatus_general,
              COALESCE(pca.fecha_conocimiento_amp, a.fecha_conocimiento_amp) AS fecha_conocimiento_amp
            FROM penal_requerimientos r
            INNER JOIN penal_asuntos a ON a.id = r.asunto_id
@@ -169,8 +171,28 @@ try {
 
     ensureWriteDelegacionAccess($user, (int)$requerimiento['delegacion_id']);
 
+    if (strtoupper((string) ($requerimiento['estatus_general'] ?? '')) === 'CONCLUIDO') {
+        sendError('El asunto se encuentra concluido, no se permiten modificaciones.', 400);
+    }
+
     if (empty($requerimiento['fecha_conocimiento_amp'])) {
         sendError('Es necesario registrar la fecha de conocimiento del AMP antes de gestionar Requerimientos', 400);
+    }
+
+    if (!empty($requerimiento['fecha_inicio_interno']) && $fechaEnvioRespuesta < (string) $requerimiento['fecha_inicio_interno']) {
+        sendError('La fecha de envio de la contestacion no puede ser menor a la fecha de inicio interno', 400);
+    }
+
+    if ($fechaEnvioRespuesta > date('Y-m-d')) {
+        sendError('La fecha de envio de la contestacion no puede ser posterior a hoy', 400);
+    }
+
+    if ($fechaRespuestaFiscalia !== null && $fechaRespuestaFiscalia < $fechaEnvioRespuesta) {
+        sendError('La fecha de recepcion de la respuesta de fiscalia no puede ser menor a la fecha de envio de la contestacion', 400);
+    }
+
+    if ($fechaRespuestaFiscalia !== null && $fechaRespuestaFiscalia > date('Y-m-d')) {
+        sendError('La fecha de recepcion de la respuesta de fiscalia no puede ser posterior a hoy', 400);
     }
 
     $existingContestacionStmt = $pdo->prepare(

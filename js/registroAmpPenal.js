@@ -1,6 +1,14 @@
 let usuarioAmpActual = null;
 let asuntoAmpActual = null;
 
+function obtenerHoyIsoAmp() {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 async function verificarSesionAmp() {
     const usuarioStr = sessionStorage.getItem('usuario');
     if (usuarioStr) {
@@ -144,8 +152,13 @@ function syncFechaAmpMin() {
     }
 
     inputFecha.min = validarFechaIso(fechaPresentacion) ? fechaPresentacion : '';
+    inputFecha.max = obtenerHoyIsoAmp();
 
     if (inputFecha.min && inputFecha.value && inputFecha.value < inputFecha.min) {
+        inputFecha.value = '';
+    }
+
+    if (inputFecha.max && inputFecha.value && inputFecha.value > inputFecha.max) {
         inputFecha.value = '';
     }
 }
@@ -190,6 +203,14 @@ async function guardarRegistroAmp(event) {
         await window.appAlert?.({
             title: 'Inconsistencia de Fechas',
             message: 'La fecha de conocimiento del AMP no puede ser menor a la fecha de presentación de la denuncia / querella.'
+        });
+        return;
+    }
+
+    if (fechaConocimientoAmp > obtenerHoyIsoAmp()) {
+        await window.appAlert?.({
+            title: 'Fecha invÃ¡lida',
+            message: 'La fecha de conocimiento del AMP no puede ser posterior a hoy.'
         });
         return;
     }
@@ -250,6 +271,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (!asuntoAmpActual) {
             throw new Error('No se encontró el asunto penal');
+        }
+
+        if (String(asuntoAmpActual.estatus_general || asuntoAmpActual.estatus || '').toUpperCase() === 'CONCLUIDO') {
+            window.location.href = 'penal.html';
+            return;
         }
 
         if ((asuntoAmpActual.fecha_conocimiento_amp || asuntoAmpActual.fecha_conocimiento_fiscal) && usuarioAmpActual.rol !== 'admin') {

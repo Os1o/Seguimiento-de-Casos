@@ -169,6 +169,10 @@ try {
     validateDateField($payload['fecha_recepcion'], 'recepcion');
     validateDateField($payload['fecha_limite_atencion'], 'limite de atencion');
 
+    if ($payload['fecha_recepcion'] > date('Y-m-d')) {
+        sendError('La fecha de recepcion no puede ser posterior a hoy', 400);
+    }
+
     if ($payload['fecha_limite_atencion'] < $payload['fecha_recepcion']) {
         sendError('La fecha limite de atencion no puede ser menor a la fecha de recepcion', 400);
     }
@@ -181,6 +185,7 @@ try {
             pa.id,
             pa.delegacion_id,
             pa.numero_carpeta,
+            pa.estatus_general,
             COALESCE(pca.fecha_conocimiento_amp, pa.fecha_conocimiento_amp) AS fecha_conocimiento_amp
         FROM penal_asuntos pa
         LEFT JOIN penal_conocimiento_amp pca
@@ -198,8 +203,16 @@ try {
 
     ensureWriteDelegacionAccess($user, isset($asunto['delegacion_id']) ? (int) $asunto['delegacion_id'] : null);
 
+    if (strtoupper((string) ($asunto['estatus_general'] ?? '')) === 'CONCLUIDO') {
+        sendError('El asunto se encuentra concluido, no se permiten modificaciones.', 400);
+    }
+
     if (empty($asunto['fecha_conocimiento_amp'])) {
         sendError('Es necesario registrar la fecha de conocimiento del AMP antes de gestionar Requerimientos', 400);
+    }
+
+    if ($payload['fecha_recepcion'] < (string) $asunto['fecha_conocimiento_amp']) {
+        sendError('La fecha de recepcion no puede ser menor a la fecha de conocimiento del AMP', 400);
     }
 
     $finalAbsolutePath = null;

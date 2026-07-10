@@ -17,6 +17,14 @@ let catalogos = {
 };
 let limitadorPrestacionesNotasEdit = null;
 
+function obtenerHoyIsoCivilEdicion() {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 function obtenerDelegacionCivilEdicion(id) {
     if (!id) return null;
     return (catalogos.delegaciones || []).find(delegacion => delegacion.id == id) || null;
@@ -654,6 +662,7 @@ function llenarFormulario() {
     document.getElementById('tribunal').value = casoActual.organo_jurisdiccional_id ?? '';
     document.getElementById('tribunal').dispatchEvent(new Event('change', { bubbles: true }));
     document.getElementById('fechaInicio').value = String(casoActual.fecha_inicio || '').split('T')[0];
+    document.getElementById('fechaInicio').max = obtenerHoyIsoCivilEdicion();
 
     const radioImss = document.querySelector(`input[name="imssEs"][value="${casoActual.imss_es}"]`);
     if (radioImss) {
@@ -1186,6 +1195,13 @@ async function validarCasoEdit(caso) {
         await window.appAlert?.({
             title: 'Abogado responsable requerido',
             message: 'Debe seleccionar un abogado responsable.'
+        });
+        return false;
+    }
+    if (caso.fecha_inicio && caso.fecha_inicio > obtenerHoyIsoCivilEdicion()) {
+        await window.appAlert?.({
+            title: 'Fecha invÃ¡lida',
+            message: 'La fecha de inicio no puede ser posterior a hoy.'
         });
         return false;
     }

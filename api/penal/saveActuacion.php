@@ -136,11 +136,15 @@ try {
     }
 
     if (strtoupper((string) ($asunto['estatus_general'] ?? '')) === 'CONCLUIDO') {
-        sendError('La carpeta penal esta concluida. Debe reabrirse antes de registrar nuevas actuaciones', 403);
+        sendError('El asunto se encuentra concluido, no se permiten modificaciones.', 400);
     }
 
     if ($fechaActuacion < (string) $asunto['fecha_presentacion_denuncia']) {
         sendError('La fecha de actuación no puede ser menor a la fecha de presentación de la denuncia / querella', 400);
+    }
+
+    if ($fechaActuacion > date('Y-m-d')) {
+        sendError('La fecha de actuacion no puede ser posterior a hoy', 400);
     }
 
     $etapaStmt = $pdo->prepare('

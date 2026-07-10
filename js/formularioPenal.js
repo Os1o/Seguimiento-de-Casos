@@ -19,6 +19,14 @@ const AREA_GENERADORA_ADD_VALUE = '__agregar_area_generadora_penal__';
 const DELITO_ADD_VALUE = '__agregar_delito_penal__';
 const SIN_CATEGORIA_DELITO_VALUE = '__sin_categoria__';
 
+function obtenerHoyIsoPenal() {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 async function verificarSesion() {
     const usuarioStr = sessionStorage.getItem('usuario');
     if (usuarioStr) {
@@ -872,25 +880,38 @@ function actualizarEstadoBotonesDenunciante(tipo) {
 
 function initResponsableQrrMode() {
     const checkbox = document.getElementById('responsableQrr');
-    const wrap = document.getElementById('probablesResponsablesWrap');
 
-    if (!checkbox || !wrap) {
+    if (!checkbox) {
         return;
     }
 
-    const sync = () => {
-        if (checkbox.checked) {
-            wrap.style.display = 'none';
-        } else {
-            wrap.style.display = '';
-            if (!document.querySelector('#listaProbablesResponsables .probable-responsable-input')) {
-                crearCampoProbableResponsable();
-            }
-        }
-    };
+    checkbox.addEventListener('change', syncResponsableQrrMode);
+    syncResponsableQrrMode();
+}
 
-    checkbox.addEventListener('change', sync);
-    sync();
+function syncResponsableQrrMode() {
+    const checkbox = document.getElementById('responsableQrr');
+    const esQrr = Boolean(checkbox?.checked);
+    const inputs = Array.from(document.querySelectorAll('#listaProbablesResponsables .probable-responsable-input'));
+    const addButton = document.getElementById('btnAgregarProbableResponsable');
+
+    inputs.forEach((input) => {
+        const group = input.closest('.form-group');
+        if (group) {
+            group.style.display = esQrr ? 'none' : '';
+        }
+        input.disabled = esQrr;
+        input.required = !esQrr;
+        if (esQrr) {
+            input.value = '';
+        }
+    });
+
+    if (addButton) {
+        addButton.disabled = esQrr;
+        addButton.style.opacity = esQrr ? '0.55' : '';
+        addButton.style.cursor = esQrr ? 'not-allowed' : '';
+    }
 }
 
 function crearCampoProbableResponsable(valor = '') {
@@ -901,12 +922,26 @@ function crearCampoProbableResponsable(valor = '') {
 
     contadorProbableResponsable += 1;
     const fieldId = `probable_responsable_${Date.now()}_${contadorProbableResponsable}`;
+    const esPrimeraTarjeta = !container.querySelector('.dynamic-field');
+    const qrrHtml = esPrimeraTarjeta ? `
+                <label class="penal-qrr-toggle penal-qrr-toggle-header" for="responsableQrr">
+                    <input type="checkbox" id="responsableQrr">
+                    <span class="penal-qrr-box"></span>
+                    <span class="penal-qrr-copy">
+                        <strong>QRR - Qui&eacute;n Resulte Responsable</strong>
+                        <small>Registrar cuando no se cuente con una persona o entidad identificada.</small>
+                    </span>
+                </label>
+    ` : '';
 
     const html = `
         <div class="dynamic-field" id="${fieldId}">
             <div class="dynamic-field-header">
                 <span class="dynamic-field-title">Probable responsable</span>
-                <button type="button" class="btn-remove" onclick="eliminarCampoProbableResponsable('${fieldId}')">Eliminar</button>
+                <div class="dynamic-field-header-actions">
+                    ${qrrHtml}
+                    <button type="button" class="btn-remove" onclick="eliminarCampoProbableResponsable('${fieldId}')">Eliminar</button>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label required">Nombre del probable responsable</label>
@@ -923,6 +958,7 @@ function crearCampoProbableResponsable(valor = '') {
     container.insertAdjacentHTML('beforeend', html);
     renumerarCamposProbableResponsable();
     actualizarEstadoBotonesProbableResponsable();
+    syncResponsableQrrMode();
 }
 
 function eliminarCampoProbableResponsable(id) {
@@ -1231,6 +1267,8 @@ function sincronizarFechasBasePenal() {
         return;
     }
 
+    fechaInicio.max = obtenerHoyIsoPenal();
+
     const fechaBase = fechaInicio.value || '';
 
     fechasDependientes.forEach(input => {
@@ -1268,6 +1306,14 @@ async function guardarCaso() {
         await window.appAlert({
             title: 'Campos obligatorios',
             message: 'Por favor completa todos los campos requeridos.'
+        });
+        return;
+    }
+
+    if (fechaInicio > obtenerHoyIsoPenal()) {
+        await window.appAlert({
+            title: 'Fecha inválida',
+            message: 'La fecha de presentación de la denuncia / querella no puede ser posterior a hoy.'
         });
         return;
     }
@@ -1326,28 +1372,13 @@ async function guardarCaso() {
     formData.append('archivo_inicial', archivoInicial);
 
     try {
-        const casoGuardado = await guardarCasoPenalApi(formData);
+        await guardarCasoPenalApi(formData);
         await window.appAlert({
             title: 'Cambios guardados',
             message: 'El registro se guardó correctamente.'
         });
 
-        const casoId = casoGuardado?.id;
-        if (!casoId) {
-            window.location.href = 'penal.html';
-            return;
-        }
-
-        const registrarRequerimientos = await window.appConfirm({
-            title: 'Requerimientos ministeriales',
-            message: '¿Deseas registrar requerimientos ministeriales para este caso?',
-            confirmText: 'Sí',
-            cancelText: 'No'
-        });
-
-        window.location.href = registrarRequerimientos
-            ? `listadoRequerimientosPenal.html?id=${encodeURIComponent(casoId)}`
-            : 'penal.html';
+        window.location.href = 'penal.html';
     } catch (error) {
         console.error('Error al guardar asunto penal:', error);
         await window.appAlert({

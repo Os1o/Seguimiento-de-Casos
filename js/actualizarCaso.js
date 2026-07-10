@@ -9,6 +9,14 @@ const MAX_PDF_SIZE = 10 * 1024 * 1024;
 const MAX_ACTUALIZACIONES_VISIBLES = 5;
 let limitadorDescripcionActuacion = null;
 
+function obtenerHoyIsoCivilActualizacion() {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 function obtenerDelegacionCivilActualizacion(id) {
     try {
         const delegaciones = window.catalogos?.delegaciones || [];
@@ -375,7 +383,17 @@ function sincronizarRangoFechasActualizacionCivil() {
         return;
     }
 
+    fechaActuacion.min = casoActual?.fecha_inicio ? String(casoActual.fecha_inicio).split('T')[0] : '';
+    fechaActuacion.max = obtenerHoyIsoCivilActualizacion();
     fechaVencimiento.min = fechaActuacion.value || '';
+
+    if (fechaActuacion.min && fechaActuacion.value && fechaActuacion.value < fechaActuacion.min) {
+        fechaActuacion.value = '';
+    }
+
+    if (fechaActuacion.max && fechaActuacion.value && fechaActuacion.value > fechaActuacion.max) {
+        fechaActuacion.value = '';
+    }
 
     if (fechaActuacion.value && fechaVencimiento.value && fechaVencimiento.value < fechaActuacion.value) {
         fechaVencimiento.value = '';
@@ -608,6 +626,23 @@ async function guardarActualizacion(event) {
     const descripcion = (document.getElementById('descripcionActuacion').value || '').toUpperCase() || null;
     const fechaVencimiento = document.getElementById('fechaVencimiento').value || null;
     const estatusAsunto = document.getElementById('estatusAsunto').value || null;
+
+    const fechaInicioExpediente = casoActual?.fecha_inicio ? String(casoActual.fecha_inicio).split('T')[0] : '';
+    if (fechaInicioExpediente && fechaActuacion && fechaActuacion < fechaInicioExpediente) {
+        await window.appAlert?.({
+            title: 'Rango de fechas invÃ¡lido',
+            message: 'La fecha de actuaciÃ³n no puede ser anterior a la fecha de inicio del expediente.'
+        });
+        return;
+    }
+
+    if (fechaActuacion && fechaActuacion > obtenerHoyIsoCivilActualizacion()) {
+        await window.appAlert?.({
+            title: 'Fecha invÃ¡lida',
+            message: 'La fecha de actuaciÃ³n no puede ser posterior a hoy.'
+        });
+        return;
+    }
 
     if (fechaActuacion && fechaVencimiento && fechaVencimiento < fechaActuacion) {
         await window.appAlert?.({

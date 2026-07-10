@@ -73,12 +73,20 @@ try {
 
     ensureWriteDelegacionAccess($user, isset($asunto['delegacion_id']) ? (int) $asunto['delegacion_id'] : null);
 
+    if (strtoupper((string) ($asunto['estatus_general'] ?? '')) === 'CONCLUIDO') {
+        sendError('El asunto se encuentra concluido, no se permiten modificaciones.', 400);
+    }
+
     if (empty($asunto['fecha_conocimiento_amp'])) {
         sendError('Es necesario registrar la fecha de conocimiento del AMP antes de gestionar MASC', 400);
     }
 
     if ($fechaConvenio < (string) $asunto['fecha_presentacion_denuncia']) {
         sendError('La fecha del convenio MASC no puede ser menor a la fecha de presentacion de la denuncia / querella', 400);
+    }
+
+    if ($fechaConvenio > date('Y-m-d')) {
+        sendError('La fecha del convenio MASC no puede ser posterior a hoy', 400);
     }
 
     $existingStmt = $pdo->prepare('

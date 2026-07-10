@@ -13,6 +13,7 @@ let permisosListadoRequerimientos = {
     puedeRestaurar: false,
 };
 let listadoRequerimientosAbortController = null;
+let carpetaConcluidaListadoRequerimientos = false;
 
 function obtenerParametroUrl(nombre) {
     return new URLSearchParams(window.location.search).get(nombre);
@@ -81,6 +82,10 @@ function usuarioListadoRequerimientosEsAdmin() {
     }
 }
 
+function puedeVerEliminadosRequerimientos(asunto) {
+    return usuarioListadoRequerimientosEsAdmin() && !esCarpetaConcluidaRequerimientos(asunto);
+}
+
 function crearLinkDocumento(documento) {
     if (!documento || !documento.ruta_archivo) {
         return '<strong>Sin documento registrado</strong>';
@@ -108,6 +113,10 @@ function renderResumenAsunto(asunto) {
 
 function tieneFechaConocimientoAmpRequerimientos(asunto) {
     return Boolean(asunto?.fecha_conocimiento_amp || asunto?.fecha_conocimiento_fiscal);
+}
+
+function esCarpetaConcluidaRequerimientos(asunto) {
+    return String(asunto?.estatus_general || asunto?.estatus || '').toUpperCase() === 'CONCLUIDO';
 }
 
 async function bloquearAccesoRequerimientosSinAmp() {
@@ -405,7 +414,9 @@ function renderRequerimiento(requerimiento) {
     const deletedMeta = eliminado
         ? `<span class="penal-req-list-card-deleted-meta">Eliminado${requerimiento.deleted_at ? `: ${formatearFecha(requerimiento.deleted_at)}` : ''}${requerimiento.deleted_by_nombre ? ` por ${escaparHtml(requerimiento.deleted_by_nombre)}` : ''}</span>`
         : '';
-    const accionesHtml = eliminado
+    const accionesHtml = carpetaConcluidaListadoRequerimientos
+        ? ''
+        : eliminado
         ? (permisosListadoRequerimientos.puedeRestaurar
             ? `<button type="button" class="btn btn-secondary" data-restore-requerimiento="${Number(requerimiento.id)}">Restaurar requerimiento</button>`
             : '')
@@ -614,7 +625,7 @@ async function cargarListadoRequerimientos(asuntoId, options = {}) {
     const statsGrid = document.querySelector('.penal-req-list-stats');
     const group = document.querySelector('.penal-req-list-group');
     const deletedToggle = document.querySelector('#toggleEliminadosRequerimientos');
-    const includeDeleted = deletedToggle?.checked === true;
+    const includeDeleted = deletedToggle?.checked === true && usuarioListadoRequerimientosEsAdmin() && !carpetaConcluidaListadoRequerimientos;
 
     if (group) {
         group.innerHTML = `
@@ -653,8 +664,9 @@ async function cargarListadoRequerimientos(asuntoId, options = {}) {
         const payload = data.data || {};
         const permisos = payload.permisos || {};
         const asunto = payload.asunto || {};
+        carpetaConcluidaListadoRequerimientos = esCarpetaConcluidaRequerimientos(asunto);
 
-        if (!tieneFechaConocimientoAmpRequerimientos(asunto)) {
+        if (!carpetaConcluidaListadoRequerimientos && !tieneFechaConocimientoAmpRequerimientos(asunto)) {
             await bloquearAccesoRequerimientosSinAmp();
             return;
         }
@@ -666,12 +678,34 @@ async function cargarListadoRequerimientos(asuntoId, options = {}) {
         };
 
         const toggleWrap = document.querySelector('#toggleEliminadosRequerimientosWrap');
+        console.log('Toggle wrap encontrado:', !!toggleWrap);
+        console.log('Asunto:', asunto);
+        console.log('Es admin:', usuarioListadoRequerimientosEsAdmin());
+        console.log('Carpeta concluida:', esCarpetaConcluidaRequerimientos(asunto));
+        console.log('Debe ocultarse:', !puedeVerEliminadosRequerimientos(asunto));
         if (toggleWrap) {
-            toggleWrap.hidden = !(permisosListadoRequerimientos.puedeEliminar || permisosListadoRequerimientos.puedeRestaurar);
+            const debeOcultarse = !puedeVerEliminadosRequerimientos(asunto);
+            toggleWrap.hidden = debeOcultarse;
+            toggleWrap.style.display = debeOcultarse ? 'none' : '';
+            if (deletedToggle) {
+                deletedToggle.style.display = debeOcultarse ? 'none' : '';
+            }
+            const label = deletedToggle?.closest('label') || document.querySelector('label[for="toggleEliminadosRequerimientos"]');
+            if (label) {
+                label.style.display = debeOcultarse ? 'none' : '';
+            }
+            if (debeOcultarse && deletedToggle) {
+                deletedToggle.checked = false;
+            }
         }
 
         if (summaryGrid) {
             summaryGrid.innerHTML = renderResumenAsunto(asunto);
+        }
+
+        const addButton = document.querySelector('.penal-req-list-add-btn');
+        if (addButton) {
+            addButton.style.display = carpetaConcluidaListadoRequerimientos ? 'none' : '';
         }
 
         if (statsGrid) {

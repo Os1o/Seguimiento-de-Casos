@@ -72,6 +72,10 @@ function validateCivilCase(array $case): void
         sendError('Debe capturar el numero de expediente', 400);
     }
 
+    if (!empty($case['fecha_inicio']) && $case['fecha_inicio'] > date('Y-m-d')) {
+        sendError('La fecha de inicio no puede ser posterior a hoy', 400);
+    }
+
     if (empty($case['imss_es'])) {
         sendError('Debe seleccionar la calidad del IMSS', 400);
     }

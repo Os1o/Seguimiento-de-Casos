@@ -44,7 +44,7 @@ try {
     }
 
     $pdo = getDatabaseConnection();
-    $scopeStmt = $pdo->prepare('SELECT delegacion_id FROM expedientes_civil WHERE id = :id LIMIT 1');
+    $scopeStmt = $pdo->prepare('SELECT delegacion_id, fecha_inicio FROM expedientes_civil WHERE id = :id LIMIT 1');
     $scopeStmt->execute([
         'id' => $expedienteId,
     ]);
@@ -53,6 +53,14 @@ try {
 
     if (!$existingCase) {
         sendError('Caso no encontrado', 404);
+    }
+
+    if (!empty($existingCase['fecha_inicio']) && $seguimiento['fecha_actuacion'] < (string) $existingCase['fecha_inicio']) {
+        sendError('La fecha de actuacion no puede ser anterior a la fecha de inicio del expediente', 400);
+    }
+
+    if ($seguimiento['fecha_actuacion'] > date('Y-m-d')) {
+        sendError('La fecha de actuacion no puede ser posterior a hoy', 400);
     }
 
     ensureWriteDelegacionAccess($user, $existingCase['delegacion_id'] !== null ? (int) $existingCase['delegacion_id'] : null);

@@ -1,3 +1,5 @@
+let asuntoReferenciaRequerimientoPenal = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     const listInicial = document.getElementById('solicitudesInicialesList');
     const listSeguimiento = document.getElementById('seguimientoSolicitudesList');
@@ -12,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fechaRecepcionFiscalia = document.getElementById('fechaRecepcionFiscalia');
     const fechaLimiteAtencionReq = document.getElementById('fechaLimiteAtencionReq');
     const fechaInicioInterno = document.getElementById('fechaInicioInterno');
+    const fechaEnvioRespuestaFinal = document.getElementById('fechaEnvioRespuestaFinal');
+    const fechaRespuestaFiscaliaFinal = document.getElementById('fechaRespuestaFiscaliaFinal');
     const areaResponsableReq = document.getElementById('areaResponsableReq');
     const documentoRequerimientoInterno = document.getElementById('documentoRequerimientoInterno');
     const faseDos = document.getElementById('faseSeguimientoInterno');
@@ -70,6 +74,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const tieneFechaConocimientoAmpRequerimiento = (asunto) => (
         Boolean(asunto?.fecha_conocimiento_amp || asunto?.fecha_conocimiento_fiscal)
+    );
+    const obtenerHoyIsoRequerimiento = () => {
+        const hoy = new Date();
+        const yyyy = hoy.getFullYear();
+        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        const dd = String(hoy.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    };
+    const obtenerFechaAmpReferencia = () => (
+        asuntoReferenciaRequerimientoPenal?.fecha_conocimiento_amp
+        || asuntoReferenciaRequerimientoPenal?.fecha_conocimiento_fiscal
+        || ''
     );
     const bloquearAccesoRequerimientoSinAmp = async () => {
         await mostrarAlertaRequerimiento(
@@ -535,6 +551,15 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('Completa los campos obligatorios del requerimiento inicial');
         }
 
+        const fechaAmp = obtenerFechaAmpReferencia();
+        if (fechaAmp && fechaRecepcion < fechaAmp) {
+            throw new Error('La fecha de recepcion no puede ser menor a la fecha de conocimiento del AMP');
+        }
+
+        if (fechaRecepcion > obtenerHoyIsoRequerimiento()) {
+            throw new Error('La fecha de recepcion no puede ser posterior a hoy');
+        }
+
         if (fechaLimiteAtencion < fechaRecepcion) {
             throw new Error('La fecha limite de atencion no puede ser menor a la fecha de recepcion');
         }
@@ -648,6 +673,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!fechaInicioInterno || !areaResponsableId) {
             throw crearErrorValidacion('Completa la fecha de inicio y el area responsable.');
+        }
+
+        const fechaRecepcion = fechaRecepcionFiscalia?.value || requerimientoActual?.fecha_recepcion || '';
+        if (fechaRecepcion && fechaInicioInterno < fechaRecepcion) {
+            throw crearErrorValidacion('La fecha de inicio interno no puede ser menor a la fecha de recepcion.');
+        }
+
+        if (fechaInicioInterno > obtenerHoyIsoRequerimiento()) {
+            throw crearErrorValidacion('La fecha de inicio interno no puede ser posterior a hoy.');
         }
 
         const validation = validateFaseDos();
@@ -780,6 +814,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!fechaEnvio) {
             throw new Error('Captura la fecha de envio de la contestacion');
+        }
+
+        const fechaInicioBase = fechaInicioInterno?.value || requerimientoActual?.fecha_inicio_interno || '';
+        if (fechaInicioBase && fechaEnvio < fechaInicioBase) {
+            throw new Error('La fecha de envio de la contestacion no puede ser menor a la fecha de inicio interno');
+        }
+
+        if (fechaEnvio > obtenerHoyIsoRequerimiento()) {
+            throw new Error('La fecha de envio de la contestacion no puede ser posterior a hoy');
+        }
+
+        if (fechaFiscalia && fechaFiscalia < fechaEnvio) {
+            throw new Error('La fecha de recepcion de la respuesta de fiscalia no puede ser menor a la fecha de envio de la contestacion');
+        }
+
+        if (fechaFiscalia && fechaFiscalia > obtenerHoyIsoRequerimiento()) {
+            throw new Error('La fecha de recepcion de la respuesta de fiscalia no puede ser posterior a hoy');
         }
 
         if (!archivoRespuesta && !tieneDocumentoRespuestaActual) {
@@ -941,6 +992,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 setFaseTresReadonlyIfClosed();
             }
             aplicarBloqueosCamposGuardadosFaseDosTres(requerimientoActual);
+            syncFechaLimiteMin();
+            syncFechaInicioInternoRange();
+            syncFechasFaseTresRange();
         } catch (error) {
             console.error('No se pudo cargar el requerimiento para actualizacion:', error);
             await mostrarAlertaRequerimiento('No se pudo cargar', error.message || 'No se pudo cargar el requerimiento.');
@@ -952,7 +1006,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        fechaRecepcionFiscalia.min = obtenerFechaAmpReferencia();
+        fechaRecepcionFiscalia.max = obtenerHoyIsoRequerimiento();
         fechaLimiteAtencionReq.min = fechaRecepcionFiscalia.value || '';
+
+        if (fechaRecepcionFiscalia.min && fechaRecepcionFiscalia.value && fechaRecepcionFiscalia.value < fechaRecepcionFiscalia.min) {
+            fechaRecepcionFiscalia.value = '';
+        }
+
+        if (fechaRecepcionFiscalia.max && fechaRecepcionFiscalia.value && fechaRecepcionFiscalia.value > fechaRecepcionFiscalia.max) {
+            fechaRecepcionFiscalia.value = '';
+        }
 
         if (fechaRecepcionFiscalia.value && fechaLimiteAtencionReq.value && fechaLimiteAtencionReq.value < fechaRecepcionFiscalia.value) {
             fechaLimiteAtencionReq.value = '';
@@ -965,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         fechaInicioInterno.min = fechaRecepcionFiscalia?.value || '';
-        fechaInicioInterno.max = fechaLimiteAtencionReq?.value || '';
+        fechaInicioInterno.max = obtenerHoyIsoRequerimiento();
 
         if (fechaInicioInterno.min && fechaInicioInterno.value && fechaInicioInterno.value < fechaInicioInterno.min) {
             fechaInicioInterno.value = '';
@@ -973,6 +1037,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (fechaInicioInterno.max && fechaInicioInterno.value && fechaInicioInterno.value > fechaInicioInterno.max) {
             fechaInicioInterno.value = '';
+        }
+    };
+
+    const syncFechasFaseTresRange = () => {
+        const hoy = obtenerHoyIsoRequerimiento();
+
+        if (fechaEnvioRespuestaFinal) {
+            fechaEnvioRespuestaFinal.min = fechaInicioInterno?.value || '';
+            fechaEnvioRespuestaFinal.max = hoy;
+
+            if (fechaEnvioRespuestaFinal.min && fechaEnvioRespuestaFinal.value && fechaEnvioRespuestaFinal.value < fechaEnvioRespuestaFinal.min) {
+                fechaEnvioRespuestaFinal.value = '';
+            }
+
+            if (fechaEnvioRespuestaFinal.max && fechaEnvioRespuestaFinal.value && fechaEnvioRespuestaFinal.value > fechaEnvioRespuestaFinal.max) {
+                fechaEnvioRespuestaFinal.value = '';
+            }
+        }
+
+        if (fechaRespuestaFiscaliaFinal) {
+            fechaRespuestaFiscaliaFinal.min = fechaEnvioRespuestaFinal?.value || '';
+            fechaRespuestaFiscaliaFinal.max = hoy;
+
+            if (fechaRespuestaFiscaliaFinal.min && fechaRespuestaFiscaliaFinal.value && fechaRespuestaFiscaliaFinal.value < fechaRespuestaFiscaliaFinal.min) {
+                fechaRespuestaFiscaliaFinal.value = '';
+            }
+
+            if (fechaRespuestaFiscaliaFinal.max && fechaRespuestaFiscaliaFinal.value && fechaRespuestaFiscaliaFinal.value > fechaRespuestaFiscaliaFinal.max) {
+                fechaRespuestaFiscaliaFinal.value = '';
+            }
         }
     };
 
@@ -1039,10 +1133,14 @@ document.addEventListener('DOMContentLoaded', () => {
     fechaRecepcionFiscalia?.addEventListener('change', () => {
         syncFechaLimiteMin();
         syncFechaInicioInternoRange();
+        syncFechasFaseTresRange();
     });
     fechaLimiteAtencionReq?.addEventListener('change', syncFechaInicioInternoRange);
+    fechaInicioInterno?.addEventListener('change', syncFechasFaseTresRange);
+    fechaEnvioRespuestaFinal?.addEventListener('change', syncFechasFaseTresRange);
     syncFechaLimiteMin();
     syncFechaInicioInternoRange();
+    syncFechasFaseTresRange();
 
     // Un solo listener delegado para tarjetas regeneradas de fase 2.
     listSeguimiento.addEventListener('change', (event) => {
@@ -1250,7 +1348,7 @@ async function cargarReferenciaAsunto(asuntoId) {
         const data = await response.json();
 
         if (!response.ok && String(data.message || '').includes('fecha de conocimiento del AMP')) {
-            await bloquearAccesoRequerimientoSinAmp();
+            await bloquearAccesoReferenciaRequerimientoSinAmp();
             return;
         }
 
@@ -1259,9 +1357,19 @@ async function cargarReferenciaAsunto(asuntoId) {
         }
 
         const asunto = data.data?.asunto || {};
-        if (!tieneFechaConocimientoAmpRequerimiento(asunto)) {
-            await bloquearAccesoRequerimientoSinAmp();
+        asuntoReferenciaRequerimientoPenal = asunto;
+        if (!Boolean(asunto?.fecha_conocimiento_amp || asunto?.fecha_conocimiento_fiscal)) {
+            await bloquearAccesoReferenciaRequerimientoSinAmp();
             return;
+        }
+
+        const fechaAmp = asunto.fecha_conocimiento_amp || asunto.fecha_conocimiento_fiscal || '';
+        const hoy = new Date();
+        const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+        const fechaRecepcion = document.getElementById('fechaRecepcionFiscalia');
+        if (fechaRecepcion) {
+            fechaRecepcion.min = fechaAmp;
+            fechaRecepcion.max = hoyIso;
         }
 
         setReferenciaText('reqRefNumeroCarpeta', asunto.numero_carpeta || '--');
@@ -1270,6 +1378,20 @@ async function cargarReferenciaAsunto(asuntoId) {
     } catch (error) {
         console.error('No se pudo cargar la referencia del asunto penal:', error);
     }
+}
+
+async function bloquearAccesoReferenciaRequerimientoSinAmp() {
+    if (typeof window.appAlert === 'function') {
+        await window.appAlert({
+            title: 'Registro AMP requerido',
+            message: 'No se puede acceder a Requerimientos sin registrar la fecha de conocimiento del AMP.',
+            confirmText: 'Aceptar'
+        });
+    } else {
+        window.alert('Registro AMP requerido\n\nNo se puede acceder a Requerimientos sin registrar la fecha de conocimiento del AMP.');
+    }
+
+    window.location.href = 'penal.html';
 }
 
 function setReferenciaText(id, value) {

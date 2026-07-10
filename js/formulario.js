@@ -16,6 +16,14 @@ let catalogos = {
 };
 let limitadorPrestacionesNotas = null;
 
+function obtenerHoyIsoCivilFormulario() {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 function obtenerDelegacionCivilFormulario(id) {
     if (!id) return null;
     return (catalogos.delegaciones || []).find(delegacion => delegacion.id == id) || null;
@@ -283,6 +291,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     actualizarHeaderCivilFormulario(usuario);
+    const fechaInicioInput = document.getElementById('fechaInicio');
+    if (fechaInicioInput) {
+        fechaInicioInput.max = obtenerHoyIsoCivilFormulario();
+    }
 
     try {
         try {
@@ -893,6 +905,14 @@ async function guardarCaso(e) {
     e.preventDefault();
 
     const caso = construirObjetoCaso();
+
+    if (caso.fecha_inicio && caso.fecha_inicio > obtenerHoyIsoCivilFormulario()) {
+        await window.appAlert?.({
+            title: 'Fecha inválida',
+            message: 'La fecha de inicio no puede ser posterior a hoy.'
+        });
+        return;
+    }
 
     if (!await validarCasoCivil(caso)) {
         return;

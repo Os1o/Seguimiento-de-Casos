@@ -18,6 +18,14 @@ let casoPenalActual = null;
 
 const $ = (selector) => document.querySelector(selector);
 
+function obtenerHoyIsoEditarPenal() {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 function mostrarMensaje(titulo, mensaje, tipo = 'info') {
     if (typeof window.appAlert === 'function') {
         return window.appAlert({
@@ -950,6 +958,7 @@ function poblarCaso(caso) {
     cargarAbogadosResponsablesPenal(caso.abogado_responsable_id || '');
 
     $('#fechaInicio').value = caso.fecha_presentacion_denuncia || caso.fecha_inicio || '';
+    $('#fechaInicio').max = obtenerHoyIsoEditarPenal();
     const categoriaDelito = obtenerCategoriaPorDelito(caso.delito_id);
     cargarCategoriasDelito(categoriaDelito);
     cargarDelitosPorCategoria(caso.delito_id || '');
@@ -969,8 +978,13 @@ function poblarCaso(caso) {
 
 function validarFormularioBase() {
     const numero = obtenerNumeroCarpeta();
+    const fechaInicio = $('#fechaInicio')?.value || '';
     if (!numero) {
         throw new Error('Capture el numero de carpeta completo.');
+    }
+
+    if (fechaInicio && fechaInicio > obtenerHoyIsoEditarPenal()) {
+        throw new Error('La fecha de presentación de la denuncia / querella no puede ser posterior a hoy.');
     }
 
     const numeroLibre = sanitizarNumeroCarpeta();
@@ -1150,6 +1164,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (!caso) {
             throw new Error('Caso penal no encontrado.');
+        }
+
+        if (String(caso.estatus_general || caso.estatus || '').toUpperCase() === 'CONCLUIDO') {
+            window.location.href = 'penal.html';
+            return;
         }
 
         poblarCaso(caso);

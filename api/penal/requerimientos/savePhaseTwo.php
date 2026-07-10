@@ -204,6 +204,7 @@ try {
             doc_interno.id AS documento_interno_id,
             pa.delegacion_id,
             pa.numero_carpeta,
+            pa.estatus_general,
             COALESCE(pca.fecha_conocimiento_amp, pa.fecha_conocimiento_amp) AS fecha_conocimiento_amp
         FROM penal_requerimientos pr
         LEFT JOIN LATERAL (
@@ -236,6 +237,10 @@ try {
         $requerimiento['delegacion_id'] !== null ? (int) $requerimiento['delegacion_id'] : null
     );
 
+    if (strtoupper((string) ($requerimiento['estatus_general'] ?? '')) === 'CONCLUIDO') {
+        sendError('El asunto se encuentra concluido, no se permiten modificaciones.', 400);
+    }
+
     if (empty($requerimiento['fecha_conocimiento_amp'])) {
         sendError('Es necesario registrar la fecha de conocimiento del AMP antes de gestionar Requerimientos', 400);
     }
@@ -252,6 +257,14 @@ try {
         if (!empty($requerimiento['area_responsable_id'])) {
             $areaResponsableId = (int) $requerimiento['area_responsable_id'];
         }
+    }
+
+    if ($fechaInicioInterno < (string) $requerimiento['fecha_recepcion']) {
+        sendError('La fecha de inicio interno no puede ser menor a la fecha de recepcion', 400);
+    }
+
+    if ($fechaInicioInterno > date('Y-m-d')) {
+        sendError('La fecha de inicio interno no puede ser posterior a hoy', 400);
     }
 
     $areaStmt->execute(['id' => $areaResponsableId]);

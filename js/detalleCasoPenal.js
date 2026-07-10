@@ -549,11 +549,11 @@ async function renderizarDetalle() {
         if (btnRequerimientos) btnRequerimientos.href = hrefRequerimientos;
         if (btnEditarDatosPenal) {
             btnEditarDatosPenal.href = hrefEditarDatos;
-            btnEditarDatosPenal.style.display = esAdmin ? '' : 'none';
+            btnEditarDatosPenal.style.display = esAdmin && !estatusConcluido ? '' : 'none';
         }
         if (btnRegistroAmp) {
             btnRegistroAmp.href = hrefRegistroAmp;
-            btnRegistroAmp.style.display = puedeEditarAmp ? '' : 'none';
+            btnRegistroAmp.style.display = puedeEditarAmp && !estatusConcluido ? '' : 'none';
         }
         if (btnActualizar) {
             btnActualizar.href = hrefActuacion;
@@ -562,7 +562,7 @@ async function renderizarDetalle() {
         if (btnMascPenal) {
             btnMascPenal.href = `mascPenal.html?id=${encodeURIComponent(caso.id)}`;
             btnMascPenal.textContent = 'MASC';
-            btnMascPenal.style.display = (tieneMasc && esAdmin) || (!tieneMasc && puedeEditar && !estatusConcluido) ? '' : 'none';
+            btnMascPenal.style.display = !estatusConcluido && ((tieneMasc && esAdmin) || (!tieneMasc && puedeEditar)) ? '' : 'none';
         }
         if (btnReabrirCarpetaPenal) {
             btnReabrirCarpetaPenal.style.display = esAdmin && estatusConcluido ? '' : 'none';
@@ -893,6 +893,7 @@ function ordenarDocumentosPenal(documentos) {
 
         return Number(b.id || 0) - Number(a.id || 0);
     });
+
 }
 
 function construirUrlDocumentoPenal(documento) {
@@ -989,7 +990,7 @@ async function confirmarReabrirCarpetaPenal() {
 }
 
 function eliminarCaso() {
-    window.appConfirm?.({
+    const ejecutarEliminacion = () => window.appConfirm?.({
         title: 'Eliminar asunto',
         message: '¿Estás seguro de que deseas eliminar este asunto? Esta acción no se puede deshacer.',
         confirmText: 'Eliminar',
@@ -1012,6 +1013,21 @@ function eliminarCaso() {
                     message: error.message || 'Ocurrió un problema al eliminar el asunto.'
                 });
             });
+    });
+
+    const estatusConcluido = String(casoActual?.estatus || casoActual?.estatus_general || '').toUpperCase() === 'CONCLUIDO';
+    if (!estatusConcluido) {
+        return ejecutarEliminacion();
+    }
+
+    return window.appConfirm?.({
+        title: 'Carpeta concluida',
+        message: 'Esta carpeta ya se encuentra concluida. ¿Seguro que desea eliminarla?',
+        confirmText: 'Sí',
+        cancelText: 'Cancelar'
+    }).then(confirmacion => {
+        if (!confirmacion) return;
+        return ejecutarEliminacion();
     });
 }
 

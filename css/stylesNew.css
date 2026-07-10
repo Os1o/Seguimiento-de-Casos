@@ -620,6 +620,11 @@ body {
 .expediente-compuesto .form-select {
   max-width: 130px;
 }
+.expediente-compuesto .exp-jurisdiccion-select {
+  flex: 0 0 150px;
+  min-width: 150px;
+  max-width: 150px;
+}
 .exp-separador {
   font-size: 18px;
   font-weight: bold;
@@ -1272,6 +1277,27 @@ body {
 .dynamic-field-title {
   font-weight: 600;
   color: var(--color-text);
+}
+
+.dynamic-field-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dynamic-field-header .penal-qrr-toggle-header {
+  min-height: 42px;
+  padding: 8px 12px;
+}
+
+.dynamic-field-header .penal-qrr-toggle-header .penal-qrr-copy strong {
+  font-size: 12px;
+}
+
+.dynamic-field-header .penal-qrr-toggle-header .penal-qrr-copy small {
+  font-size: 11px;
 }
 
 .btn-remove {

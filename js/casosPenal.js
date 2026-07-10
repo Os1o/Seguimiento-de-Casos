@@ -1272,6 +1272,7 @@ function renderizarTabla() {
         const fechaConocimientoAmp = obtenerFechaConocimientoAmpPenal(caso);
         const cuantia = obtenerCuantiaPenal(caso);
         const tieneConocimientoAmp = tieneFechaConocimientoAmpPenal(caso);
+        const carpetaConcluida = esCarpetaConcluidaPenal(caso);
         const badgeEstatus = caso.estatus === 'TRAMITE'
             ? '<span class="badge badge-tramite penal-status-badge">En trámite</span>'
             : '<span class="badge badge-concluido penal-status-badge">Concluido</span>';
@@ -1307,27 +1308,27 @@ function renderizarTabla() {
                             <div class="menu-item" onclick="verDetalle(${caso.id})">
                                 Ver detalle
                             </div>
-                            ${tieneConocimientoAmp ? `
+                            ${(tieneConocimientoAmp || carpetaConcluida) ? `
                             <div class="menu-item" onclick="verRequerimientos(${caso.id})">
                                 Requerimientos ministeriales
                             </div>` : ''}
-                            ${usuarioActual && (usuarioActual.rol === 'admin' || (usuarioActual.rol !== 'consulta' && !tieneConocimientoAmp)) ? `
+                            ${usuarioActual && !carpetaConcluida && (usuarioActual.rol === 'admin' || (usuarioActual.rol !== 'consulta' && !tieneConocimientoAmp)) ? `
                             <div class="menu-item" onclick="actualizarSeguimiento(${caso.id})">
                                 Registro AMP
                             </div>` : ''}
-                            ${usuarioActual && usuarioActual.rol !== 'consulta' && tieneConocimientoAmp ? `
+                            ${usuarioActual && usuarioActual.rol !== 'consulta' && tieneConocimientoAmp && !carpetaConcluida ? `
                             <div class="menu-item" onclick="verActuacionesPenales(${caso.id})">
                                 Seguimiento
                             </div>
                             <div class="menu-item" onclick="verMASC(${caso.id})">
                                 MASC
                             </div>` : ''}
-                            ${usuarioActual && usuarioActual.rol === 'admin' ? `
+                            ${usuarioActual && usuarioActual.rol === 'admin' && !carpetaConcluida ? `
                             <div class="menu-item" onclick="editarCaso(${caso.id})">
                                 Editar datos
                             </div>` : ''}
                             ${usuarioActual && usuarioActual.rol === 'admin' ? `
-                            <div class="menu-item danger" onclick="confirmarEliminar(${caso.id})">
+                            <div class="menu-item danger" onclick="confirmarEliminarKebabPenal(${caso.id}, ${carpetaConcluida ? 'true' : 'false'})">
                                 Eliminar
                             </div>` : ''}
                         </div>
@@ -1478,6 +1479,8 @@ function obtenerFechaConocimientoAmpPenal(caso) {
 function tieneFechaConocimientoAmpPenal(caso) {
     return Boolean(caso?.fecha_conocimiento_amp || caso?.fecha_conocimiento_fiscal);
 }
+
+const esCarpetaConcluidaPenal = (caso) => String(caso?.estatus_general || caso?.estatus || '').toUpperCase() === 'CONCLUIDO';
 
 function obtenerCuantiaPenal(caso) {
     if (!caso || typeof caso !== 'object') {
@@ -1703,6 +1706,23 @@ async function confirmarEliminar(id) {
             message: err.message || 'Ocurrió un problema al eliminar el asunto.'
         });
     }
+}
+
+async function confirmarEliminarKebabPenal(id, carpetaConcluida = false) {
+    if (carpetaConcluida) {
+        const confirmacionConcluida = await window.appConfirm?.({
+            title: 'Carpeta concluida',
+            message: 'Esta carpeta ya se encuentra concluida. ¿Seguro que desea eliminarla?',
+            confirmText: 'Sí',
+            cancelText: 'Cancelar'
+        });
+
+        if (!confirmacionConcluida) {
+            return;
+        }
+    }
+
+    return confirmarEliminar(id);
 }
 
 function toggleMenu(casoId) {

@@ -54,6 +54,10 @@ try {
 
     $fechaConocimiento = parseIsoDateOrFail($payload['fecha_conocimiento_amp'], 'fecha_conocimiento_amp');
 
+    if ($payload['fecha_conocimiento_amp'] > date('Y-m-d')) {
+        sendError('La fecha de conocimiento del AMP no puede ser posterior a hoy', 400);
+    }
+
     $pdo = getDatabaseConnection();
 
     $stmtAsunto = $pdo->prepare('
@@ -78,6 +82,10 @@ try {
 
     if (!$asunto) {
         sendError('Asunto penal no encontrado', 404);
+    }
+
+    if (strtoupper((string) ($asunto['estatus_general'] ?? '')) === 'CONCLUIDO') {
+        sendError('El asunto se encuentra concluido, no se permiten modificaciones.', 400);
     }
 
     if (!empty($asunto['fecha_conocimiento_amp']) && !isAdminUser($user)) {

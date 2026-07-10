@@ -375,6 +375,10 @@ function validatePenalUpdatePayload(PDO $pdo, array $user, array $current, array
         sendError('Debes capturar los hechos con datos de la victima o denunciante', 400);
     }
 
+    if ($payload['fecha_presentacion_denuncia'] > date('Y-m-d')) {
+        sendError('La fecha de presentacion de la denuncia / querella no puede ser posterior a hoy', 400);
+    }
+
     if (mb_strlen($payload['hechos_denunciante'], 'UTF-8') > 1000) {
         sendError('Los hechos con datos de la victima o denunciante no pueden exceder 1000 caracteres', 400);
     }
@@ -473,6 +477,10 @@ try {
 
     if (!$current) {
         sendError('Caso penal no encontrado', 404);
+    }
+
+    if (strtoupper((string) ($current['estatus_general'] ?? '')) === 'CONCLUIDO') {
+        sendError('El asunto se encuentra concluido, no se permiten modificaciones.', 400);
     }
 
     $payload = validatePenalUpdatePayload($pdo, $user, $current, $payload);

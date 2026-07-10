@@ -20,6 +20,14 @@ function formatearFechaMasc(fecha) {
     return `${dia}/${mes}/${anio}`;
 }
 
+function obtenerHoyIsoMasc() {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 async function verificarSesionMasc() {
     const usuarioStr = sessionStorage.getItem('usuario');
     if (usuarioStr) {
@@ -138,6 +146,7 @@ function renderizarMasc() {
     const fechaInput = mascGet('fechaConvenioMasc');
     if (fechaInput) {
         fechaInput.min = asuntoMascActual.fecha_presentacion_denuncia || asuntoMascActual.fecha_inicio || '';
+        fechaInput.max = obtenerHoyIsoMasc();
     }
 
     if (mascActual?.id) {
@@ -176,6 +185,10 @@ function obtenerPayloadMasc() {
 
     if (fechaMinima && fechaConvenio < fechaMinima) {
         throw new Error('La fecha del convenio MASC no puede ser menor a la fecha de denuncia / querella');
+    }
+
+    if (fechaConvenio > obtenerHoyIsoMasc()) {
+        throw new Error('La fecha del convenio MASC no puede ser posterior a hoy');
     }
 
     if (!descripcion) {
@@ -250,6 +263,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (!asuntoMascActual) {
             throw new Error('No se encontró el asunto penal');
+        }
+
+        if (String(asuntoMascActual.estatus_general || asuntoMascActual.estatus || '').toUpperCase() === 'CONCLUIDO') {
+            window.location.href = 'penal.html';
+            return;
         }
 
         if (!tieneFechaConocimientoAmpMasc(asuntoMascActual)) {

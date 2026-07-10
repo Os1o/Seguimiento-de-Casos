@@ -210,6 +210,14 @@ function validarFechaIso(fecha) {
     return /^\d{4}-\d{2}-\d{2}$/.test(String(fecha || ''));
 }
 
+function obtenerHoyIsoActuacionPenal() {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 function syncFechaActuacionMin() {
     const inputFecha = document.getElementById('fechaActuacionSecundaria');
     const fechaPresentacion = asuntoActual?.fecha_presentacion_denuncia || '';
@@ -219,8 +227,13 @@ function syncFechaActuacionMin() {
     }
 
     inputFecha.min = validarFechaIso(fechaPresentacion) ? fechaPresentacion : '';
+    inputFecha.max = obtenerHoyIsoActuacionPenal();
 
     if (inputFecha.min && inputFecha.value && inputFecha.value < inputFecha.min) {
+        inputFecha.value = '';
+    }
+
+    if (inputFecha.max && inputFecha.value && inputFecha.value > inputFecha.max) {
         inputFecha.value = '';
     }
 }
@@ -349,6 +362,15 @@ function obtenerPayloadActuacionPenal() {
 
     if (!fecha) {
         throw new Error('La fecha de actuación es obligatoria');
+    }
+
+    const fechaMinima = asuntoActual?.fecha_presentacion_denuncia || '';
+    if (validarFechaIso(fechaMinima) && fecha < fechaMinima) {
+        throw new Error('La fecha de actuacion no puede ser menor a la fecha de presentacion de la denuncia / querella');
+    }
+
+    if (fecha > obtenerHoyIsoActuacionPenal()) {
+        throw new Error('La fecha de actuacion no puede ser posterior a hoy');
     }
 
     if (!Number.isInteger(etapaId) || etapaId <= 0) {
@@ -541,6 +563,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         if (!asuntoActual) {
             throw new Error('No se encontró el asunto penal');
+        }
+
+        if (String(asuntoActual.estatus_general || asuntoActual.estatus || '').toUpperCase() === 'CONCLUIDO') {
+            window.location.href = 'penal.html';
+            return;
         }
 
         llenarResumenActuacionPenal(asuntoActual);

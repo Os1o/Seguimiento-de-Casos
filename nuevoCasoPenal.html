@@ -61,13 +61,13 @@
                     <label class="form-label required">No. de Carpeta</label>
                     <p class="form-hint">Formato actual: JURISDICCI&Oacute;N / N&Uacute;MERO DE CARPETA</p>
                     <div class="expediente-compuesto">
-                        <select id="expJurisdiccion" class="form-select" required>
-                            <option value="">Jurisdicci&oacute;n</option>
+                        <select id="expJurisdiccion" class="form-select exp-jurisdiccion-select" required>
+                            <option value="" disabled hidden selected>Jurisdicci&oacute;n</option>
                             <option value="FED">FED</option>
                             <option value="LOC">LOC</option>
                         </select>
                         <span class="exp-separador">/</span>
-                        <input type="text" id="expNumeroCarpeta" class="form-input" placeholder="MIC12345672026" maxlength="80" inputmode="text" required>
+                        <input type="text" id="expNumeroCarpeta" class="form-input" placeholder="ENTIDAD / OOAD / N&Uacute;MERO / A&Ntilde;O" maxlength="80" inputmode="text" required>
                     </div>
                     <small class="form-preview" id="previewExpediente">Vista previa: ---</small>
                 </div>
@@ -189,20 +189,6 @@
                 <div class="penal-section-head">
                     <div>
                         <h3 class="form-section-title">Probable responsable y control interno</h3>
-                    </div>
-                </div>
-
-                <div class="form-grid penal-mode-group">
-                    <div class="form-group form-grid-full">
-                        <label class="form-label">Identificaci&oacute;n del probable responsable</label>
-                        <label class="penal-qrr-toggle" for="responsableQrr">
-                            <input type="checkbox" id="responsableQrr">
-                            <span class="penal-qrr-box"></span>
-                            <span class="penal-qrr-copy">
-                                <strong>QRR - Qui&eacute;n Resulte Responsable</strong>
-                                <small>Registrar cuando no se cuente con una persona o entidad identificada.</small>
-                            </span>
-                        </label>
                     </div>
                 </div>
 
